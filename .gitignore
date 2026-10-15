@@ -17,6 +17,7 @@ out/
 build/
 .next/
 .wrangler/
+*.tsbuildinfo
 
 # Logs
 npm-debug.log*

@@ -1,6 +1,7 @@
 import { simanScraper } from './stores/siman.js';
 import { walmartScraper } from './stores/walmart.js';
 import { syncProductsToDatabase } from './db/supabase.js';
+import { generateDealsSnapshot } from './core/snapshot.js';
 import { StoreScraper, ScrapedProduct } from './types.js';
 import dotenv from 'dotenv';
 
@@ -46,6 +47,13 @@ async function main() {
   console.log('\n----------------------------------------------------');
   console.log(`📦 Sincronizando ${totalProducts.length} productos con la base de datos...`);
   const stats = await syncProductsToDatabase(totalProducts);
+
+  // Plan B: Generar snapshot estático para Cloudflare Pages
+  try {
+    await generateDealsSnapshot(totalProducts);
+  } catch (err) {
+    console.warn('No se pudo generar el snapshot estático:', err);
+  }
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
 

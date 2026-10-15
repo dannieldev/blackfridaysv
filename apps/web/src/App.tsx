@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   AlertTriangle, 
@@ -7,8 +7,10 @@ import {
   ExternalLink,
   Store,
   Flame,
-  Info
+  Info,
+  Database
 } from 'lucide-react';
+import { fetchLiveDeals } from './lib/supabase.ts';
 
 interface DealItem {
   id: string;
@@ -121,12 +123,43 @@ const MOCK_DEALS: DealItem[] = [
 ];
 
 export default function App() {
+  const [deals, setDeals] = useState<DealItem[]>(MOCK_DEALS);
+  const [isUsingLiveDb, setIsUsingLiveDb] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScore, setFilterScore] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  useEffect(() => {
+    async function loadDb() {
+      const live = await fetchLiveDeals();
+      if (live && live.length > 0) {
+        const mapped: DealItem[] = live.map((item) => ({
+          id: item.store_product_id,
+          store: item.store_name,
+          brand: item.brand || 'Genérico',
+          modelCode: item.model_code || 'N/A',
+          title: item.store_title,
+          category: item.category,
+          currentPrice: item.current_offer_price,
+          regularPrice: item.current_regular_price,
+          baselinePrice30d: item.baseline_price_30d || item.current_offer_price,
+          dealScore: item.deal_score === 'precio_regular' ? 'descuento_cosmetico' : item.deal_score,
+          verdictMessage: item.is_inflated 
+            ? '¡ALERTA! El precio regular fue inflado recientemente en este comercio para fingir un descuento.' 
+            : item.is_all_time_low 
+            ? '¡MÍNIMO HISTÓRICO! Es el precio más bajo registrado en los últimos 60 días.' 
+            : `Descuento real calculado del ${item.real_discount_percent}% frente a la línea base de octubre.`,
+          productUrl: item.product_url,
+        }));
+        setDeals(mapped);
+        setIsUsingLiveDb(true);
+      }
+    }
+    loadDb();
+  }, []);
+
   const filteredDeals = useMemo(() => {
-    return MOCK_DEALS.filter((deal) => {
+    return deals.filter((deal) => {
       const matchSearch = 
         deal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         deal.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -138,14 +171,20 @@ export default function App() {
 
       return matchSearch && matchScore && matchCategory;
     });
-  }, [searchTerm, filterScore, selectedCategory]);
+  }, [deals, searchTerm, filterScore, selectedCategory]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-b border-blue-900/40 px-4 py-2.5 text-xs text-center text-blue-200/90 flex items-center justify-center gap-2">
-        <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>Rastreo activo de precios de línea base para Black Friday 2026 en El Salvador</span>
+      <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-b border-blue-900/40 px-4 py-2.5 text-xs text-center text-blue-200/90 flex flex-wrap items-center justify-center gap-3">
+        <span className="flex items-center gap-1.5">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Rastreo activo de precios de línea base para Black Friday 2026 en El Salvador</span>
+        </span>
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[11px] font-mono">
+          <Database className="w-3 h-3" />
+          {isUsingLiveDb ? 'Datos en Vivo' : 'Monitoreo Activo'}
+        </span>
       </div>
 
       {/* Hero Section */}
