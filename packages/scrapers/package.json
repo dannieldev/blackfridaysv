@@ -8,11 +8,14 @@
     "scrape:dry": "SCRAPER_MODE=dry-run tsx src/index.ts",
     "scrape:siman": "SCRAPER_STORE=siman tsx src/index.ts",
     "scrape:walmart": "SCRAPER_STORE=walmart tsx src/index.ts",
+    "scrape:curacao": "SCRAPER_STORE=curacao tsx src/index.ts",
+    "scrape:prado": "SCRAPER_STORE=prado tsx src/index.ts",
     "build": "tsc"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "undici": "^7.29.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.9",
