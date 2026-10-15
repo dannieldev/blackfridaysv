@@ -56,7 +56,15 @@ export async function fetchLiveDeals(): Promise<SupabaseDeal[] | null> {
           product_url: item.productUrl,
           product_image: item.imageUrl || null,
           in_stock: true,
-          store_id: item.store.toLowerCase().includes('siman') ? 'siman' : 'walmart',
+          store_id: item.store.toLowerCase().includes('siman')
+            ? 'siman'
+            : item.store.toLowerCase().includes('walmart')
+            ? 'walmart'
+            : item.store.toLowerCase().includes('curacao')
+            ? 'curacao'
+            : item.store.toLowerCase().includes('prado')
+            ? 'prado'
+            : 'omnisport',
           store_name: item.store,
           canonical_id: null,
           model_code: item.modelCode,

@@ -49,9 +49,17 @@ export async function generateDealsSnapshot(products: ScrapedProduct[]): Promise
       verdict = 'Descuento real comprobado sobre la línea base.';
     }
 
+    const STORE_DISPLAY_NAMES: Record<string, string> = {
+      siman: 'Almacenes Siman',
+      walmart: 'Walmart El Salvador',
+      curacao: 'La Curacao',
+      prado: 'Almacenes Prado',
+      omnisport: 'Omnisport',
+    };
+
     return {
       id: `${p.storeId}-${p.storeSku || idx}`,
-      store: p.storeId === 'siman' ? 'Almacenes Siman' : p.storeId === 'walmart' ? 'Walmart El Salvador' : p.storeId,
+      store: STORE_DISPLAY_NAMES[p.storeId] || p.storeId,
       brand: p.brand,
       modelCode: p.modelCode || 'N/A',
       title: p.title,
