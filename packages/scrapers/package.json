@@ -1,0 +1,22 @@
+{
+  "name": "@blackfridaysv/scrapers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scrape": "tsx src/index.ts",
+    "scrape:dry": "SCRAPER_MODE=dry-run tsx src/index.ts",
+    "scrape:siman": "SCRAPER_STORE=siman tsx src/index.ts",
+    "scrape:walmart": "SCRAPER_STORE=walmart tsx src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

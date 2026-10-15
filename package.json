@@ -1,0 +1,28 @@
+{
+  "name": "blackfridaysv-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Radar de Ofertas Reales Black Friday El Salvador 2026",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "scrape": "npm run scrape --workspace=packages/scrapers",
+    "scrape:dry": "npm run scrape:dry --workspace=packages/scrapers",
+    "scrape:siman": "npm run scrape:siman --workspace=packages/scrapers",
+    "scrape:walmart": "npm run scrape:walmart --workspace=packages/scrapers",
+    "deploy": "npm run deploy --workspace=apps/web"
+  },
+  "keywords": [
+    "black-friday",
+    "el-salvador",
+    "price-tracker",
+    "anti-inflation",
+    "deals"
+  ],
+  "author": "Danniel Dev (@dannieldev) & Team",
+  "license": "MIT"
+}

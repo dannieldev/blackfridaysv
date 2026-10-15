@@ -1,0 +1,49 @@
+name: Automated Price Scraper
+
+on:
+  schedule:
+    # 2 veces al día durante Octubre (9:00 AM y 9:00 PM CST = 15:00 y 03:00 UTC)
+    - cron: '0 15,3 * * *'
+  workflow_dispatch:
+    inputs:
+      store:
+        description: 'Tienda específica a scrapear (dejar vacío para todas)'
+        required: false
+        default: ''
+      mode:
+        description: 'Modo de ejecución'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - dry-run
+
+jobs:
+  scrape-and-sync:
+    name: Scrape Stores and Sync to Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SCRAPER_STORE: ${{ github.event.inputs.store || '' }}
+          SCRAPER_MODE: ${{ github.event.inputs.mode || 'production' }}
+          SCRAPE_MAX_ITEMS_PER_CATEGORY: 50
+        run: |
+          npm run scrape
