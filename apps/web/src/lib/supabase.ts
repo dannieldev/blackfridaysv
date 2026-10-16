@@ -1,13 +1,20 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const environment = import.meta.env ?? {};
+const supabaseUrl = environment.VITE_SUPABASE_URL;
+const supabaseKey = environment.VITE_SUPABASE_ANON_KEY;
 
-export const supabase: SupabaseClient | null = (supabaseUrl && supabaseKey) 
-  ? createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-  : null;
+let clientPromise: Promise<SupabaseClient> | undefined;
+
+function getSupabaseClient(): Promise<SupabaseClient> {
+  clientPromise ??= import('@supabase/supabase-js')
+    .then(({ createClient }) => createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } }))
+    .catch(error => {
+      clientPromise = undefined;
+      throw error;
+    });
+  return clientPromise;
+}
 
 export interface SupabaseDeal {
   store_product_id: string;
@@ -15,7 +22,7 @@ export interface SupabaseDeal {
   store_title: string;
   product_url: string;
   product_image: string | null;
-  in_stock: boolean;
+  in_stock: boolean | null;
   store_id: string;
   store_name: string;
   canonical_id: string | null;
@@ -32,83 +39,142 @@ export interface SupabaseDeal {
   is_all_time_low: boolean;
   real_discount_percent: number;
   deal_score: 'ganga_historica' | 'buena_oferta' | 'falsa_oferta_inflada' | 'descuento_cosmetico' | 'precio_regular';
+  source: 'snapshot' | 'database';
+  updated_at?: string;
+  history?: { date: string; price: number }[];
 }
 
-/**
- * Consulta de ofertas con estrategia híbrida anti-colapso:
- * 1. Intenta leer snapshot estático de Cloudflare Edge (/data/deals-snapshot.json) si existe (0% costo Supabase).
- * 2. Si no hay snapshot, consulta la base de datos Supabase en tiempo real.
- * 3. En caso de error de red o saturación, devuelve null para activar el dataset de contingencia.
- */
-export async function fetchLiveDeals(): Promise<SupabaseDeal[] | null> {
-  // Plan B: Intentar leer snapshot estático de Cloudflare Edge primero (ultra rápido, soporta millones de visitas)
+type Row = Record<string, unknown>;
+const scores = new Set<SupabaseDeal['deal_score']>([
+  'ganga_historica', 'buena_oferta', 'falsa_oferta_inflada', 'descuento_cosmetico', 'precio_regular',
+]);
+
+function string(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function price(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function url(value: unknown): string | null {
   try {
-    const staticRes = await fetch('/data/deals-snapshot.json', {
-      headers: { 'Cache-Control': 'max-age=300' }
+    const parsed = new URL(string(value));
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function timestamp(value: unknown): string | undefined {
+  const input = string(value);
+  const time = Date.parse(input);
+  return input && Number.isFinite(time) ? new Date(time).toISOString() : undefined;
+}
+
+function normalizeRows(data: unknown, source: SupabaseDeal['source']): SupabaseDeal[] {
+  if (!Array.isArray(data)) return [];
+  const normalized: SupabaseDeal[] = [];
+  const seen = new Set<string>();
+
+  for (const value of data) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+    const item = value as Row;
+    const snapshot = source === 'snapshot';
+    const id = string(snapshot ? item.id : item.store_product_id);
+    const title = string(snapshot ? item.title : item.store_title);
+    const store = string(snapshot ? item.store : item.store_name);
+    const productUrl = url(snapshot ? item.productUrl : item.product_url);
+    const currentPrice = price(snapshot ? item.currentPrice : item.current_offer_price);
+    if (!id || !title || !store || !productUrl || currentPrice === null || seen.has(id)) continue;
+
+    const score = (snapshot ? item.dealScore : item.deal_score) as SupabaseDeal['deal_score'];
+    const stock = snapshot ? item.inStock : item.in_stock;
+    const history = Array.isArray(item.history) ? item.history.flatMap((point: unknown) => {
+      if (!point || typeof point !== 'object') return [];
+      const entry = point as Row;
+      const date = timestamp(entry.date);
+      const amount = price(entry.price);
+      return date && amount !== null ? [{ date, price: amount }] : [];
+    }).sort((a, b) => a.date.localeCompare(b.date)) : undefined;
+
+    normalized.push({
+      store_product_id: id,
+      store_sku: string(item.store_sku) || (snapshot ? id : ''),
+      store_title: title,
+      product_url: productUrl,
+      product_image: url(snapshot ? item.imageUrl : item.product_image),
+      in_stock: typeof stock === 'boolean' ? stock : null,
+      store_id: string(item.store_id) || (snapshot ? ['siman', 'walmart', 'curacao', 'prado', 'omnisport']
+        .find(name => store.toLowerCase().includes(name)) || store.toLowerCase() : ''),
+      store_name: store,
+      canonical_id: string(item.canonical_id) || null,
+      model_code: string(snapshot ? item.modelCode : item.model_code) || null,
+      brand: string(item.brand) || null,
+      canonical_title: string(snapshot ? item.title : item.canonical_title) || null,
+      category: string(item.category) || 'otros',
+      current_regular_price: price(snapshot ? item.regularPrice : item.current_regular_price),
+      current_offer_price: currentPrice,
+      // Legacy snapshots derive this baseline from list prices, not observations.
+      min_historic_price: snapshot ? null : price(item.min_historic_price),
+      avg_historic_price: snapshot ? null : price(item.avg_historic_price),
+      baseline_price_30d: snapshot ? null : price(item.baseline_price_30d),
+      is_inflated: !snapshot && item.is_inflated === true,
+      is_all_time_low: !snapshot && item.is_all_time_low === true,
+      real_discount_percent: !snapshot && typeof item.real_discount_percent === 'number'
+        && Number.isFinite(item.real_discount_percent) ? item.real_discount_percent : 0,
+      deal_score: scores.has(score) ? score : 'precio_regular',
+      source,
+      updated_at: timestamp(snapshot ? item.updatedAt : item.last_scraped_at ?? item.updated_at ?? item.latest_captured_at),
+      ...(history?.length ? { history } : {}),
     });
-    if (staticRes.ok) {
-      const staticData = await staticRes.json();
-      if (Array.isArray(staticData) && staticData.length > 0) {
-        return staticData.map((item: any) => ({
-          store_product_id: item.id,
-          store_sku: item.id,
-          store_title: item.title,
-          product_url: item.productUrl,
-          product_image: item.imageUrl || null,
-          in_stock: true,
-          store_id: item.store.toLowerCase().includes('siman')
-            ? 'siman'
-            : item.store.toLowerCase().includes('walmart')
-            ? 'walmart'
-            : item.store.toLowerCase().includes('curacao')
-            ? 'curacao'
-            : item.store.toLowerCase().includes('prado')
-            ? 'prado'
-            : 'omnisport',
-          store_name: item.store,
-          canonical_id: null,
-          model_code: item.modelCode,
-          brand: item.brand,
-          canonical_title: item.title,
-          category: item.category,
-          current_regular_price: item.regularPrice,
-          current_offer_price: item.currentPrice,
-          min_historic_price: item.currentPrice,
-          avg_historic_price: item.baselinePrice30d,
-          baseline_price_30d: item.baselinePrice30d,
-          is_inflated: item.dealScore === 'falsa_oferta_inflada',
-          is_all_time_low: item.dealScore === 'ganga_historica',
-          real_discount_percent: item.regularPrice ? Math.round((1 - item.currentPrice / item.regularPrice) * 100) : 0,
-          deal_score: item.dealScore,
-        }));
-      }
+    seen.add(id);
+  }
+  return normalized;
+}
+
+export async function fetchLiveDeals(): Promise<SupabaseDeal[] | null> {
+  const snapshotController = new AbortController();
+  const snapshotTimer = setTimeout(() => snapshotController.abort(), 3500);
+  try {
+    const response = await fetch('/data/deals-snapshot.json', {
+      signal: snapshotController.signal,
+      headers: { 'Cache-Control': 'max-age=300' },
+    });
+    if (response.ok) {
+      const snapshot = normalizeRows(await response.json(), 'snapshot');
+      if (snapshot.length) return snapshot;
     }
   } catch {
-    // Si no hay snapshot estático, proceder a Supabase
+    // Continue to the database when the cached catalog is unavailable.
+  } finally {
+    clearTimeout(snapshotTimer);
   }
 
-  // Plan A: Consulta directa a Supabase (con timeout seguro)
-  if (!supabase) {
-    return null;
-  }
+  if (!supabaseUrl || !supabaseKey) return null;
 
+  const databaseController = new AbortController();
+  let databaseTimer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeoutPromise = new Promise<null>((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout de consulta Supabase')), 3500)
-    );
-
-    const queryPromise = supabase
-      .from('view_deal_radar')
-      .select('*')
-      .limit(100)
-      .then(({ data, error }) => {
-        if (error) throw error;
-        return data as SupabaseDeal[];
-      });
-
-    const result = await Promise.race([queryPromise, timeoutPromise]);
-    return result;
+    const query = (async () => {
+      const supabase = await getSupabaseClient();
+      const { data, error } = await supabase
+        .from('view_deal_radar')
+        .select('*')
+        .limit(100)
+        .abortSignal(databaseController.signal);
+      if (error) return null;
+      const deals = normalizeRows(data, 'database');
+      return deals.length ? deals : null;
+    })();
+    // Bound the lazy SDK download as well as the database request.
+    const timeout = new Promise<null>(resolve => {
+      databaseTimer = setTimeout(() => { databaseController.abort(); resolve(null); }, 3500);
+    });
+    return await Promise.race([query, timeout]);
   } catch {
     return null;
+  } finally {
+    clearTimeout(databaseTimer);
   }
 }

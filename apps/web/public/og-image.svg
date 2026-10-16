@@ -1,64 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
-  <rect width="1200" height="630" fill="#020617"/>
-  
-  <!-- Subtle Grid Pattern -->
-  <defs>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.8" stroke-opacity="0.6"/>
-    </pattern>
-    <linearGradient id="blueGlow" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  
-  <rect width="1200" height="630" fill="url(#grid)"/>
-  <circle cx="200" cy="150" r="300" fill="url(#blueGlow)"/>
-
-  <!-- Badge -->
-  <rect x="100" y="90" width="360" height="38" rx="19" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.4"/>
-  <circle cx="120" cy="109" r="6" fill="#10b981"/>
-  <text x="136" y="115" fill="#93c5fd" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" letter-spacing="1">MONITOREO DE PRECIOS • EL SALVADOR</text>
-
-  <!-- Title -->
-  <text x="100" y="210" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="900" letter-spacing="-1">
-    Radar Black Friday SV
-  </text>
-  <text x="100" y="270" fill="#60a5fa" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="800">
-    Auditoría de Ofertas Reales vs. Precios Inflados
-  </text>
-
-  <!-- Subtitle -->
-  <text x="100" y="340" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="400">
-    Rastreo histórico diario en Siman, Prado, La Curacao, Omnisport y Walmart.
-  </text>
-  <text x="100" y="375" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="400">
-    Amparado en los Art. 31 y 32 de la Ley de Protección al Consumidor.
-  </text>
-
-  <!-- 3 Pillar Badges -->
-  <g transform="translate(100, 440)">
-    <!-- Real -->
-    <rect x="0" y="0" width="310" height="90" rx="16" fill="#064e3b" fill-opacity="0.4" stroke="#059669" stroke-width="1.5"/>
-    <circle cx="35" cy="45" r="14" fill="#10b981"/>
-    <text x="65" y="40" fill="#6ee7b7" font-family="system-ui, sans-serif" font-size="14" font-weight="700">VERDADERA REBAJA</text>
-    <text x="65" y="62" fill="#ffffff" font-family="system-ui, sans-serif" font-size="16" font-weight="800">Mínimo Histórico Real</text>
-
-    <!-- Inflated -->
-    <rect x="340" y="0" width="310" height="90" rx="16" fill="#881337" fill-opacity="0.4" stroke="#e11d48" stroke-width="1.5"/>
-    <circle cx="375" cy="45" r="14" fill="#f43f5e"/>
-    <text x="405" y="40" fill="#fda4af" font-family="system-ui, sans-serif" font-size="14" font-weight="700">OFERTA INFLADA</text>
-    <text x="405" y="62" fill="#ffffff" font-family="system-ui, sans-serif" font-size="16" font-weight="800">Precio Subido Previamente</text>
-
-    <!-- Comparison -->
-    <rect x="680" y="0" width="320" height="90" rx="16" fill="#1e1b4b" fill-opacity="0.4" stroke="#6366f1" stroke-width="1.5"/>
-    <circle cx="715" cy="45" r="14" fill="#818cf8"/>
-    <text x="745" y="40" fill="#c7d2fe" font-family="system-ui, sans-serif" font-size="14" font-weight="700">PODIO DE ALMACENES</text>
-    <text x="745" y="62" fill="#ffffff" font-family="system-ui, sans-serif" font-size="16" font-weight="800">¿Dónde Comprar Más Barato?</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1e261f"/>
+  <g font-family="DM Sans,Arial,sans-serif">
+    <text x="72" y="102" fill="#f5f6ed" font-size="34" font-weight="600">blackfridaysv.</text>
+    <text x="72" y="280" fill="#f5f6ed" font-size="92" font-weight="500" letter-spacing="-3">El buen precio</text>
+    <text x="72" y="385" fill="#d4f578" font-size="92" font-weight="500" letter-spacing="-3">se compara.</text>
+    <text x="72" y="468" fill="#b7c0b1" font-size="25">Compara precios de El Salvador. Decide con más información.</text>
+    <path d="M72 530H1128" stroke="#3d473c"/>
+    <text x="72" y="576" fill="#b7c0b1" font-size="20">Siman · Walmart · La Curacao · Prado · Omnisport</text>
+    <text x="1128" y="576" fill="#d4f578" font-size="20" text-anchor="end">El Salvador · USD</text>
   </g>
-
-  <!-- Footer URL -->
-  <text x="100" y="585" fill="#475569" font-family="monospace" font-size="16" font-weight="600">
-    https://blackfridaysv.danielcrespin-dev.workers.dev • Iniciativa Ciudadana Independiente
-  </text>
 </svg>

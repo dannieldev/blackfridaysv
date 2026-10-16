@@ -1,0 +1,605 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15",
+  "title": "Design System: BlackFridaySV",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Lima de acción",
+        "canonical": "#d4f578",
+        "cssVariable": "--accent",
+        "tonalRamp": [
+          "oklch(0.150 0.1559 121.76)",
+          "oklch(0.265 0.1559 121.76)",
+          "oklch(0.380 0.1559 121.76)",
+          "oklch(0.495 0.1559 121.76)",
+          "oklch(0.610 0.1559 121.76)",
+          "oklch(0.725 0.1559 121.76)",
+          "oklch(0.840 0.1559 121.76)",
+          "oklch(0.950 0.1559 121.76)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Lima de respuesta",
+        "canonical": "#e0ff91",
+        "cssVariable": "--accent-hover",
+        "tonalRamp": [
+          "oklch(0.150 0.1401 121.98)",
+          "oklch(0.265 0.1401 121.98)",
+          "oklch(0.380 0.1401 121.98)",
+          "oklch(0.495 0.1401 121.98)",
+          "oklch(0.610 0.1401 121.98)",
+          "oklch(0.725 0.1401 121.98)",
+          "oklch(0.840 0.1401 121.98)",
+          "oklch(0.950 0.1401 121.98)"
+        ]
+      },
+      "graphite": {
+        "role": "primary",
+        "displayName": "Grafito vegetal",
+        "canonical": "#1e261f",
+        "cssVariable": "--graphite",
+        "tonalRamp": [
+          "oklch(0.150 0.0173 148.57)",
+          "oklch(0.265 0.0173 148.57)",
+          "oklch(0.380 0.0173 148.57)",
+          "oklch(0.495 0.0173 148.57)",
+          "oklch(0.610 0.0173 148.57)",
+          "oklch(0.725 0.0173 148.57)",
+          "oklch(0.840 0.0173 148.57)",
+          "oklch(0.950 0.0173 148.57)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Lienzo",
+        "canonical": "#fafbf7",
+        "cssVariable": "--canvas",
+        "tonalRamp": [
+          "oklch(0.150 0.0054 117.92)",
+          "oklch(0.265 0.0054 117.92)",
+          "oklch(0.380 0.0054 117.92)",
+          "oklch(0.495 0.0054 117.92)",
+          "oklch(0.610 0.0054 117.92)",
+          "oklch(0.725 0.0054 117.92)",
+          "oklch(0.840 0.0054 117.92)",
+          "oklch(0.950 0.0054 117.92)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Superficie",
+        "canonical": "#f0f2ea",
+        "cssVariable": "--surface",
+        "tonalRamp": [
+          "oklch(0.150 0.0108 118.02)",
+          "oklch(0.265 0.0108 118.02)",
+          "oklch(0.380 0.0108 118.02)",
+          "oklch(0.495 0.0108 118.02)",
+          "oklch(0.610 0.0108 118.02)",
+          "oklch(0.725 0.0108 118.02)",
+          "oklch(0.840 0.0108 118.02)",
+          "oklch(0.950 0.0108 118.02)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Papel",
+        "canonical": "#ffffff",
+        "cssVariable": "--paper",
+        "tonalRamp": [
+          "oklch(0.150 0.0000 0.00)",
+          "oklch(0.265 0.0000 0.00)",
+          "oklch(0.380 0.0000 0.00)",
+          "oklch(0.495 0.0000 0.00)",
+          "oklch(0.610 0.0000 0.00)",
+          "oklch(0.725 0.0000 0.00)",
+          "oklch(0.840 0.0000 0.00)",
+          "oklch(0.950 0.0000 0.00)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#242922",
+        "cssVariable": "--ink",
+        "tonalRamp": [
+          "oklch(0.150 0.0145 136.70)",
+          "oklch(0.265 0.0145 136.70)",
+          "oklch(0.380 0.0145 136.70)",
+          "oklch(0.495 0.0145 136.70)",
+          "oklch(0.610 0.0145 136.70)",
+          "oklch(0.725 0.0145 136.70)",
+          "oklch(0.840 0.0145 136.70)",
+          "oklch(0.950 0.0145 136.70)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Texto secundario",
+        "canonical": "#61685c",
+        "cssVariable": "--muted",
+        "tonalRamp": [
+          "oklch(0.150 0.0205 132.06)",
+          "oklch(0.265 0.0205 132.06)",
+          "oklch(0.380 0.0205 132.06)",
+          "oklch(0.495 0.0205 132.06)",
+          "oklch(0.610 0.0205 132.06)",
+          "oklch(0.725 0.0205 132.06)",
+          "oklch(0.840 0.0205 132.06)",
+          "oklch(0.950 0.0205 132.06)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "División",
+        "canonical": "#dce0d4",
+        "cssVariable": "--line",
+        "tonalRamp": [
+          "oklch(0.150 0.0167 121.79)",
+          "oklch(0.265 0.0167 121.79)",
+          "oklch(0.380 0.0167 121.79)",
+          "oklch(0.495 0.0167 121.79)",
+          "oklch(0.610 0.0167 121.79)",
+          "oklch(0.725 0.0167 121.79)",
+          "oklch(0.840 0.0167 121.79)",
+          "oklch(0.950 0.0167 121.79)"
+        ]
+      },
+      "on-dark": {
+        "role": "neutral",
+        "displayName": "Texto sobre grafito",
+        "canonical": "#f5f6ed",
+        "cssVariable": "--on-dark",
+        "tonalRamp": [
+          "oklch(0.150 0.0119 111.75)",
+          "oklch(0.265 0.0119 111.75)",
+          "oklch(0.380 0.0119 111.75)",
+          "oklch(0.495 0.0119 111.75)",
+          "oklch(0.610 0.0119 111.75)",
+          "oklch(0.725 0.0119 111.75)",
+          "oklch(0.840 0.0119 111.75)",
+          "oklch(0.950 0.0119 111.75)"
+        ]
+      },
+      "on-dark-muted": {
+        "role": "neutral",
+        "displayName": "Texto secundario sobre grafito",
+        "canonical": "#b7c0b1",
+        "cssVariable": "--on-dark-muted",
+        "tonalRamp": [
+          "oklch(0.150 0.0230 132.58)",
+          "oklch(0.265 0.0230 132.58)",
+          "oklch(0.380 0.0230 132.58)",
+          "oklch(0.495 0.0230 132.58)",
+          "oklch(0.610 0.0230 132.58)",
+          "oklch(0.725 0.0230 132.58)",
+          "oklch(0.840 0.0230 132.58)",
+          "oklch(0.950 0.0230 132.58)"
+        ]
+      },
+      "positive": {
+        "role": "secondary",
+        "displayName": "Verde de comparación",
+        "canonical": "#3c5d22",
+        "cssVariable": "--positive",
+        "tonalRamp": [
+          "oklch(0.150 0.0949 133.47)",
+          "oklch(0.265 0.0949 133.47)",
+          "oklch(0.380 0.0949 133.47)",
+          "oklch(0.495 0.0949 133.47)",
+          "oklch(0.610 0.0949 133.47)",
+          "oklch(0.725 0.0949 133.47)",
+          "oklch(0.840 0.0949 133.47)",
+          "oklch(0.950 0.0949 133.47)"
+        ]
+      },
+      "positive-bg": {
+        "role": "secondary",
+        "displayName": "Superficie de comparación",
+        "canonical": "#e9f0dd",
+        "cssVariable": "--positive-bg",
+        "tonalRamp": [
+          "oklch(0.150 0.0262 123.43)",
+          "oklch(0.265 0.0262 123.43)",
+          "oklch(0.380 0.0262 123.43)",
+          "oklch(0.495 0.0262 123.43)",
+          "oklch(0.610 0.0262 123.43)",
+          "oklch(0.725 0.0262 123.43)",
+          "oklch(0.840 0.0262 123.43)",
+          "oklch(0.950 0.0262 123.43)"
+        ]
+      },
+      "caution": {
+        "role": "secondary",
+        "displayName": "Ocre de atención",
+        "canonical": "#725322",
+        "cssVariable": "--caution",
+        "tonalRamp": [
+          "oklch(0.150 0.0771 76.12)",
+          "oklch(0.265 0.0771 76.12)",
+          "oklch(0.380 0.0771 76.12)",
+          "oklch(0.495 0.0771 76.12)",
+          "oklch(0.610 0.0771 76.12)",
+          "oklch(0.725 0.0771 76.12)",
+          "oklch(0.840 0.0771 76.12)",
+          "oklch(0.950 0.0771 76.12)"
+        ]
+      },
+      "caution-bg": {
+        "role": "secondary",
+        "displayName": "Superficie de atención",
+        "canonical": "#f5eddd",
+        "cssVariable": "--caution-bg",
+        "tonalRamp": [
+          "oklch(0.150 0.0229 84.59)",
+          "oklch(0.265 0.0229 84.59)",
+          "oklch(0.380 0.0229 84.59)",
+          "oklch(0.495 0.0229 84.59)",
+          "oklch(0.610 0.0229 84.59)",
+          "oklch(0.725 0.0229 84.59)",
+          "oklch(0.840 0.0229 84.59)",
+          "oklch(0.950 0.0229 84.59)"
+        ]
+      },
+      "focus": {
+        "role": "secondary",
+        "displayName": "Verde de foco",
+        "canonical": "#56772d",
+        "cssVariable": "--focus",
+        "tonalRamp": [
+          "oklch(0.150 0.1091 129.71)",
+          "oklch(0.265 0.1091 129.71)",
+          "oklch(0.380 0.1091 129.71)",
+          "oklch(0.495 0.1091 129.71)",
+          "oklch(0.610 0.1091 129.71)",
+          "oklch(0.725 0.1091 129.71)",
+          "oklch(0.840 0.1091 129.71)",
+          "oklch(0.950 0.1091 129.71)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Titular editorial",
+        "purpose": "Portada; DM Sans variable local."
+      },
+      "headline": {
+        "displayName": "Título de catálogo",
+        "purpose": "Inicio de resultados y orientación."
+      },
+      "guide-headline": {
+        "displayName": "Título de guía",
+        "purpose": "Sección explicativa inferior."
+      },
+      "title": {
+        "displayName": "Nombre de producto",
+        "purpose": "Dos líneas desktop, tres móvil."
+      },
+      "body": {
+        "displayName": "Texto de lectura",
+        "purpose": "Metodología y texto legal."
+      },
+      "hero-body": {
+        "displayName": "Descripción de portada",
+        "purpose": "Explicación breve del servicio."
+      },
+      "label": {
+        "displayName": "Etiqueta",
+        "purpose": "Acciones y datos compactos."
+      },
+      "price": {
+        "displayName": "Precio de ficha",
+        "purpose": "Importe actual, cifras tabulares."
+      },
+      "detail-price": {
+        "displayName": "Precio de detalle",
+        "purpose": "Importe actual ampliado."
+      }
+    },
+    "shadows": [
+      {
+        "name": "dialog",
+        "value": "0 24px 72px #00000030",
+        "purpose": "Panel modal sobre backdrop #111a15b3."
+      },
+      {
+        "name": "toast",
+        "value": "0 8px 24px #1e261f22",
+        "purpose": "Mensaje transitorio superpuesto."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Curva CSS compartida para respuesta y entrada."
+      },
+      {
+        "name": "state",
+        "value": "160ms ease",
+        "purpose": "Color de botones, iconos y categorías; opacidad de toast."
+      },
+      {
+        "name": "disclosure",
+        "value": "180ms var(--ease-out)",
+        "purpose": "Rotación del indicador de preguntas."
+      },
+      {
+        "name": "dialog",
+        "value": "200ms var(--ease-out)",
+        "purpose": "Entrada desde translateY(8px) scale(0.98) y opacity 0."
+      },
+      {
+        "name": "product-hover",
+        "value": "220ms var(--ease-out)",
+        "purpose": "Imagen a scale(1.04), sólo con hover y puntero preciso."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.97)",
+        "purpose": "Estado activo de botones e iconos."
+      },
+      {
+        "name": "skeleton",
+        "value": "1.5s ease-in-out infinite alternate",
+        "purpose": "Opacidad entre 0.65 y 1 durante carga real."
+      },
+      {
+        "name": "reduced",
+        "value": "animation: none; transition-duration: 0.01ms; scroll-behavior: auto",
+        "purpose": "Respuesta a prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1600px",
+        "query": "min-width",
+        "behavior": "Portada más aireada."
+      },
+      {
+        "name": "desktop-compact",
+        "value": "1199px",
+        "query": "max-width",
+        "behavior": "32 px laterales, sidebar 180 px."
+      },
+      {
+        "name": "tablet",
+        "value": "1023px",
+        "query": "max-width",
+        "behavior": "Filtros en diálogo y navegación de enlaces oculta."
+      },
+      {
+        "name": "mobile",
+        "value": "767px",
+        "query": "max-width",
+        "behavior": "Portada a una columna, productos a dos, 20 px laterales."
+      },
+      {
+        "name": "small-mobile",
+        "value": "379px",
+        "query": "max-width",
+        "behavior": "16 px laterales y ordenación a fila completa."
+      }
+    ],
+    "layout": {
+      "maxContainer": "1320px",
+      "desktopContainer": "min(100% - 112px, 1320px)",
+      "desktopCatalog": "202px minmax(0, 1fr)",
+      "desktopCatalogGap": "38px",
+      "productColumns": {
+        "desktop": 3,
+        "mobile": 2
+      },
+      "productAspectRatio": {
+        "desktop": "1.2",
+        "mobile": "1"
+      },
+      "dialogMaxWidth": "780px",
+      "filterDialogMaxWidth": "440px"
+    },
+    "accessibility": {
+      "focus": "2px solid var(--focus), offset 4px; var(--accent) sobre cabecera",
+      "primaryControlMinHeight": "44px",
+      "desktopFilterChipMinHeight": "36px",
+      "mobileFilterChipMinHeight": "44px",
+      "desktopViewToggleWidth": "36px",
+      "searchShortcuts": [
+        "/",
+        "Meta+K",
+        "Control+K"
+      ],
+      "dialog": "dialog nativo showModal; Escape, retorno de foco y scroll del cuerpo bloqueado",
+      "liveRegions": "Resultados y notificaciones: polite; dentro del detalle el feedback vive en el dialog activo.",
+      "status": "Documentación extraída del código; no certificación de auditoría."
+    },
+    "fontAsset": {
+      "family": "DM Sans",
+      "path": "/fonts/dm-sans.ttf",
+      "weightRange": "100 1000",
+      "display": "swap",
+      "numeric": "font-variant-numeric: tabular-nums"
+    },
+    "provenance": {
+      "dateLocal": "2026-10-15",
+      "timeZone": "America/El_Salvador",
+      "visualApproval": "Propuesta editorial local revisable; usuario no eligió explícitamente tema claro u oscuro.",
+      "implementationSources": [
+        "src/index.css",
+        "src/App.tsx",
+        "src/components/Dialog.tsx",
+        "src/components/PriceSparkline.tsx",
+        "src/components/Toast.tsx",
+        "PRODUCT.md"
+      ],
+      "primitiveSource": "Frontmatter de DESIGN.md; extraído de CSS.",
+      "tonalRampStatus": "Rampas OKLCH sintetizadas sólo para el panel de documentación; no son tokens implementados.",
+      "previewData": "Las vistas usan etiquetas estructurales y $— para evitar inventar ofertas."
+    },
+    "references": [
+      {
+        "title": "Investigación de referentes",
+        "url": "docs/referentes-ux.md"
+      },
+      {
+        "title": "Apple Shop",
+        "url": "https://www.apple.com/shop/buy-iphone"
+      },
+      {
+        "title": "Teenage Engineering Store",
+        "url": "https://teenage.engineering/store"
+      },
+      {
+        "title": "Baymard Filter UI",
+        "url": "https://baymard.com/blog/ecommerce-filter-ui"
+      },
+      {
+        "title": "NN/g Filter Categories",
+        "url": "https://www.nngroup.com/articles/filter-categories-values/"
+      },
+      {
+        "title": "idealo FAQ",
+        "url": "https://www.idealo.co.uk/magazine/faqs"
+      },
+      {
+        "title": "PriceSpy Price History",
+        "url": "https://pricespy.co.uk/information/price-history"
+      },
+      {
+        "title": "Apple Motion",
+        "url": "https://developer.apple.com/design/human-interface-guidelines/motion"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción de continuación; lima y grafito, con foco y presión reconocibles.",
+      "html": "<button class=\"ds-primary\">Ver resultados <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M7 7h10v10M7 17 17 7\"/></svg></button>",
+      "css": ".ds-primary{font-family:\"DM Sans\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:12px 20px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background-color 160ms ease,transform 160ms var(--ease-out);background:var(--accent);color:var(--graphite)}.ds-primary:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}.ds-primary:active{transform:scale(.97)}.ds-primary:disabled{opacity:.4;cursor:not-allowed}@media(hover:hover) and (pointer:fine){.ds-primary:hover{background:var(--accent-hover)}}@media(prefers-reduced-motion:reduce){.ds-primary{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Guardar, copiar o abrir una acción auxiliar sin competir con la salida a la tienda.",
+      "html": "<button class=\"ds-secondary\">Copiar enlace</button>",
+      "css": ".ds-secondary{font-family:\"DM Sans\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:12px 20px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background-color 160ms ease,transform 160ms var(--ease-out);background:var(--paper);color:var(--ink);border-color:var(--line)}.ds-secondary:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}.ds-secondary:active{transform:scale(.97)}.ds-secondary:disabled{opacity:.4;cursor:not-allowed}@media(hover:hover) and (pointer:fine){.ds-secondary:hover{background:var(--surface)}}@media(prefers-reduced-motion:reduce){.ds-secondary{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Buscador de portada",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "Búsqueda visible dentro de la cabecera; el contenedor expresa el foco.",
+      "html": "<div class=\"ds-search\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"search\" aria-label=\"Buscar producto, marca o modelo\" placeholder=\"Producto, marca o modelo\"><button aria-label=\"Buscar en el catálogo\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M7 7h10v10M7 17 17 7\"/></svg></button></div>",
+      "css": ".ds-search{font-family:\"DM Sans\",sans-serif;display:flex;align-items:center;gap:12px;max-width:530px;background:var(--canvas);color:var(--ink);border-radius:10px;padding:8px 8px 8px 20px}.ds-search input{font-family:\"DM Sans\",sans-serif;width:100%;min-width:0;height:42px;border:0;background:transparent;color:var(--ink);font-size:15px;outline:none}.ds-search input::placeholder{color:var(--muted);opacity:1}.ds-search:focus-within{outline:2px solid var(--accent);outline-offset:4px}.ds-search button{display:grid;place-items:center;min-width:44px;min-height:44px;background:var(--accent);color:var(--graphite);border:0;border-radius:6px;cursor:pointer}.ds-search button:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}@media(max-width:767px){.ds-search input{font-size:16px}}"
+    },
+    {
+      "name": "Categorías",
+      "kind": "nav",
+      "refersTo": "category",
+      "description": "Selección reconocible por texto, fondo y aria-pressed.",
+      "html": "<nav class=\"ds-categories\" aria-label=\"Categorías\"><button aria-pressed=\"true\">Todo el catálogo</button><button aria-pressed=\"false\">TV y audio</button><button aria-pressed=\"false\">Celulares</button></nav>",
+      "css": ".ds-categories{display:flex;gap:8px;overflow-x:auto;padding:5px}.ds-categories button{font-family:\"DM Sans\",sans-serif;min-height:64px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease}.ds-categories button[aria-pressed=true]{background:var(--graphite);color:var(--on-dark);border-color:var(--graphite)}.ds-categories button:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-categories button[aria-pressed=false]:hover{background:var(--surface);border-color:#bdc5b0}}@media(prefers-reduced-motion:reduce){.ds-categories button{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Filtro aplicado",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Selección individual removible; 44 px de altura en móvil.",
+      "html": "<button class=\"ds-chip\" aria-label=\"Quitar tienda Siman\">Siman <svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"m6 6 12 12M6 18 18 6\"/></svg></button>",
+      "css": ".ds-chip{font-family:\"DM Sans\",sans-serif;display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:7px 10px;background:var(--surface);color:var(--ink);border:0;border-radius:5px;font-size:11px;cursor:pointer}.ds-chip:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}@media(max-width:767px){.ds-chip{min-height:44px}}"
+    },
+    {
+      "name": "Ficha de producto",
+      "kind": "card",
+      "refersTo": "product-image",
+      "description": "Vista estructural sin datos ficticios: el producto real aporta fotografía, nombre e importes.",
+      "html": "<article class=\"ds-card\"><button class=\"ds-visual\" aria-label=\"Ver detalles del producto\"><span>Imagen no disponible</span></button><div class=\"ds-meta\"><strong>Tienda</strong><span>Marca</span></div><h3><button>Nombre del producto</button></h3><strong class=\"ds-price\">$—</strong><p class=\"ds-evidence\">Precio publicado por la tienda</p><button class=\"ds-action\">Ver precio y detalles <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M7 7h10v10M7 17 17 7\"/></svg></button></article>",
+      "css": ".ds-card{font-family:\"DM Sans\",sans-serif;max-width:290px;color:var(--ink)}.ds-visual{display:grid;place-items:center;width:100%;aspect-ratio:1.2;padding:28px;border:0;border-radius:12px;background:var(--surface);color:var(--muted);font:inherit;font-size:11px;cursor:pointer}.ds-visual:focus-visible{outline:2px solid var(--focus);outline-offset:4px;outline-offset:-5px}.ds-meta{display:flex;justify-content:space-between;margin:16px 2px 9px;font-size:11px;color:var(--muted)}.ds-meta strong{font-size:12px;font-weight:600;color:var(--ink)}.ds-card h3{margin:0 2px 14px;font-size:15px;line-height:1.45;font-weight:500;letter-spacing:-.015em}.ds-card h3 button{font:inherit;color:inherit;text-align:left;min-height:44px;border:0;background:none;cursor:pointer}.ds-price{font-size:25px;font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums}.ds-evidence{font-size:11px;line-height:1.5;margin:9px 0 0;color:var(--muted)}.ds-action{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin-top:14px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:12px;font-weight:500;cursor:pointer}.ds-action:focus-visible,.ds-card h3 button:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-action:hover{color:var(--positive)}}"
+    },
+    {
+      "name": "Fila de comparación",
+      "kind": "custom",
+      "refersTo": "comparison-lowest",
+      "description": "Prioriza el menor precio dentro de las ofertas comparables disponibles.",
+      "html": "<div class=\"ds-comparison\"><div><strong>Tienda</strong><span>Menor precio mostrado</span></div><strong>$—</strong><button aria-label=\"Ver en la tienda\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M7 7h10v10M7 17 17 7\"/></svg></button></div>",
+      "css": ".ds-comparison{font-family:\"DM Sans\",sans-serif;display:grid;grid-template-columns:1fr auto 44px;align-items:center;gap:16px;padding:12px 16px;background:var(--positive-bg);color:var(--ink);border:1px solid var(--line);border-radius:10px}.ds-comparison div strong{font-size:13px;font-weight:600}.ds-comparison div span{display:block;font-size:10px;line-height:1.6;color:var(--muted);margin-top:3px}.ds-comparison>strong{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}.ds-comparison button{display:grid;place-items:center;width:44px;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer}.ds-comparison button:focus-visible{outline:2px solid var(--focus);outline-offset:4px;}@media(hover:hover) and (pointer:fine){.ds-comparison button:hover{background:var(--surface)}}"
+    },
+    {
+      "name": "Historial sin datos",
+      "kind": "custom",
+      "refersTo": "history-empty",
+      "description": "Estado implementado cuando no hay dos observaciones fechadas distintas.",
+      "html": "<div class=\"ds-history-empty\"><p>Historial aún no disponible</p><span>Se necesitan al menos dos precios registrados en fechas distintas para mostrar su evolución.</span></div>",
+      "css": ".ds-history-empty{font-family:\"DM Sans\",sans-serif;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:20px;border-radius:10px;background:var(--surface);color:var(--ink)}.ds-history-empty p{margin:0;font-size:14px;font-weight:600}.ds-history-empty span{font-size:12px;line-height:1.7;color:var(--muted)}"
+    },
+    {
+      "name": "Notificación",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Feedback breve de guardado o copia; esta muestra no cambia el almacenamiento.",
+      "html": "<div class=\"ds-toast\" role=\"status\"><span>Enlace copiado</span><button aria-label=\"Cerrar notificación\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"m6 6 12 12M6 18 18 6\"/></svg></button></div>",
+      "css": ".ds-toast{font-family:\"DM Sans\",sans-serif;display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:460px;border-radius:10px;background:var(--graphite);color:var(--on-dark);box-shadow:0 8px 24px #1e261f22}.ds-toast>span{font-size:13px;line-height:1.5}.ds-toast button{display:grid;place-items:center;width:44px;min-width:44px;min-height:44px;padding:7px;border:0;border-radius:8px;background:none;color:var(--on-dark);cursor:pointer}.ds-toast button:focus-visible{outline:2px solid var(--accent);outline-offset:4px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Catálogo con criterio",
+    "overview": "BlackFridaySV presenta productos y precios con el cuidado de un catálogo editorial. La cabecera grafito concentra la identidad y la búsqueda; el catálogo claro facilita comparar imágenes, modelos e importes durante una sesión de compra. El contraste entre ambas superficies es intencional y no constituye un selector de temas.\n\nLa personalidad es cercana, precisa y contenida. El acento lima identifica acciones y selecciones; la comparación se explica con texto y datos. Los productos conservan protagonismo sin convertir cada ficha en un bloque decorativo ni cada precio en una promesa de ahorro.",
+    "keyCharacteristics": [
+      "Cabecera grafito y catálogo claro, con funciones visuales diferentes.",
+      "Una familia local, DM Sans, y cifras tabulares para comparar precios.",
+      "Imágenes de producto contenidas y superficies planas de tono neutro.",
+      "Navegación, filtros y estados reconocibles, con movimiento breve.",
+      "Contexto de datos visible y referencias anunciadas identificadas como tales."
+    ],
+    "rules": [
+      {
+        "name": "The Evidencia antes de énfasis Rule",
+        "body": "La intensidad visual de una oferta no puede sugerir una certeza que los datos no ofrecen.",
+        "section": "overview"
+      },
+      {
+        "name": "The Color con significado Rule",
+        "body": "Una selección o advertencia se reconoce por su etiqueta y estado semántico, además del color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cifras comparables Rule",
+        "body": "Todos los precios, recuentos y filas de comparación mantienen cifras tabulares; el símbolo de moneda y el formato provienen del dato formateado, no de imágenes.",
+        "section": "typography"
+      },
+      {
+        "name": "The Catálogo continuo Rule",
+        "body": "Al reducir la pantalla se reorganizan controles y columnas; el precio, la tienda y la apertura del detalle siguen accesibles sin depender del hover.",
+        "section": "layout"
+      },
+      {
+        "name": "The Superficies planas Rule",
+        "body": "Las sombras identifican superposición, no sirven para añadir peso a todas las fichas.",
+        "section": "elevation & depth"
+      }
+    ],
+    "dos": [
+      "Do conservar el precio actual como dato principal y nombrar la referencia anunciada.",
+      "Do usar DM Sans local y cifras tabulares para precios y recuentos.",
+      "Do mantener imágenes contenidas, títulos legibles y estados de error dentro de la misma estructura.",
+      "Do expresar selección y avisos con texto, semántica y color.",
+      "Do conservar teclado, foco, Escape, retorno al disparador y movimiento reducido al ampliar componentes.",
+      "Do documentar como propuesta revisable cualquier decisión visual pendiente de elección explícita."
+    ],
+    "donts": [
+      "Don't convertir el acento lima o un precio tachado en una certificación de ahorro histórico.",
+      "Don't dibujar historia sin observaciones fechadas ni presentar una captura como precio en vivo.",
+      "Don't añadir sombras, gradientes, animación continua o insignias sin función a cada ficha.",
+      "Don't ocultar una acción esencial detrás del hover, un gesto obligatorio o un icono sin nombre accesible.",
+      "Don't sustituir datos ausentes por reseñas, disponibilidad, rankings o cifras de ahorro inventadas.",
+      "Don't describir el tema editorial claro como aprobado por el usuario mientras esa elección siga pendiente."
+    ]
+  }
+}

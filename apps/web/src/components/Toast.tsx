@@ -1,26 +1,17 @@
-import React from 'react';
-import { CheckCircle2, Info, AlertTriangle } from 'lucide-react';
+import { Check, Info, AlertTriangle, X } from 'lucide-react';
 
 interface ToastProps {
   message: string | null;
   type?: 'success' | 'info' | 'warning';
+  onClose?: () => void;
 }
 
-export const Toast: React.FC<ToastProps> = ({ message, type = 'success' }) => {
-  if (!message) return null;
+export function Toast({ message, type = 'success', onClose }: ToastProps) {
+  const Icon = type === 'success' ? Check : type === 'warning' ? AlertTriangle : Info;
 
   return (
-    <div 
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-200"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="bg-slate-900 border border-slate-700/80 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-xs font-semibold backdrop-blur-md">
-        {type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-        {type === 'info' && <Info className="w-4 h-4 text-blue-400 shrink-0" />}
-        {type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
-        <span>{message}</span>
-      </div>
+    <div className={`toast${message ? ' is-visible' : ''}`} data-type={type} role="status" aria-live="polite" aria-atomic="true">
+      {message && <><Icon size={18} aria-hidden="true" /><span>{message}</span>{onClose && <button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar notificación"><X size={16} aria-hidden="true" /></button>}</>}
     </div>
   );
-};
+}

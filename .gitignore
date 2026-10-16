@@ -18,6 +18,7 @@ build/
 .next/
 .wrangler/
 *.tsbuildinfo
+**/.impeccable/review/
 
 # Logs
 npm-debug.log*
