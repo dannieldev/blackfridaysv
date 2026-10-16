@@ -18,7 +18,13 @@ import {
   ArrowRight,
   Trophy,
   ShoppingBag,
-  Eye
+  Eye,
+  ArrowUpDown,
+  LayoutGrid,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 import { fetchLiveDeals } from './lib/supabase.ts';
 
@@ -208,6 +214,19 @@ function enrichDealsWithCrossStoreComparisons(rawDeals: DealItem[]): DealItem[] 
   });
 }
 
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 6) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, '...', total];
+  }
+  if (current >= total - 2) {
+    return [1, '...', total - 3, total - 2, total - 1, total];
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 const STORE_CHIPS = [
   { id: 'all', label: 'Todos los almacenes' },
   { id: 'siman', label: 'Siman' },
@@ -234,6 +253,10 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [onlyMultiStore, setOnlyMultiStore] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>('savings_desc');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(16);
+  const [viewMode, setViewMode] = useState<'cards' | 'compact'>('cards');
   const [showGuide, setShowGuide] = useState<boolean>(false);
   const [activeModalDeal, setActiveModalDeal] = useState<DealItem | null>(null);
 
@@ -306,6 +329,49 @@ export default function App() {
       return matchSearch && matchScore && matchCategory && matchStore && matchMultiStore;
     });
   }, [deals, searchTerm, filterScore, selectedCategory, selectedStore, onlyMultiStore]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterScore, selectedCategory, selectedStore, onlyMultiStore, sortBy, pageSize]);
+
+  const sortedDeals = useMemo(() => {
+    const list = [...filteredDeals];
+    switch (sortBy) {
+      case 'savings_desc':
+        return list.sort((a, b) => {
+          const savingsA = a.baselinePrice30d > a.currentPrice ? (a.baselinePrice30d - a.currentPrice) : 0;
+          const savingsB = b.baselinePrice30d > b.currentPrice ? (b.baselinePrice30d - b.currentPrice) : 0;
+          return savingsB - savingsA;
+        });
+      case 'discount_pct':
+        return list.sort((a, b) => {
+          const pctA = a.baselinePrice30d > a.currentPrice ? ((a.baselinePrice30d - a.currentPrice) / a.baselinePrice30d) : 0;
+          const pctB = b.baselinePrice30d > b.currentPrice ? ((b.baselinePrice30d - b.currentPrice) / b.baselinePrice30d) : 0;
+          return pctB - pctA;
+        });
+      case 'price_asc':
+        return list.sort((a, b) => a.currentPrice - b.currentPrice);
+      case 'price_desc':
+        return list.sort((a, b) => b.currentPrice - a.currentPrice);
+      case 'inflated_first':
+        return list.sort((a, b) => {
+          const isInfA = a.dealScore === 'falsa_oferta_inflada' ? 1 : 0;
+          const isInfB = b.dealScore === 'falsa_oferta_inflada' ? 1 : 0;
+          return isInfB - isInfA;
+        });
+      default:
+        return list;
+    }
+  }, [filteredDeals, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedDeals.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedDeals = useMemo(() => {
+    if (pageSize >= 9999) return sortedDeals;
+    const start = (safeCurrentPage - 1) * pageSize;
+    return sortedDeals.slice(start, start + pageSize);
+  }, [sortedDeals, safeCurrentPage, pageSize]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 selection:bg-blue-600 selection:text-white">
@@ -412,7 +478,8 @@ export default function App() {
             <input 
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              maxLength={80}
+              onChange={(e) => setSearchTerm(e.target.value.slice(0, 80))}
               placeholder="¿Qué producto buscas? (ej: Smart TV 55, Galaxy S24, iPhone 15, Lavadora Mabe)..."
               className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-12 pr-10 py-3.5 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
@@ -537,10 +604,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* Contador de Resultados */}
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="text-xs text-slate-300">
-            Mostrando <span className="font-mono text-white font-bold">{filteredDeals.length}</span> ofertas auditadas
+        {/* Barra de Control: Conteo, Ordenación, Modo de Vista y Paginación rápida */}
+        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+          {/* Conteo y Reset */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-slate-300">
+              Mostrando <strong className="font-mono text-white">{(safeCurrentPage - 1) * pageSize + 1} - {Math.min(safeCurrentPage * pageSize, sortedDeals.length)}</strong> de <strong className="font-mono text-blue-400 font-bold">{sortedDeals.length}</strong> ofertas
+            </span>
             {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all' || onlyMultiStore) && (
               <button
                 onClick={() => {
@@ -550,14 +620,92 @@ export default function App() {
                   setSelectedStore('all');
                   setOnlyMultiStore(false);
                 }}
-                className="ml-3 text-blue-400 hover:underline inline-flex items-center gap-1"
+                className="text-blue-400 hover:underline font-medium inline-flex items-center gap-1"
               >
-                Restablecer filtros
+                (Restablecer filtros)
               </button>
             )}
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full ml-1 font-mono">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" /> Búsqueda Segura (Inmune a SQLi)
+            </span>
           </div>
-          <div className="text-xs text-slate-400 hidden sm:flex items-center gap-1">
-            <Info className="w-3.5 h-3.5 text-blue-400" /> Monitoreo diario en tiendas salvadoreñas
+
+          {/* Opciones de Ordenación y Modo de Vista */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Selector de Ordenamiento */}
+            <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <label htmlFor="sort-select" className="text-slate-400 text-[11px] font-medium hidden sm:inline">Ordenar:</label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer pr-1"
+              >
+                <option value="savings_desc" className="bg-slate-900 text-white">🔥 Mayor Ahorro Real ($)</option>
+                <option value="discount_pct" className="bg-slate-900 text-white">📉 Mayor Descuento (%)</option>
+                <option value="price_asc" className="bg-slate-900 text-white">💲 Menor Precio ($)</option>
+                <option value="price_desc" className="bg-slate-900 text-white">💰 Mayor Precio ($)</option>
+                <option value="inflated_first" className="bg-slate-900 text-white">⚠️ Precios Inflados Primero</option>
+              </select>
+            </div>
+
+            {/* Selector de Cantidad por Página */}
+            <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-xl px-2 py-1">
+              <span className="text-slate-400 text-[11px] font-medium pl-1">Por pág:</span>
+              {[16, 32, 64].map((sz) => (
+                <button
+                  key={sz}
+                  onClick={() => setPageSize(sz)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+                    pageSize === sz
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  {sz}
+                </button>
+              ))}
+              <button
+                onClick={() => setPageSize(9999)}
+                className={`px-2 py-0.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+                  pageSize >= 9999
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+                title="Mostrar todas sin paginar"
+              >
+                Todo
+              </button>
+            </div>
+
+            {/* Selector de Modo de Vista (Cards vs Compact) */}
+            <div className="flex items-center bg-slate-950/80 border border-slate-800 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`p-1.5 rounded-lg transition-all ${
+                  viewMode === 'cards'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+                title="Vista en Tarjetas Detalladas"
+                aria-label="Vista en Tarjetas Detalladas"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`p-1.5 rounded-lg transition-all ${
+                  viewMode === 'compact'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+                title="Vista Lista Compacta (Menos scroll)"
+                aria-label="Vista Lista Compacta"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -584,9 +732,133 @@ export default function App() {
               Ver todas las ofertas
             </button>
           </div>
+        ) : viewMode === 'compact' ? (
+          <div className="space-y-2">
+            {paginatedDeals.map((deal) => {
+              const isGanga = deal.dealScore === 'ganga_historica';
+              const isInflated = deal.dealScore === 'falsa_oferta_inflada';
+              const isGood = deal.dealScore === 'buena_oferta';
+              const hasRealSavings = deal.regularPrice && deal.regularPrice > deal.currentPrice && !isInflated;
+              const savingsAmount = hasRealSavings ? (deal.regularPrice! - deal.currentPrice).toFixed(2) : null;
+
+              const allPodiumStores = [
+                { store: deal.store, price: deal.currentPrice, productUrl: deal.productUrl, isCurrent: true, inStock: deal.inStock },
+                ...(deal.competitors || []).map(c => ({ store: c.store, price: c.price, productUrl: c.productUrl, isCurrent: false, inStock: c.inStock ?? true }))
+              ].sort((a, b) => a.price - b.price);
+
+              const bestStore = allPodiumStores[0];
+
+              return (
+                <div 
+                  key={deal.id}
+                  className={`bg-slate-900/80 border rounded-xl p-3 sm:p-4 transition-all hover:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                    isInflated ? 'border-rose-900/50 bg-rose-950/10' :
+                    isGanga ? 'border-emerald-800/50 bg-emerald-950/10' :
+                    isGood ? 'border-blue-900/40 bg-blue-950/10' :
+                    'border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                    <div className="w-12 h-12 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden p-1 relative">
+                      {deal.imageUrl ? (
+                        <img 
+                          src={deal.imageUrl} 
+                          alt={deal.title} 
+                          className="max-h-full max-w-full object-contain" 
+                          loading="lazy" 
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <ShoppingBag className="w-5 h-5 text-slate-600" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap text-[11px] mb-0.5">
+                        <span className="font-semibold text-slate-300">{deal.store}</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="font-mono text-blue-400 font-semibold">{deal.modelCode}</span>
+                        {deal.inStock ? (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold px-1.5 py-0.2 rounded bg-emerald-950/50 border border-emerald-800/40">
+                            🟢 Stock
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/50 border border-rose-800/40">
+                            🔴 Agotado
+                          </span>
+                        )}
+                        {isInflated ? (
+                          <span className="text-[10px] font-bold text-rose-400 bg-rose-950/60 border border-rose-800/50 px-1.5 py-0.2 rounded">
+                            ⚠️ Inflado
+                          </span>
+                        ) : isGanga ? (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-1.5 py-0.2 rounded">
+                            🏆 Ganga
+                          </span>
+                        ) : null}
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-semibold text-white truncate max-w-lg" title={deal.title}>
+                        {deal.title}
+                      </h4>
+                      {deal.competitors && deal.competitors.length > 0 && (
+                        <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+                          <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span>Mejor precio comparado: <strong>{bestStore.store} (${bestStore.price.toFixed(2)})</strong></span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800/80">
+                    <div className="text-left md:text-right">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-lg sm:text-xl font-extrabold font-mono text-white">
+                          ${deal.currentPrice.toFixed(2)}
+                        </span>
+                        {deal.regularPrice && (
+                          <span className="text-xs font-mono text-slate-500 line-through">
+                            ${deal.regularPrice.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      {savingsAmount && (
+                        <div className="text-[10px] text-emerald-400 font-bold font-mono">
+                          Ahorro real: ${savingsAmount}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setActiveModalDeal(deal)}
+                        className="p-2 text-slate-400 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+                        title="Ver auditoría pericial"
+                        aria-label="Ver auditoría"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <a
+                        href={deal.productUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-3 py-2 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-md ${
+                          !deal.inStock
+                            ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                            : 'bg-blue-600 hover:bg-blue-500 text-white'
+                        }`}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Comprar</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="space-y-4">
-            {filteredDeals.map((deal) => {
+            {paginatedDeals.map((deal) => {
               const isGanga = deal.dealScore === 'ganga_historica';
               const isInflated = deal.dealScore === 'falsa_oferta_inflada';
               const isGood = deal.dealScore === 'buena_oferta';
@@ -853,6 +1125,77 @@ export default function App() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Paginación y Navegación al Pie */}
+        {sortedDeals.length > 0 && pageSize < 9999 && (
+          <div className="mt-8 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-slate-400 text-center sm:text-left">
+              Página <strong className="font-mono text-white">{safeCurrentPage}</strong> de{' '}
+              <strong className="font-mono text-white">{totalPages}</strong> (mostrando ofertas{' '}
+              <span className="font-bold text-white font-mono">{(safeCurrentPage - 1) * pageSize + 1}</span> a{' '}
+              <span className="font-bold text-white font-mono">{Math.min(safeCurrentPage * pageSize, sortedDeals.length)}</span> de{' '}
+              <span className="font-bold text-blue-400 font-mono">{sortedDeals.length}</span>)
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={safeCurrentPage <= 1}
+                onClick={() => {
+                  setCurrentPage(prev => Math.max(1, prev - 1));
+                  window.scrollTo({ top: 380, behavior: 'smooth' });
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+                  safeCurrentPage <= 1
+                    ? 'text-slate-600 bg-slate-950/40 border border-slate-900 cursor-not-allowed'
+                    : 'text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80'
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Anterior</span>
+              </button>
+
+              {/* Botones de Páginas */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers(safeCurrentPage, totalPages).map((p, idx) => (
+                  typeof p === 'number' ? (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setCurrentPage(p);
+                        window.scrollTo({ top: 380, behavior: 'smooth' });
+                      }}
+                      className={`min-w-[36px] h-9 px-2 rounded-xl text-xs font-mono font-bold transition-all ${
+                        safeCurrentPage === p
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500'
+                          : 'bg-slate-950/70 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ) : (
+                    <span key={idx} className="px-1 text-slate-600 text-xs font-mono">…</span>
+                  )
+                ))}
+              </div>
+
+              <button
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => {
+                  setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                  window.scrollTo({ top: 380, behavior: 'smooth' });
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all ${
+                  safeCurrentPage >= totalPages
+                    ? 'text-slate-600 bg-slate-950/40 border border-slate-900 cursor-not-allowed'
+                    : 'text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80'
+                }`}
+              >
+                <span className="hidden sm:inline">Siguiente</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </main>
