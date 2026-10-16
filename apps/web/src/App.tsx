@@ -237,12 +237,12 @@ const STORE_CHIPS = [
 ];
 
 const POPULAR_SEARCHES = [
-  { label: '📺 Smart TV 55"', query: '55' },
+  { label: '📺 Pantallas Smart TV 55"', query: '55' },
   { label: '📱 Celulares Samsung', query: 'Samsung' },
   { label: '🍎 iPhone', query: 'iPhone' },
   { label: '❄️ Refrigeradoras', query: 'refrigeradora' },
-  { label: '🎮 PlayStation 5', query: 'PlayStation' },
-  { label: '💻 Laptops', query: 'laptop' },
+  { label: '🎮 Consolas PlayStation 5', query: 'PlayStation' },
+  { label: '💻 Laptops y Computadoras', query: 'laptop' },
 ];
 
 export default function App() {
@@ -405,8 +405,8 @@ export default function App() {
         {/* Resumen de Hallazgos en 4 Tarjetas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-4xl mx-auto mt-6">
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-white">5 Tiendas</div>
-            <div className="text-xs text-slate-400 mt-0.5">Auditoría diaria continua</div>
+            <div className="text-xl sm:text-2xl font-bold font-mono text-white">5 Almacenes</div>
+            <div className="text-xs text-slate-400 mt-0.5">Auditoría diaria en El Salvador</div>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">{stats.realPercent}% Reales</div>
@@ -546,12 +546,12 @@ export default function App() {
               onClick={() => setOnlyMultiStore(!onlyMultiStore)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 onlyMultiStore
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'bg-slate-800/70 text-indigo-300 hover:bg-slate-800'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'bg-slate-800/70 text-blue-300 hover:bg-slate-800'
               }`}
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span>Podio Cross-Store (2+ Tiendas)</span>
+              <span>Comparativa entre almacenes (2+ almacenes)</span>
               {onlyMultiStore && <span className="bg-white/20 text-[10px] px-1.5 py-0.2 rounded-full font-mono">Activo</span>}
             </button>
           </div>
@@ -559,7 +559,7 @@ export default function App() {
           {/* Filtro por Almacén */}
           <div className="flex flex-wrap items-center gap-1.5 pt-2.5 mt-2.5 border-t border-slate-800/60 text-xs">
             <span className="text-slate-400 mr-1 text-[11px] uppercase font-semibold flex items-center gap-1">
-              <Store className="w-3 h-3 text-slate-400" /> Tienda:
+              <Store className="w-3 h-3 text-blue-400" /> Almacén:
             </span>
             {STORE_CHIPS.map((chip) => (
               <button
@@ -583,11 +583,11 @@ export default function App() {
             </span>
             {[
               { id: 'all', label: 'Todas las categorías' },
-              { id: 'tv_audio', label: '📺 Smart TVs y Audio' },
+              { id: 'tv_audio', label: '📺 Pantallas y Audio' },
               { id: 'smartphones', label: '📱 Celulares' },
               { id: 'computacion', label: '💻 Laptops y Computadoras' },
-              { id: 'linea_blanca', label: '❄️ Línea Blanca' },
-              { id: 'gaming', label: '🎮 Videojuegos y Consolas' },
+              { id: 'linea_blanca', label: '❄️ Línea Blanca (Refrigeración y Lavado)' },
+              { id: 'gaming', label: '🎮 Consolas y Videojuegos' },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -626,7 +626,7 @@ export default function App() {
               </button>
             )}
             <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full ml-1 font-mono">
-              <ShieldCheck className="w-3 h-3 text-emerald-400" /> Búsqueda Segura (Inmune a SQLi)
+              <ShieldCheck className="w-3 h-3 text-emerald-400" /> Búsqueda protegida en tu navegador
             </span>
           </div>
 
@@ -688,8 +688,8 @@ export default function App() {
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
-                title="Vista en Tarjetas Detalladas"
-                aria-label="Vista en Tarjetas Detalladas"
+                title="Vista en fichas detalladas"
+                aria-label="Vista en fichas detalladas"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -700,8 +700,8 @@ export default function App() {
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
-                title="Vista Lista Compacta (Menos scroll)"
-                aria-label="Vista Lista Compacta"
+                title="Vista compacta (pantalla limpia)"
+                aria-label="Vista compacta"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
@@ -779,7 +779,7 @@ export default function App() {
                         <span className="font-mono text-blue-400 font-semibold">{deal.modelCode}</span>
                         {deal.inStock ? (
                           <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold px-1.5 py-0.2 rounded bg-emerald-950/50 border border-emerald-800/40">
-                            🟢 Stock
+                            🟢 En existencia
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-0.5 text-[10px] text-rose-400 font-bold px-1.5 py-0.2 rounded bg-rose-950/50 border border-rose-800/40">
@@ -792,7 +792,7 @@ export default function App() {
                           </span>
                         ) : isGanga ? (
                           <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-1.5 py-0.2 rounded">
-                            🏆 Ganga
+                            🏆 Ganga real
                           </span>
                         ) : null}
                       </div>
@@ -802,7 +802,7 @@ export default function App() {
                       {deal.competitors && deal.competitors.length > 0 && (
                         <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
                           <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
-                          <span>Mejor precio comparado: <strong>{bestStore.store} (${bestStore.price.toFixed(2)})</strong></span>
+                          <span>Precio más bajo: <strong>{bestStore.store} (${bestStore.price.toFixed(2)})</strong></span>
                         </div>
                       )}
                     </div>
@@ -898,7 +898,7 @@ export default function App() {
                         {deal.inStock ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 border border-emerald-600/80 text-emerald-300 shadow-md">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            En Stock
+                            En existencia
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/90 border border-rose-600/80 text-rose-300 shadow-md">
@@ -1006,11 +1006,11 @@ export default function App() {
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-bold text-slate-200 flex items-center gap-1.5">
                               <Trophy className="w-4 h-4 text-amber-400" />
-                              Podio de Precios en El Salvador para este modelo:
+                              Comparación de precios en almacenes de El Salvador:
                             </span>
                             {parseFloat(maxSavingsVsWorst) > 0 && (
                               <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/80 border border-emerald-800/50 px-2 py-0.5 rounded-full font-bold">
-                                Ahorro de hasta ${maxSavingsVsWorst} entre tiendas
+                                Ahorro de hasta ${maxSavingsVsWorst} entre almacenes
                               </span>
                             )}
                           </div>
@@ -1117,7 +1117,7 @@ export default function App() {
                         }`}
                       >
                         <ShoppingBag className="w-4 h-4" />
-                        <span>{deal.inStock ? `Comprar en ${deal.store}` : 'Ver en tienda (Agotado)'}</span>
+                        <span>{deal.inStock ? `Comprar en ${deal.store}` : 'Ver en almacén (Agotado)'}</span>
                         <ArrowRight className="w-4 h-4" />
                       </a>
                     </div>
@@ -1213,7 +1213,7 @@ export default function App() {
 
             <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">
               <ShieldAlert className="w-4 h-4" />
-              Ficha Técnica Pericial — Ley de Protección al Consumidor SV
+              Ficha Técnica Pericial — Ley de Protección al Consumidor (Defensoría del Consumidor El Salvador)
             </div>
 
             <h2 className="text-xl font-bold text-white mb-4 pr-8">
@@ -1231,18 +1231,18 @@ export default function App() {
 
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Comercio</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Almacén o Comercio</span>
                   <strong className="text-white text-sm">{activeModalDeal.store}</strong>
                 </div>
 
                 <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Código de Modelo (MPN)</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Código de Modelo del Fabricante</span>
                   <strong className="text-blue-400 font-mono text-sm">{activeModalDeal.modelCode}</strong>
-                  <span className="text-slate-500 block text-[10px] mt-0.5">Clave universal de fabricante para comparar precios</span>
+                  <span className="text-slate-500 block text-[10px] mt-0.5">Clave de fabricante para comparar precios entre almacenes salvadoreños</span>
                 </div>
 
                 <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Estado de Inventario</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Disponibilidad en Almacén</span>
                   <span className={`font-bold ${activeModalDeal.inStock ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {activeModalDeal.inStock ? '🟢 Disponible para compra inmediata' : '🔴 Agotado en este almacén'}
                   </span>
@@ -1253,7 +1253,7 @@ export default function App() {
             {/* Veredicto Detallado */}
             <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-6">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-blue-400" /> Veredicto Pericial Objetivado:
+                <Info className="w-4 h-4 text-blue-400" /> Veredicto de Auditoría Pericial:
               </h4>
               <p className="text-xs text-slate-300 leading-relaxed">
                 {activeModalDeal.verdictMessage}
@@ -1285,10 +1285,10 @@ export default function App() {
       {/* Footer Legal */}
       <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
         <p className="font-medium text-slate-300">
-          Radar de Ofertas Reales Black Friday El Salvador 2026 — Iniciativa ciudadana e independiente.
+          Radar de Ofertas Reales Black Friday El Salvador 2026 — Iniciativa ciudadana e independiente de auditoría de precios.
         </p>
         <p className="max-w-3xl mx-auto leading-relaxed text-slate-400 text-[11px]">
-          Precios auditados diariamente de forma automática de los sitios web públicos de cada almacén. En apego a los Artículos 31 y 32 de la Ley de Protección al Consumidor de El Salvador sobre la veracidad de la publicidad y ofertas comerciales.
+          Precios auditados diariamente de forma automática en los sitios web públicos de cada almacén. En apego a los Artículos 31 y 32 de la Ley de Protección al Consumidor de la República de El Salvador sobre la veracidad de la publicidad y ofertas comerciales.
         </p>
       </footer>
     </div>
