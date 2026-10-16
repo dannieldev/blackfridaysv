@@ -14,7 +14,6 @@ import {
   ChevronUp, 
   X, 
   Tag, 
-  Sparkles, 
   ArrowRight,
   Trophy,
   ShoppingBag,
@@ -234,15 +233,6 @@ const STORE_CHIPS = [
   { id: 'curacao', label: 'La Curacao' },
   { id: 'prado', label: 'Prado' },
   { id: 'omnisport', label: 'Omnisport' },
-];
-
-const POPULAR_SEARCHES = [
-  { label: '📺 Pantallas Smart TV 55"', query: '55' },
-  { label: '📱 Celulares Samsung', query: 'Samsung' },
-  { label: '🍎 iPhone', query: 'iPhone' },
-  { label: '❄️ Refrigeradoras', query: 'refrigeradora' },
-  { label: '🎮 Consolas PlayStation 5', query: 'PlayStation' },
-  { label: '💻 Laptops y Computadoras', query: 'laptop' },
 ];
 
 export default function App() {
@@ -513,30 +503,6 @@ export default function App() {
                 <X className="w-4 h-4" />
               </button>
             )}
-          </div>
-
-          {/* Atajos Rápidos */}
-          <div className="flex flex-wrap items-center gap-1.5 mb-3 text-xs">
-            <span className="text-slate-400 flex items-center gap-1 mr-1 text-[11px] font-semibold uppercase">
-              <Sparkles className="w-3 h-3 text-amber-400" /> Atajos:
-            </span>
-            {POPULAR_SEARCHES.map((item) => {
-              const isActive = searchTerm === item.query;
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => setSearchTerm(isActive ? '' : item.query)}
-                  className={`px-2.5 py-1 rounded-lg border transition-all text-xs font-medium ${
-                    isActive
-                      ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                      : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
-                  }`}
-                  title={isActive ? 'Haz clic para deseleccionar' : undefined}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
           </div>
 
           {/* Filtros Principales */}
