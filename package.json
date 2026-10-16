@@ -14,7 +14,8 @@
     "scrape:dry": "npm run scrape:dry --workspace=packages/scrapers",
     "scrape:siman": "npm run scrape:siman --workspace=packages/scrapers",
     "scrape:walmart": "npm run scrape:walmart --workspace=packages/scrapers",
-    "deploy": "npm run deploy --workspace=apps/web"
+    "deploy": "npm run deploy --workspace=apps/web",
+    "scrape:omnisport": "npm run scrape:omnisport --workspace=packages/scrapers"
   },
   "keywords": [
     "black-friday",

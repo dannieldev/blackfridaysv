@@ -2,6 +2,7 @@ import { simanScraper } from './stores/siman.js';
 import { walmartScraper } from './stores/walmart.js';
 import { curacaoScraper } from './stores/curacao.js';
 import { pradoScraper } from './stores/prado.js';
+import { omnisportScraper } from './stores/omnisport.js';
 import { syncProductsToDatabase } from './db/supabase.js';
 import { generateDealsSnapshot } from './core/snapshot.js';
 import { StoreScraper, ScrapedProduct } from './types.js';
@@ -14,6 +15,7 @@ const ALL_SCRAPERS: Record<string, StoreScraper> = {
   walmart: walmartScraper,
   curacao: curacaoScraper,
   prado: pradoScraper,
+  omnisport: omnisportScraper,
 };
 
 async function main() {
