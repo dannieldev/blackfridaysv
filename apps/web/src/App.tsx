@@ -509,8 +509,8 @@ export default function App() {
   const hasOtherFilters = activeCount > 0 || category !== "all";
   const hasFilters =
     hasOtherFilters ||
-    filter !== "all" ||
-    Boolean(search.trim());
+    Boolean(search.trim()) ||
+    (filter === "saved" && savedCount > 0);
 
   const filterControls = (mobile = false) => (
     <>
@@ -983,16 +983,6 @@ export default function App() {
                       <X aria-label="Quitar categoría" />
                     </button>
                   )}
-                  {filter !== "all" && (
-                    <button onClick={() => change(() => setFilter("all"))}>
-                      {filter === "saved"
-                        ? "Guardados"
-                        : filter === "discounted"
-                          ? "Con descuento"
-                          : "En varias tiendas"}
-                      <X aria-label="Quitar filtro" />
-                    </button>
-                  )}
                   {stores.map((store) => (
                     <button key={store} onClick={() => toggleStore(store)}>
                       {store}
@@ -1022,9 +1012,11 @@ export default function App() {
                       Vaciar guardados
                     </button>
                   )}
-                  <button className="clear-all" onClick={reset}>
-                    Limpiar filtros
-                  </button>
+                  {hasOtherFilters || Boolean(search.trim()) ? (
+                    <button className="clear-all" onClick={reset}>
+                      Limpiar filtros
+                    </button>
+                  ) : null}
                 </div>
               )}
               {isLoading ? (
