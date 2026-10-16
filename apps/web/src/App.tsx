@@ -187,6 +187,7 @@ function DealCard({
               </span>
             )}
         </div>
+        <PriceSparkline deal={deal} compact />
         <PriceEvidence deal={deal} />
         <button className="card-action" onClick={onOpen}>
           Ver precio y detalles
