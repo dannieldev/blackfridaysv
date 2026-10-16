@@ -1,8 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#1e261f"/>
-  <circle cx="32" cy="32" r="24" stroke="#68794c" stroke-width="2"/>
-  <circle cx="32" cy="32" r="16" stroke="#d4f578" stroke-width="2"/>
-  <circle cx="32" cy="32" r="8" stroke="#d4f578" stroke-width="2"/>
-  <path d="M32 32 L50 14" stroke="#d4f578" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="32" cy="32" r="3" fill="#d4f578"/>
+  <!-- Contenedor Grafito con esquinas redondeadas -->
+  <rect width="64" height="64" rx="14" fill="#1e261f"/>
+  <!-- Anillos del Radar nítidos y visibles en 16x16 / 32x32 -->
+  <circle cx="32" cy="32" r="23" stroke="#d4f578" stroke-opacity="0.3" stroke-width="2.5"/>
+  <circle cx="32" cy="32" r="14" stroke="#d4f578" stroke-opacity="0.75" stroke-width="2.5"/>
+  <!-- Haz del Radar a 45 grados -->
+  <path d="M32 32 L49 15" stroke="#d4f578" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Núcleo central -->
+  <circle cx="32" cy="32" r="4.5" fill="#d4f578"/>
+  <!-- Punto de oferta detectada (Blip) -->
+  <circle cx="49" cy="15" r="4.5" fill="#d4f578"/>
 </svg>

@@ -1092,14 +1092,26 @@ export default function App() {
           <button onClick={() => openLegal("terminos")}>Aviso legal</button>
           <button onClick={() => openLegal("metodologia")}>Metodología</button>
           <button onClick={() => openLegal("privacidad")}>Privacidad</button>
-          <a
-            href="https://dannieldev.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Por Danniel
-            <ArrowUpRight aria-hidden="true" />
-          </a>
+          <span className="footer-by">
+            Por:{" "}
+            <a
+              href="https://dannieldev.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              dannieldev
+              <ArrowUpRight aria-hidden="true" />
+            </a>
+            {" y "}
+            <a
+              href="https://github.com/andoqv"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Andres
+              <ArrowUpRight aria-hidden="true" />
+            </a>
+          </span>
         </div>
         <div className="footer-bottom">
           <span>Una iniciativa independiente en El Salvador.</span>

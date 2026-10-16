@@ -1165,6 +1165,19 @@ input::placeholder {
   align-items: center;
   gap: 5px;
 }
+.footer-by {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: var(--muted);
+}
+.footer-by a {
+  color: var(--ink);
+  font-weight: 500;
+  gap: 3px;
+}
 .footer-links svg {
   width: 14px;
   height: 14px;
