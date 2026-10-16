@@ -120,7 +120,7 @@ const MOCK_DEALS: DealItem[] = [
     dealScore: 'descuento_cosmetico',
     verdictMessage: 'Mismo precio de todo el año. Su costo habitual ha sido de $485. Solo hay $6 de diferencia.',
     productUrl: 'https://prado.com.sv',
-    inStock: false, // Simulación de agotado para auditoría
+    inStock: false, // Simulación de agotado para pruebas visuales
     competitors: [
       { store: 'La Curacao', price: 479.00, productUrl: 'https://lacuracaonline.com/elsalvador/', inStock: true },
       { store: 'Omnisport', price: 489.00, productUrl: 'https://omnisport.com', inStock: true },
@@ -385,7 +385,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 selection:bg-blue-600 selection:text-white">
-      {/* Top Banner de Auditoría */}
+      {/* Top Banner de Monitoreo */}
       <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-b border-blue-900/40 px-4 py-2 text-xs text-center text-blue-200/90 flex flex-wrap items-center justify-center gap-3">
         <span className="flex items-center gap-1.5 font-medium">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -401,7 +401,7 @@ export default function App() {
       <header className="max-w-5xl mx-auto px-4 pt-8 pb-6 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
           <ShieldAlert className="w-3.5 h-3.5" />
-          Auditoría de Precios Independiente
+          Monitoreo Ciudadano de Precios
         </div>
         
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3">
@@ -416,7 +416,7 @@ export default function App() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-4xl mx-auto mt-6">
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-white">5 Almacenes</div>
-            <div className="text-xs text-slate-400 mt-0.5">Auditoría diaria en El Salvador</div>
+            <div className="text-xs text-slate-400 mt-0.5">Revisión diaria en El Salvador</div>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">{stats.realPercent}% Reales</div>
@@ -424,7 +424,7 @@ export default function App() {
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-rose-400">{stats.inflatedPercent}% Infladas</div>
-            <div className="text-xs text-slate-400 mt-0.5">Descuentos simulados</div>
+            <div className="text-xs text-slate-400 mt-0.5">Ofertas infladas o engañosas</div>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400">{stats.neutralPercent}% Mismo Precio</div>
@@ -514,7 +514,7 @@ export default function App() {
                   : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              Todos los veredictos
+              Todos los resultados
             </button>
             <button
               onClick={() => setFilterScore(filterScore === 'reales' ? 'all' : 'reales')}
@@ -654,8 +654,8 @@ export default function App() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer pr-1"
               >
-                <option value="savings_desc" className="bg-slate-900 text-white">🔥 Mayor Ahorro Real ($)</option>
-                <option value="discount_pct" className="bg-slate-900 text-white">📉 Mayor Descuento (%)</option>
+                <option value="savings_desc" className="bg-slate-900 text-white">🔥 Mayor Ahorro en Dólares ($)</option>
+                <option value="discount_pct" className="bg-slate-900 text-white">📉 Mayor Porcentaje de Ahorro (%)</option>
                 <option value="price_asc" className="bg-slate-900 text-white">💲 Menor Precio ($)</option>
                 <option value="price_desc" className="bg-slate-900 text-white">💰 Mayor Precio ($)</option>
                 <option value="inflated_first" className="bg-slate-900 text-white">⚠️ Precios Inflados Primero</option>
@@ -846,8 +846,8 @@ export default function App() {
                       <button
                         onClick={() => setActiveModalDeal(deal)}
                         className="p-2 text-slate-400 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
-                        title="Ver auditoría pericial"
-                        aria-label="Ver auditoría"
+                        title="Ver detalles del precio"
+                        aria-label="Ver detalles del precio"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -941,7 +941,7 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* 2. Información Central y Veredicto Pericial */}
+                    {/* 2. Información Central y Explicación del Precio */}
                     <div className="flex-1 min-w-0">
                       {/* Tienda, Marca y Modelo */}
                       <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -980,10 +980,10 @@ export default function App() {
                         
                         <div>
                           <span className="font-bold uppercase tracking-wider block text-[11px] mb-0.5">
-                            {isGanga && '🟢 Veredicto: ¡Rebaja Real Comprobada!'}
-                            {isInflated && '🔴 Veredicto: Cuidado — Precio Inflado'}
-                            {isGood && '🟢 Veredicto: Descuento Real'}
-                            {!isInflated && !isGanga && !isGood && '🟡 Veredicto: Mismo Precio de Siempre'}
+                            {isGanga && '🟢 Resultado: ¡Rebaja Real Comprobada!'}
+                            {isInflated && '🔴 Alerta: Cuidado — Precio Inflado'}
+                            {isGood && '🟢 Resultado: Descuento Real'}
+                            {!isInflated && !isGanga && !isGood && '🟡 Resultado: Mismo Precio de Siempre'}
                           </span>
                           <span className="leading-relaxed">{deal.verdictMessage}</span>
                         </div>
@@ -1111,13 +1111,13 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Botón de Ficha Pericial Rápida */}
+                      {/* Botón de Explicación y Detalles de Precio */}
                       <button
                         onClick={() => setActiveModalDeal(deal)}
                         className="w-full text-left md:text-right text-xs text-blue-400 hover:text-blue-300 inline-flex items-center justify-start md:justify-end gap-1 font-medium transition-colors"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Ver auditoría completa</span>
+                        <span>Ver cómo calculamos el precio</span>
                       </button>
 
                       {/* Botón de Compra Directa */}
@@ -1215,7 +1215,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Modal / Ficha Pericial de Auditoría */}
+      {/* Modal / Ventana de Detalles y Explicación del Precio */}
       {activeModalDeal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -1228,7 +1228,7 @@ export default function App() {
 
             <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">
               <ShieldAlert className="w-4 h-4" />
-              Ficha Técnica Pericial — Ley de Protección al Consumidor (Defensoría del Consumidor El Salvador)
+              Detalles de la Oferta y Protección al Consumidor (El Salvador)
             </div>
 
             <h2 className="text-xl font-bold text-white mb-4 pr-8">
@@ -1246,18 +1246,18 @@ export default function App() {
 
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Almacén o Comercio</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Almacén:</span>
                   <strong className="text-white text-sm">{activeModalDeal.store}</strong>
                 </div>
 
                 <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Código de Modelo del Fabricante</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Código oficial del modelo:</span>
                   <strong className="text-blue-400 font-mono text-sm">{activeModalDeal.modelCode}</strong>
-                  <span className="text-slate-500 block text-[10px] mt-0.5">Clave de fabricante para comparar precios entre almacenes salvadoreños</span>
+                  <span className="text-slate-500 block text-[10px] mt-0.5">Código oficial del producto para comparar el mismo modelo exacto en otras tiendas</span>
                 </div>
 
                 <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Disponibilidad en Almacén</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Disponibilidad en tienda:</span>
                   <span className={`font-bold ${activeModalDeal.inStock ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {activeModalDeal.inStock ? '🟢 Disponible para compra inmediata' : '🔴 Agotado en este almacén'}
                   </span>
@@ -1265,10 +1265,10 @@ export default function App() {
               </div>
             </div>
 
-            {/* Veredicto Detallado */}
+            {/* Explicación Detallada del Precio */}
             <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-6">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-blue-400" /> Veredicto de Auditoría Pericial:
+                <Info className="w-4 h-4 text-blue-400" /> ¿Cómo verificamos esta oferta?:
               </h4>
               <p className="text-xs text-slate-300 leading-relaxed">
                 {activeModalDeal.verdictMessage}
@@ -1300,10 +1300,10 @@ export default function App() {
       {/* Footer Legal */}
       <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
         <p className="font-medium text-slate-300">
-          Radar de Ofertas Reales Black Friday El Salvador 2026 — Iniciativa ciudadana e independiente de auditoría de precios.
+          Radar de Ofertas Reales Black Friday El Salvador 2026 — Iniciativa ciudadana e independiente para monitorear precios justos.
         </p>
         <p className="max-w-3xl mx-auto leading-relaxed text-slate-400 text-[11px]">
-          Precios auditados diariamente de forma automática en los sitios web públicos de cada almacén. En apego a los Artículos 31 y 32 de la Ley de Protección al Consumidor de la República de El Salvador sobre la veracidad de la publicidad y ofertas comerciales.
+          Precios revisados diariamente de forma automática en las páginas web oficiales de cada almacén. Basado en la Ley de Protección al Consumidor de El Salvador para promover compras transparentes y ofertas verdaderas.
         </p>
       </footer>
     </div>
