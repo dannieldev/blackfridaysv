@@ -242,7 +242,6 @@ export default function App() {
   const [filterScore, setFilterScore] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
-  const [onlyMultiStore, setOnlyMultiStore] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>('savings_desc');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(16);
@@ -317,6 +316,8 @@ export default function App() {
       const matchScore = 
         filterScore === 'all' ? true :
         filterScore === 'reales' ? (deal.dealScore === 'ganga_historica' || deal.dealScore === 'buena_oferta') :
+        filterScore === 'falsa_oferta_inflada' ? (deal.dealScore === 'falsa_oferta_inflada') :
+        filterScore === 'comparativa' ? Boolean(deal.competitors && deal.competitors.length > 0) :
         deal.dealScore === filterScore;
 
       const matchCategory = selectedCategory === 'all' || deal.category === selectedCategory;
@@ -325,15 +326,13 @@ export default function App() {
         selectedStore === 'all' ? true :
         deal.store.toLowerCase().includes(selectedStore.toLowerCase());
 
-      const matchMultiStore = !onlyMultiStore || (deal.competitors && deal.competitors.length > 0);
-
-      return matchSearch && matchScore && matchCategory && matchStore && matchMultiStore;
+      return matchSearch && matchScore && matchCategory && matchStore;
     });
-  }, [deals, searchTerm, filterScore, selectedCategory, selectedStore, onlyMultiStore]);
+  }, [deals, searchTerm, filterScore, selectedCategory, selectedStore]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterScore, selectedCategory, selectedStore, onlyMultiStore, sortBy, pageSize]);
+  }, [searchTerm, filterScore, selectedCategory, selectedStore, sortBy, pageSize]);
 
   const sortedDeals = useMemo(() => {
     const list = [...filteredDeals];
@@ -540,16 +539,17 @@ export default function App() {
               <AlertTriangle className="w-3.5 h-3.5" /> 🔴 Ver Precios Inflados
             </button>
             <button
-              onClick={() => setOnlyMultiStore(!onlyMultiStore)}
+              onClick={() => setFilterScore(filterScore === 'comparativa' ? 'all' : 'comparativa')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                onlyMultiStore
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                filterScore === 'comparativa'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/30'
                   : 'bg-slate-800/70 text-blue-300 hover:bg-slate-800'
               }`}
+              title={filterScore === 'comparativa' ? 'Haz clic para deseleccionar' : undefined}
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
               <span>Comparativa entre almacenes (2+ almacenes)</span>
-              {onlyMultiStore && <span className="bg-white/20 text-[10px] px-1.5 py-0.2 rounded-full font-mono">Activo</span>}
+              {filterScore === 'comparativa' && <span className="bg-white/20 text-[10px] px-1.5 py-0.2 rounded-full font-mono">Activo</span>}
             </button>
           </div>
 
@@ -624,14 +624,13 @@ export default function App() {
                 Mostrando <strong className="font-mono text-white">{(safeCurrentPage - 1) * pageSize + 1} - {Math.min(safeCurrentPage * pageSize, sortedDeals.length)}</strong> de <strong className="font-mono text-blue-400 font-bold">{sortedDeals.length}</strong> ofertas
               </span>
             )}
-            {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all' || onlyMultiStore) && (
+            {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all') && (
               <button
                 onClick={() => {
                   setSearchTerm('');
                   setFilterScore('all');
                   setSelectedCategory('all');
                   setSelectedStore('all');
-                  setOnlyMultiStore(false);
                 }}
                 className="text-blue-400 hover:underline font-medium inline-flex items-center gap-1"
               >
@@ -742,7 +741,6 @@ export default function App() {
                 setFilterScore('all');
                 setSelectedCategory('all');
                 setSelectedStore('all');
-                setOnlyMultiStore(false);
               }}
               className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30"
             >
