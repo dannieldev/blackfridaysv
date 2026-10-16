@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Search, 
   AlertTriangle, 
@@ -25,10 +25,17 @@ import {
   ChevronRight,
   ShieldCheck,
   Scale,
-  Lock
+  Lock,
+  Copy,
+  RotateCcw,
+  MessageCircle,
+  Tv
 } from 'lucide-react';
 import { fetchLiveDeals } from './lib/supabase.ts';
 import { LegalModals, LegalModalType } from './components/LegalModals.tsx';
+import { SkeletonCard } from './components/SkeletonCard.tsx';
+import { NotFoundPage } from './components/NotFoundPage.tsx';
+import { Toast } from './components/Toast.tsx';
 
 export interface DealItem {
   id: string;
@@ -239,7 +246,8 @@ const STORE_CHIPS = [
 ];
 
 export default function App() {
-  const [deals, setDeals] = useState<DealItem[]>(MOCK_DEALS);
+  const [deals, setDeals] = useState<DealItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUsingLiveDb, setIsUsingLiveDb] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScore, setFilterScore] = useState<string>('all');
@@ -252,46 +260,120 @@ export default function App() {
   const [showGuide, setShowGuide] = useState<boolean>(false);
   const [activeModalDeal, setActiveModalDeal] = useState<DealItem | null>(null);
   const [activeLegalModal, setActiveLegalModal] = useState<LegalModalType>(null);
+  const [toast, setToast] = useState<{ message: string; type?: 'success' | 'info' | 'warning' } | null>(null);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const [is404, setIs404] = useState<boolean>(() => {
+    const path = window.location.pathname;
+    return path !== '/' && !path.startsWith('/data') && !path.endsWith('.svg') && !path.endsWith('.xml') && !path.endsWith('.txt');
+  });
+
+  const showToast = (message: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleShareWhatsApp = (deal: DealItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const text = `🚨 *Radar Black Friday SV*: Encontré esta oferta en ${deal.store}:\n\n` +
+      `*${deal.title}*\n` +
+      `💰 Precio Hoy: $${deal.currentPrice.toFixed(2)}${deal.regularPrice ? ` (Precio regular: $${deal.regularPrice.toFixed(2)})` : ''}\n` +
+      `🚦 Veredicto: ${deal.verdictMessage}\n\n` +
+      `🔍 Audítalo aquí: ${window.location.origin}/#deal-${deal.id}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleCopyLink = async (deal: DealItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const url = `${window.location.origin}/#deal-${deal.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast(`Enlace copiado para ${deal.brand} ${deal.modelCode}`);
+    } catch {
+      showToast('No se pudo copiar el enlace', 'warning');
+    }
+  };
+
+  // Keyboard Shortcuts (/ o Cmd+K para buscar, Escape para cerrar)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+      if (e.key === 'Escape') {
+        if (activeModalDeal) {
+          setActiveModalDeal(null);
+        } else if (activeLegalModal) {
+          setActiveLegalModal(null);
+        } else if (searchTerm) {
+          setSearchTerm('');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeModalDeal, activeLegalModal, searchTerm]);
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
       if (hash === 'terminos' || hash === 'metodologia' || hash === 'privacidad') {
         setActiveLegalModal(hash as LegalModalType);
+      } else if (hash.startsWith('deal-')) {
+        const dealId = hash.replace('deal-', '');
+        const target = deals.find(d => d.id === dealId);
+        if (target) setActiveModalDeal(target);
       }
     };
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [deals]);
 
   useEffect(() => {
     async function loadDb() {
-      const live = await fetchLiveDeals();
-      if (live && live.length > 0) {
-        const mapped: DealItem[] = live.map((item) => ({
-          id: item.store_product_id,
-          store: item.store_name,
-          brand: item.brand || 'Genérico',
-          modelCode: item.model_code || 'N/A',
-          title: item.store_title,
-          category: item.category,
-          currentPrice: item.current_offer_price,
-          regularPrice: item.current_regular_price,
-          baselinePrice30d: item.baseline_price_30d || item.current_offer_price,
-          dealScore: item.deal_score === 'precio_regular' ? 'descuento_cosmetico' : item.deal_score,
-          verdictMessage: item.is_inflated 
-            ? '¡CUIDADO! La tienda subió el precio anunciado semanas antes para que la rebaja pareciera más grande.' 
-            : item.is_all_time_low 
-            ? '¡PRECIO MÁS BAJO DEL AÑO! Ahorro real verificado frente al precio habitual de octubre.' 
-            : `Rebaja real calculada del ${item.real_discount_percent}% frente a su costo en octubre.`,
-          productUrl: item.product_url,
-          imageUrl: item.product_image,
-          inStock: item.in_stock ?? true,
-        }));
-        const enriched = enrichDealsWithCrossStoreComparisons(mapped);
-        setDeals(enriched);
-        setIsUsingLiveDb(true);
+      setIsLoading(true);
+      try {
+        const live = await fetchLiveDeals();
+        if (live && live.length > 0) {
+          const mapped: DealItem[] = live.map((item) => ({
+            id: item.store_product_id,
+            store: item.store_name,
+            brand: item.brand || 'Genérico',
+            modelCode: item.model_code || 'N/A',
+            title: item.store_title,
+            category: item.category,
+            currentPrice: item.current_offer_price,
+            regularPrice: item.current_regular_price,
+            baselinePrice30d: item.baseline_price_30d || item.current_offer_price,
+            dealScore: item.deal_score === 'precio_regular' ? 'descuento_cosmetico' : item.deal_score,
+            verdictMessage: item.is_inflated 
+              ? '¡CUIDADO! La tienda subió el precio anunciado semanas antes para que la rebaja pareciera más grande.' 
+              : item.is_all_time_low 
+              ? '¡PRECIO MÁS BAJO DEL AÑO! Ahorro real verificado frente al precio habitual de octubre.' 
+              : `Rebaja real calculada del ${item.real_discount_percent}% frente a su costo en octubre.`,
+            productUrl: item.product_url,
+            imageUrl: item.product_image,
+            inStock: item.in_stock ?? true,
+          }));
+          const enriched = enrichDealsWithCrossStoreComparisons(mapped);
+          setDeals(enriched);
+          setIsUsingLiveDb(true);
+        } else {
+          setDeals(MOCK_DEALS);
+        }
+      } catch (err) {
+        console.warn('Error cargando catálogo:', err);
+        setDeals(MOCK_DEALS);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadDb();
@@ -399,6 +481,17 @@ export default function App() {
     return sortedDeals.slice(start, start + pageSize);
   }, [sortedDeals, safeCurrentPage, pageSize]);
 
+  if (is404) {
+    return (
+      <NotFoundPage 
+        onReturnHome={() => {
+          window.history.pushState(null, '', '/');
+          setIs404(false);
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 selection:bg-blue-600 selection:text-white">
       {/* Top Banner de Monitoreo */}
@@ -496,28 +589,38 @@ export default function App() {
       </header>
 
       {/* Main Search & Filters Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl mb-6">
           {/* Caja de Búsqueda */}
           <div className="relative mb-3">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
             <input 
+              ref={searchInputRef}
               type="text"
               value={searchTerm}
               maxLength={80}
               onChange={(e) => setSearchTerm(e.target.value.slice(0, 80))}
               placeholder="¿Qué producto buscas? (ej: Smart TV 55, Galaxy S24, iPhone 15, Lavadora Mabe)..."
-              className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-12 pr-10 py-3.5 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-12 pr-20 py-3.5 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              aria-label="Buscar producto o modelo en el catálogo"
             />
-            {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white"
-                title="Limpiar búsqueda"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              {!searchTerm && (
+                <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-700/80 rounded" title="Presiona / o ⌘K para buscar">
+                  /
+                </kbd>
+              )}
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="p-1 text-slate-400 hover:text-white"
+                  title="Limpiar búsqueda"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filtros Principales */}
@@ -740,28 +843,61 @@ export default function App() {
         </div>
 
         {/* Lista de Tarjetas de Productos */}
-        {filteredDeals.length === 0 ? (
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 sm:p-14 text-center max-w-lg mx-auto shadow-2xl my-6">
+        {isLoading ? (
+          <div className={viewMode === 'compact' ? 'space-y-2' : 'space-y-4'}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} viewMode={viewMode} />
+            ))}
+          </div>
+        ) : filteredDeals.length === 0 ? (
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 sm:p-12 text-center max-w-lg mx-auto shadow-2xl my-6">
             <div className="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto mb-4 text-slate-400">
               <Search className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-white mb-2">
               {searchTerm ? `Sin resultados para "${searchTerm}"` : 'No encontramos ofertas con estos filtros'}
             </h3>
-            <p className="text-xs text-slate-400 mb-5 leading-relaxed max-w-sm mx-auto">
-              Prueba deseleccionando filtros o buscando términos más generales como "TV", "Samsung", "iPhone" o "Lavadora".
+            <p className="text-xs text-slate-400 mb-6 leading-relaxed max-w-sm mx-auto">
+              Prueba deseleccionando filtros o seleccionando alguna de las categorías más buscadas en El Salvador.
             </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterScore('all');
-                setSelectedCategory('all');
-                setSelectedStore('all');
-              }}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30"
-            >
-              Restablecer todos los filtros
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  setSelectedCategory('tv_audio');
+                  setSearchTerm('');
+                  setFilterScore('all');
+                  setSelectedStore('all');
+                }}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+              >
+                <Tv className="w-3.5 h-3.5 text-blue-400" />
+                <span>Ver Pantallas y TV</span>
+              </button>
+              <button
+                onClick={() => {
+                  setFilterScore('reales');
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                  setSelectedStore('all');
+                }}
+                className="px-3.5 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/50 text-emerald-300 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+              >
+                <Flame className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Ver Gangas Reales</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterScore('all');
+                  setSelectedCategory('all');
+                  setSelectedStore('all');
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 inline-flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restablecer filtros</span>
+              </button>
+            </div>
           </div>
         ) : viewMode === 'compact' ? (
           <div className="space-y-2">
@@ -791,13 +927,13 @@ export default function App() {
                 >
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     <div className="w-12 h-12 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden p-1 relative">
-                      {deal.imageUrl ? (
+                      {deal.imageUrl && !imgErrors[deal.id] ? (
                         <img 
                           src={deal.imageUrl} 
                           alt={deal.title} 
                           className="max-h-full max-w-full object-contain" 
                           loading="lazy" 
-                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                          onError={() => setImgErrors(prev => ({ ...prev, [deal.id]: true }))}
                         />
                       ) : (
                         <ShoppingBag className="w-5 h-5 text-slate-600" />
@@ -858,10 +994,26 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => handleShareWhatsApp(deal, e)}
+                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-emerald-400 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition-colors"
+                        title="Compartir por WhatsApp"
+                        aria-label="Compartir por WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => handleCopyLink(deal, e)}
+                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-blue-400 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition-colors"
+                        title="Copiar enlace directo"
+                        aria-label="Copiar enlace directo"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => setActiveModalDeal(deal)}
-                        className="p-2 text-slate-400 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors"
                         title="Ver detalles del precio"
                         aria-label="Ver detalles del precio"
                       >
@@ -871,7 +1023,7 @@ export default function App() {
                         href={deal.productUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-3 py-2 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-md ${
+                        className={`min-h-[44px] px-3.5 py-2 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-md ${
                           !deal.inStock
                             ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
                             : 'bg-blue-600 hover:bg-blue-500 text-white'
@@ -939,20 +1091,18 @@ export default function App() {
                         )}
                       </div>
 
-                      {deal.imageUrl ? (
+                      {deal.imageUrl && !imgErrors[deal.id] ? (
                         <img 
                           src={deal.imageUrl} 
                           alt={deal.title}
                           className="max-h-full max-w-full object-contain mx-auto transition-transform duration-300 group-hover:scale-105"
                           loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
+                          onError={() => setImgErrors(prev => ({ ...prev, [deal.id]: true }))}
                         />
                       ) : (
-                        <div className="text-slate-600 text-center">
-                          <Tag className="w-8 h-8 mx-auto mb-1 opacity-50" />
-                          <span className="text-[10px] block">Sin foto disponible</span>
+                        <div className="text-slate-600 text-center flex flex-col items-center justify-center p-2">
+                          <ShoppingBag className="w-8 h-8 mx-auto mb-1 text-slate-700" />
+                          <span className="text-[10px] block text-slate-500 font-medium">{deal.store}</span>
                         </div>
                       )}
                     </div>
@@ -1130,11 +1280,31 @@ export default function App() {
                       {/* Botón de Explicación y Detalles de Precio */}
                       <button
                         onClick={() => setActiveModalDeal(deal)}
-                        className="w-full text-left md:text-right text-xs text-blue-400 hover:text-blue-300 inline-flex items-center justify-start md:justify-end gap-1 font-medium transition-colors"
+                        className="w-full text-left md:text-right text-xs text-blue-400 hover:text-blue-300 inline-flex items-center justify-start md:justify-end gap-1 font-medium transition-colors py-1"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Ver cómo calculamos el precio</span>
                       </button>
+
+                      {/* Botones de Compartir y Copiar Enlace */}
+                      <div className="grid grid-cols-2 gap-2 w-full">
+                        <button
+                          onClick={(e) => handleShareWhatsApp(deal, e)}
+                          className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center gap-1.5 transition-colors"
+                          title="Compartir por WhatsApp"
+                        >
+                          <MessageCircle className="w-4 h-4 text-emerald-400" />
+                          <span>WhatsApp</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleCopyLink(deal, e)}
+                          className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center gap-1.5 transition-colors"
+                          title="Copiar enlace"
+                        >
+                          <Copy className="w-4 h-4 text-blue-400" />
+                          <span>Copiar</span>
+                        </button>
+                      </div>
 
                       {/* Botón de Compra Directa */}
                       <a 
@@ -1253,10 +1423,18 @@ export default function App() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center flex items-center justify-center h-48">
-                {activeModalDeal.imageUrl ? (
-                  <img src={activeModalDeal.imageUrl} alt={activeModalDeal.title} className="max-h-full max-w-full object-contain" />
+                {activeModalDeal.imageUrl && !imgErrors[activeModalDeal.id] ? (
+                  <img 
+                    src={activeModalDeal.imageUrl} 
+                    alt={activeModalDeal.title} 
+                    className="max-h-full max-w-full object-contain" 
+                    onError={() => setImgErrors(prev => ({ ...prev, [activeModalDeal.id]: true }))}
+                  />
                 ) : (
-                  <span className="text-slate-600 text-xs">Sin foto disponible</span>
+                  <div className="text-center p-4">
+                    <ShoppingBag className="w-10 h-10 mx-auto text-slate-700 mb-1.5" />
+                    <span className="text-slate-500 text-xs">Sin foto disponible en catálogo oficial</span>
+                  </div>
                 )}
               </div>
 
@@ -1291,20 +1469,38 @@ export default function App() {
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
               <a
                 href={activeModalDeal.productUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-h-[44px] bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 min-h-[44px] bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors shadow-md"
               >
                 <span>Ir al sitio oficial de {activeModalDeal.store}</span>
                 <ExternalLink className="w-4 h-4" />
               </a>
 
               <button
+                onClick={(e) => handleShareWhatsApp(activeModalDeal, e)}
+                className="min-h-[44px] px-3.5 bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-800/60 text-emerald-300 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                title="Compartir por WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-400" />
+                <span className="hidden sm:inline">WhatsApp</span>
+              </button>
+
+              <button
+                onClick={(e) => handleCopyLink(activeModalDeal, e)}
+                className="min-h-[44px] px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                title="Copiar enlace"
+              >
+                <Copy className="w-4 h-4 text-blue-400" />
+                <span className="hidden sm:inline">Copiar</span>
+              </button>
+
+              <button
                 onClick={() => setActiveModalDeal(null)}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors"
+                className="min-h-[44px] px-5 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-semibold rounded-xl transition-colors"
               >
                 Cerrar
               </button>
@@ -1376,6 +1572,9 @@ export default function App() {
           window.location.hash = tab;
         }}
       />
+
+      {/* Toast de Notificaciones y Retroalimentación Táctil */}
+      <Toast message={toast?.message ?? null} type={toast?.type ?? 'success'} />
     </div>
   );
 }
