@@ -19,6 +19,7 @@ export function extractModelCode(title: string, brand: string): string | null {
     SAMSUNG: [
       /\b(SM-[A-Z0-9]{4,6})\b/i, // Galaxy Phones
       /\b([A-Z]{2}[0-9]{2}[A-Z0-9]{4,12})\b/i, // Samsung TVs (QN65..., UN55...)
+      /\b(R[SBT][0-9]{2}[A-Z0-9]{5,10})\b/i, // Samsung Refrigeradoras
     ],
     // Apple: ej. A2849, A3106, MYD82LL/A o nombres canónicos (iPhone 15 Pro 128GB)
     APPLE: [
@@ -32,9 +33,12 @@ export function extractModelCode(title: string, brand: string): string | null {
       /\b(XR-[0-9]{2}[A-Z0-9]+)\b/i,
       /\b(CFI-[0-9]{4}[A-Z]?)\b/i, // PS5
     ],
-    // TCL / Hisense: ej. 55Q650G, 50P635, 55U6K
+    // HP: ej. 15-FC0250LA, 14-HU0050LA, 24-CR0233LA
+    HP: [/\b([0-9]{2}-[A-Z0-9]{5,8})\b/i],
+    // TCL / Hisense / Toshiba: ej. 55Q650G, 50P635, 55U6K, 43V35R
     TCL: [/\b([0-9]{2}[A-Z][0-9]{3,4}[A-Z]?)\b/i],
     HISENSE: [/\b([0-9]{2}[A-Z][0-9]{1,2}[A-Z0-9]*)\b/i],
+    TOSHIBA: [/\b([0-9]{2}[A-Z][0-9]{2,3}[A-Z]?)\b/i],
     // Nintendo: ej. HEG-001 (OLED), HAC-001
     NINTENDO: [/\b(HEG-[0-9]{3}|HAC-[0-9]{3})\b/i],
   };
@@ -83,6 +87,8 @@ export function normalizeBrand(brand: string): string {
   if (b.includes('hp') || b.includes('hewlett')) return 'HP';
   if (b.includes('dell')) return 'Dell';
   if (b.includes('oster')) return 'Oster';
+  if (b.includes('toshiba')) return 'Toshiba';
+  if (b.includes('asus')) return 'Asus';
 
   // Capitalización de la primera letra
   return brand.charAt(0).toUpperCase() + brand.slice(1);

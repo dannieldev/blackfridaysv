@@ -10,7 +10,8 @@
     "scrape:walmart": "SCRAPER_STORE=walmart tsx src/index.ts",
     "scrape:curacao": "SCRAPER_STORE=curacao tsx src/index.ts",
     "scrape:prado": "SCRAPER_STORE=prado tsx src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "scrape:omnisport": "SCRAPER_STORE=omnisport tsx src/index.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
