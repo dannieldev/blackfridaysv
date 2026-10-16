@@ -1105,7 +1105,7 @@ export default function App() {
             </a>
             {" y "}
             <a
-              href="https://portfolio-6g2.pages.dev/"
+              href="https://elite-portfolio-1.pages.dev/"
               target="_blank"
               rel="noopener noreferrer"
             >
