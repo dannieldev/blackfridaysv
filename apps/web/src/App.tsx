@@ -1109,7 +1109,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Andres
+              AndresDev
               <ArrowUpRight aria-hidden="true" />
             </a>
           </span>
