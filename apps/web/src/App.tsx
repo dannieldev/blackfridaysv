@@ -398,7 +398,7 @@ export default function App() {
       </div>
 
       {/* Hero Section */}
-      <header className="max-w-5xl mx-auto px-4 pt-8 pb-6 text-center">
+      <header className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
           <ShieldAlert className="w-3.5 h-3.5" />
           Monitoreo Ciudadano de Precios
@@ -413,20 +413,20 @@ export default function App() {
         </p>
 
         {/* Resumen de Hallazgos en 4 Tarjetas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-4xl mx-auto mt-6">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 max-w-5xl mx-auto mt-6">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-white">5 Almacenes</div>
             <div className="text-xs text-slate-400 mt-0.5">Revisión diaria en El Salvador</div>
           </div>
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">{stats.realPercent}% Reales</div>
             <div className="text-xs text-slate-400 mt-0.5">Rebajas verdaderas</div>
           </div>
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-rose-400">{stats.inflatedPercent}% Infladas</div>
             <div className="text-xs text-slate-400 mt-0.5">Ofertas infladas o engañosas</div>
           </div>
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
             <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400">{stats.neutralPercent}% Mismo Precio</div>
             <div className="text-xs text-slate-400 mt-0.5">Sin rebaja vs octubre</div>
           </div>
@@ -480,7 +480,7 @@ export default function App() {
       </header>
 
       {/* Main Search & Filters Container */}
-      <main className="max-w-6xl mx-auto px-4">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl mb-6">
           {/* Caja de Búsqueda */}
           <div className="relative mb-3">
@@ -609,8 +609,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Barra de Control: Conteo, Ordenación, Modo de Vista y Paginación rápida */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        {/* Barra de Control: Conteo, Ordenación, Paginación rápida y Modo de Vista */}
+        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3 sm:p-3.5 mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 text-xs">
           {/* Conteo y Reset */}
           <div className="flex flex-wrap items-center gap-2">
             {sortedDeals.length === 0 ? (
@@ -642,10 +642,10 @@ export default function App() {
             </span>
           </div>
 
-          {/* Opciones de Ordenación y Modo de Vista */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Opciones de Ordenación, Paginación rápida y Modo de Vista */}
+          <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 shrink-0 justify-start lg:justify-end">
             {/* Selector de Ordenamiento */}
-            <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5">
+            <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5 shrink-0">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
               <label htmlFor="sort-select" className="text-slate-400 text-[11px] font-medium hidden sm:inline">Ordenar:</label>
               <select
@@ -664,7 +664,7 @@ export default function App() {
 
             {/* Selector de Cantidad por Página (Solo visible cuando hay suficientes productos) */}
             {availablePageSizes.length > 0 && (
-              <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-xl px-2 py-1">
+              <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-xl px-2 py-1 shrink-0">
                 <span className="text-slate-400 text-[11px] font-medium pl-1">Por pág:</span>
                 {availablePageSizes.map((sz) => (
                   <button
@@ -693,8 +693,8 @@ export default function App() {
               </div>
             )}
 
-            {/* Selector de Modo de Vista (Cards vs Compact) */}
-            <div className="flex items-center bg-slate-950/80 border border-slate-800 rounded-xl p-1">
+            {/* Selector de Modo de Vista (Fichas vs Lista Compacta) */}
+            <div className="flex items-center bg-slate-950/80 border border-slate-800 rounded-xl p-1 shrink-0">
               <button
                 onClick={() => setViewMode('cards')}
                 className={`p-1.5 rounded-lg transition-all ${
@@ -811,7 +811,7 @@ export default function App() {
                           </span>
                         ) : null}
                       </div>
-                      <h4 className="text-xs sm:text-sm font-semibold text-white truncate max-w-lg" title={deal.title}>
+                      <h4 className="text-xs sm:text-sm font-semibold text-white truncate max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl" title={deal.title}>
                         {deal.title}
                       </h4>
                       {deal.competitors && deal.competitors.length > 0 && (
@@ -905,9 +905,9 @@ export default function App() {
                     'border-slate-800'
                   }`}
                 >
-                  <div className="flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
+                  <div className="flex flex-col md:flex-row gap-4 sm:gap-5 items-stretch">
                     {/* 1. Columna Imagen + Badge Flotante de Stock */}
-                    <div className="w-full md:w-40 h-40 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden relative p-2 group">
+                    <div className="w-full md:w-44 lg:w-48 h-44 md:h-auto md:min-h-[190px] bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden relative p-2.5 group">
                       {/* Badge Flotante de Stock en Tiempo Real */}
                       <div className="absolute top-2 left-2 z-10">
                         {deal.inStock ? (
@@ -1087,7 +1087,7 @@ export default function App() {
                     </div>
 
                     {/* 3. Columna Derecha: Precios y Acciones */}
-                    <div className="w-full md:w-56 shrink-0 flex flex-col justify-between items-start md:items-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-800">
+                    <div className="w-full md:w-56 lg:w-60 shrink-0 flex flex-col justify-between items-start md:items-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-800 self-stretch">
                       <div className="md:text-right w-full">
                         <div className="flex items-baseline gap-2 md:justify-end">
                           <span className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
