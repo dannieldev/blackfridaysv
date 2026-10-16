@@ -29,13 +29,16 @@ import {
   Copy,
   RotateCcw,
   MessageCircle,
-  Tv
+  Tv,
+  Heart,
+  DollarSign
 } from 'lucide-react';
 import { fetchLiveDeals } from './lib/supabase.ts';
 import { LegalModals, LegalModalType } from './components/LegalModals.tsx';
 import { SkeletonCard } from './components/SkeletonCard.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
 import { Toast } from './components/Toast.tsx';
+import { PriceSparkline } from './components/PriceSparkline.tsx';
 
 export interface DealItem {
   id: string;
@@ -245,6 +248,25 @@ const STORE_CHIPS = [
   { id: 'omnisport', label: 'Omnisport' },
 ];
 
+export type BudgetFilterType = 'all' | 'under_100' | '100_to_300' | '300_to_600' | 'above_600';
+
+export const BUDGET_CHIPS: { id: BudgetFilterType; label: string; range: string }[] = [
+  { id: 'all', label: 'Cualquier precio', range: 'Todo' },
+  { id: 'under_100', label: '< $100', range: 'Económicos' },
+  { id: '100_to_300', label: '$100 - $300', range: 'Gama media' },
+  { id: '300_to_600', label: '$300 - $600', range: 'Smart TV / Hogar' },
+  { id: 'above_600', label: '> $600', range: 'Premium / Tech' },
+];
+
+export const CATEGORY_CHIPS = [
+  { id: 'all', label: 'Todas las categorías' },
+  { id: 'tv_audio', label: '📺 Pantallas y Audio' },
+  { id: 'smartphones', label: '📱 Celulares' },
+  { id: 'computacion', label: '💻 Laptops y Computadoras' },
+  { id: 'linea_blanca', label: '❄️ Línea Blanca' },
+  { id: 'gaming', label: '🎮 Videojuegos' },
+];
+
 export default function App() {
   const [deals, setDeals] = useState<DealItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -253,6 +275,15 @@ export default function App() {
   const [filterScore, setFilterScore] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
+  const [budgetFilter, setBudgetFilter] = useState<BudgetFilterType>('all');
+  const [savedDealIds, setSavedDealIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('blackfridaysv_saved_deals');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [sortBy, setSortBy] = useState<string>('savings_desc');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(16);
@@ -273,6 +304,27 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 2500);
   };
+
+  // Sincronizar favoritos en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('blackfridaysv_saved_deals', JSON.stringify(savedDealIds));
+    } catch (err) {
+      console.warn('Error guardando en localStorage:', err);
+    }
+  }, [savedDealIds]);
+
+  const toggleSaveDeal = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSavedDealIds((prev) => {
+      const exists = prev.includes(id);
+      const updated = exists ? prev.filter((x) => x !== id) : [...prev, id];
+      showToast(exists ? 'Oferta retirada de tus guardados' : '❤️ Oferta guardada en tu lista');
+      return updated;
+    });
+  };
+
+  const isDealSaved = (id: string) => savedDealIds.includes(id);
 
   const handleShareWhatsApp = (deal: DealItem, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -403,6 +455,37 @@ export default function App() {
     };
   }, [deals]);
 
+  const facetCounts = useMemo(() => {
+    const storeCounts: Record<string, number> = { all: deals.length };
+    STORE_CHIPS.forEach((chip) => {
+      if (chip.id !== 'all') {
+        storeCounts[chip.id] = deals.filter((d) => d.store.toLowerCase().includes(chip.id.toLowerCase())).length;
+      }
+    });
+
+    const categoryCounts: Record<string, number> = { all: deals.length };
+    CATEGORY_CHIPS.forEach((cat) => {
+      if (cat.id !== 'all') {
+        categoryCounts[cat.id] = deals.filter((d) => d.category === cat.id).length;
+      }
+    });
+
+    const budgetCounts: Record<BudgetFilterType, number> = {
+      all: deals.length,
+      under_100: deals.filter((d) => d.currentPrice < 100).length,
+      '100_to_300': deals.filter((d) => d.currentPrice >= 100 && d.currentPrice <= 300).length,
+      '300_to_600': deals.filter((d) => d.currentPrice > 300 && d.currentPrice <= 600).length,
+      above_600: deals.filter((d) => d.currentPrice > 600).length,
+    };
+
+    const realCount = deals.filter((d) => d.dealScore === 'ganga_historica' || d.dealScore === 'buena_oferta').length;
+    const inflatedCount = deals.filter((d) => d.dealScore === 'falsa_oferta_inflada').length;
+    const comparativeCount = deals.filter((d) => Boolean(d.competitors && d.competitors.length > 0)).length;
+    const savedCount = deals.filter((d) => savedDealIds.includes(d.id)).length;
+
+    return { storeCounts, categoryCounts, budgetCounts, realCount, inflatedCount, comparativeCount, savedCount };
+  }, [deals, savedDealIds]);
+
   const filteredDeals = useMemo(() => {
     return deals.filter((deal) => {
       const matchSearch = 
@@ -416,6 +499,7 @@ export default function App() {
         filterScore === 'reales' ? (deal.dealScore === 'ganga_historica' || deal.dealScore === 'buena_oferta') :
         filterScore === 'falsa_oferta_inflada' ? (deal.dealScore === 'falsa_oferta_inflada') :
         filterScore === 'comparativa' ? Boolean(deal.competitors && deal.competitors.length > 0) :
+        filterScore === 'guardados' ? savedDealIds.includes(deal.id) :
         deal.dealScore === filterScore;
 
       const matchCategory = selectedCategory === 'all' || deal.category === selectedCategory;
@@ -424,13 +508,20 @@ export default function App() {
         selectedStore === 'all' ? true :
         deal.store.toLowerCase().includes(selectedStore.toLowerCase());
 
-      return matchSearch && matchScore && matchCategory && matchStore;
+      const matchBudget = 
+        budgetFilter === 'all' ? true :
+        budgetFilter === 'under_100' ? deal.currentPrice < 100 :
+        budgetFilter === '100_to_300' ? (deal.currentPrice >= 100 && deal.currentPrice <= 300) :
+        budgetFilter === '300_to_600' ? (deal.currentPrice > 300 && deal.currentPrice <= 600) :
+        deal.currentPrice > 600;
+
+      return matchSearch && matchScore && matchCategory && matchStore && matchBudget;
     });
-  }, [deals, searchTerm, filterScore, selectedCategory, selectedStore]);
+  }, [deals, searchTerm, filterScore, selectedCategory, selectedStore, budgetFilter, savedDealIds]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterScore, selectedCategory, selectedStore, sortBy, pageSize]);
+  }, [searchTerm, filterScore, selectedCategory, selectedStore, budgetFilter, sortBy, pageSize]);
 
   const sortedDeals = useMemo(() => {
     const list = [...filteredDeals];
@@ -633,7 +724,7 @@ export default function App() {
                   : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
               }`}
             >
-              Todos los resultados
+              Todos ({deals.length})
             </button>
             <button
               onClick={() => setFilterScore(filterScore === 'reales' ? 'all' : 'reales')}
@@ -644,7 +735,7 @@ export default function App() {
               }`}
               title={filterScore === 'reales' ? 'Haz clic para deseleccionar' : undefined}
             >
-              <CheckCircle2 className="w-3.5 h-3.5" /> 🟢 Solo Ofertas Reales
+              <CheckCircle2 className="w-3.5 h-3.5" /> 🟢 Ofertas Reales ({facetCounts.realCount})
             </button>
             <button
               onClick={() => setFilterScore(filterScore === 'falsa_oferta_inflada' ? 'all' : 'falsa_oferta_inflada')}
@@ -655,7 +746,7 @@ export default function App() {
               }`}
               title={filterScore === 'falsa_oferta_inflada' ? 'Haz clic para deseleccionar' : undefined}
             >
-              <AlertTriangle className="w-3.5 h-3.5" /> 🔴 Ver Precios Inflados
+              <AlertTriangle className="w-3.5 h-3.5" /> 🔴 Precios Inflados ({facetCounts.inflatedCount})
             </button>
             <button
               onClick={() => setFilterScore(filterScore === 'comparativa' ? 'all' : 'comparativa')}
@@ -667,8 +758,19 @@ export default function App() {
               title={filterScore === 'comparativa' ? 'Haz clic para deseleccionar' : undefined}
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span>Comparativa entre almacenes (2+ almacenes)</span>
-              {filterScore === 'comparativa' && <span className="bg-white/20 text-[10px] px-1.5 py-0.2 rounded-full font-mono">Activo</span>}
+              <span>Comparativa ({facetCounts.comparativeCount})</span>
+            </button>
+            <button
+              onClick={() => setFilterScore(filterScore === 'guardados' ? 'all' : 'guardados')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                filterScore === 'guardados'
+                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30 border border-rose-400/30'
+                  : 'bg-slate-800/70 text-rose-300 hover:bg-slate-800'
+              }`}
+              title={filterScore === 'guardados' ? 'Haz clic para deseleccionar' : undefined}
+            >
+              <Heart className={`w-3.5 h-3.5 ${facetCounts.savedCount > 0 ? 'fill-rose-400 text-rose-400' : ''}`} />
+              <span>Mis Guardados ({facetCounts.savedCount})</span>
             </button>
           </div>
 
@@ -679,18 +781,50 @@ export default function App() {
             </span>
             {STORE_CHIPS.map((chip) => {
               const isSelected = selectedStore === chip.id;
+              const count = facetCounts.storeCounts[chip.id] ?? 0;
               return (
                 <button
                   key={chip.id}
                   onClick={() => setSelectedStore(chip.id === 'all' ? 'all' : (isSelected ? 'all' : chip.id))}
-                  className={`px-2.5 py-1 rounded-md transition-all text-xs ${
+                  className={`px-2.5 py-1 rounded-md transition-all text-xs flex items-center gap-1 ${
                     isSelected
                       ? 'bg-blue-600 border border-blue-500 text-white font-semibold shadow-sm'
                       : 'text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/60'
                   }`}
                   title={isSelected && chip.id !== 'all' ? 'Haz clic para deseleccionar' : undefined}
                 >
-                  {chip.label}
+                  <span>{chip.label}</span>
+                  <span className={`text-[10px] font-mono px-1 rounded ${isSelected ? 'bg-blue-700 text-white' : 'text-slate-400 bg-slate-900'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Filtro por Presupuesto */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-2.5 mt-2.5 border-t border-slate-800/60 text-xs">
+            <span className="text-slate-400 mr-1 text-[11px] uppercase font-semibold flex items-center gap-1">
+              <DollarSign className="w-3 h-3 text-emerald-400" /> Presupuesto:
+            </span>
+            {BUDGET_CHIPS.map((chip) => {
+              const isSelected = budgetFilter === chip.id;
+              const count = facetCounts.budgetCounts[chip.id] ?? 0;
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => setBudgetFilter(chip.id === 'all' ? 'all' : (isSelected ? 'all' : chip.id))}
+                  className={`px-2.5 py-1 rounded-md transition-all text-xs flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-emerald-600 border border-emerald-500 text-white font-semibold shadow-sm'
+                      : 'text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/60'
+                  }`}
+                  title={chip.range}
+                >
+                  <span>{chip.label}</span>
+                  <span className={`text-[10px] font-mono px-1 rounded ${isSelected ? 'bg-emerald-700 text-white' : 'text-slate-400 bg-slate-900'}`}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -701,27 +835,24 @@ export default function App() {
             <span className="text-slate-400 mr-1 text-[11px] uppercase font-semibold flex items-center gap-1">
               <Tag className="w-3 h-3 text-slate-400" /> Categoría:
             </span>
-            {[
-              { id: 'all', label: 'Todas las categorías' },
-              { id: 'tv_audio', label: '📺 Pantallas y Audio' },
-              { id: 'smartphones', label: '📱 Celulares' },
-              { id: 'computacion', label: '💻 Laptops y Computadoras' },
-              { id: 'linea_blanca', label: '❄️ Línea Blanca (Refrigeración y Lavado)' },
-              { id: 'gaming', label: '🎮 Consolas y Videojuegos' },
-            ].map((cat) => {
+            {CATEGORY_CHIPS.map((cat) => {
               const isSelected = selectedCategory === cat.id;
+              const count = facetCounts.categoryCounts[cat.id] ?? 0;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id === 'all' ? 'all' : (isSelected ? 'all' : cat.id))}
-                  className={`px-2.5 py-1 rounded-md transition-colors text-xs ${
+                  className={`px-2.5 py-1 rounded-md transition-colors text-xs flex items-center gap-1 ${
                     isSelected
                       ? 'bg-blue-600 border border-blue-500 text-white font-semibold shadow-sm'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/50 bg-slate-950/60 border border-slate-800/60'
                   }`}
                   title={isSelected && cat.id !== 'all' ? 'Haz clic para deseleccionar' : undefined}
                 >
-                  {cat.label}
+                  <span>{cat.label}</span>
+                  <span className={`text-[10px] font-mono px-1 rounded ${isSelected ? 'bg-blue-700 text-white' : 'text-slate-400 bg-slate-900'}`}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -743,13 +874,14 @@ export default function App() {
                 Mostrando <strong className="font-mono text-white">{(safeCurrentPage - 1) * pageSize + 1} - {Math.min(safeCurrentPage * pageSize, sortedDeals.length)}</strong> de <strong className="font-mono text-blue-400 font-bold">{sortedDeals.length}</strong> ofertas
               </span>
             )}
-            {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all') && (
+            {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all' || budgetFilter !== 'all') && (
               <button
                 onClick={() => {
                   setSearchTerm('');
                   setFilterScore('all');
                   setSelectedCategory('all');
                   setSelectedStore('all');
+                  setBudgetFilter('all');
                 }}
                 className="text-blue-400 hover:underline font-medium inline-flex items-center gap-1"
               >
@@ -976,6 +1108,11 @@ export default function App() {
                   </div>
 
                   <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800/80">
+                    {/* Mini Sparkline de 60 días */}
+                    <div className="hidden lg:block">
+                      <PriceSparkline deal={deal} compact />
+                    </div>
+
                     <div className="text-left md:text-right">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg sm:text-xl font-extrabold font-mono text-white">
@@ -995,6 +1132,18 @@ export default function App() {
                     </div>
 
                     <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => toggleSaveDeal(deal.id, e)}
+                        className={`p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl transition-colors border ${
+                          isDealSaved(deal.id)
+                            ? 'bg-rose-950/60 text-rose-400 border-rose-800/80'
+                            : 'text-slate-400 hover:text-rose-400 bg-slate-800/80 hover:bg-slate-700 border-transparent'
+                        }`}
+                        title={isDealSaved(deal.id) ? 'Quitar de mis guardados' : 'Guardar en mi lista'}
+                        aria-label="Guardar oferta"
+                      >
+                        <Heart className={`w-4 h-4 ${isDealSaved(deal.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                      </button>
                       <button
                         onClick={(e) => handleShareWhatsApp(deal, e)}
                         className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-emerald-400 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition-colors"
@@ -1058,11 +1207,6 @@ export default function App() {
               const maxPriceStore = allPodiumStores[allPodiumStores.length - 1];
               const maxSavingsVsWorst = (maxPriceStore.price - bestStore.price).toFixed(2);
 
-              // Cálculo de porcentaje de rebaja real sobre el costo normal en octubre
-              const pctSavings = deal.baselinePrice30d > deal.currentPrice
-                ? Math.round(((deal.baselinePrice30d - deal.currentPrice) / deal.baselinePrice30d) * 100)
-                : 0;
-
               return (
                 <div 
                   key={deal.id}
@@ -1074,7 +1218,7 @@ export default function App() {
                   }`}
                 >
                   <div className="flex flex-col md:flex-row gap-4 sm:gap-5 items-stretch">
-                    {/* 1. Columna Imagen + Badge Flotante de Stock */}
+                    {/* 1. Columna Imagen + Badge Flotante de Stock + Guardar */}
                     <div className="w-full md:w-44 lg:w-48 h-44 md:h-auto md:min-h-[190px] bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden relative p-2.5 group">
                       {/* Badge Flotante de Stock en Tiempo Real */}
                       <div className="absolute top-2 left-2 z-10">
@@ -1090,6 +1234,20 @@ export default function App() {
                           </span>
                         )}
                       </div>
+
+                      {/* Botón Flotante de Guardar / Favoritos */}
+                      <button
+                        onClick={(e) => toggleSaveDeal(deal.id, e)}
+                        className={`absolute top-2 right-2 z-10 p-1.5 rounded-full backdrop-blur-md transition-all shadow-md ${
+                          isDealSaved(deal.id)
+                            ? 'bg-rose-950/90 text-rose-400 border border-rose-500/80 scale-105'
+                            : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-700/60'
+                        }`}
+                        title={isDealSaved(deal.id) ? 'Quitar de mis guardados' : 'Guardar en mi lista de Black Friday'}
+                        aria-label={isDealSaved(deal.id) ? 'Quitar de guardados' : 'Guardar en mi lista'}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isDealSaved(deal.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                      </button>
 
                       {deal.imageUrl && !imgErrors[deal.id] ? (
                         <img 
@@ -1132,10 +1290,10 @@ export default function App() {
                         {deal.title}
                       </h3>
 
-                      {/* Caja del Veredicto */}
-                      <div className={`rounded-xl p-3 text-xs sm:text-sm font-medium flex items-start gap-2.5 mb-3 ${
-                        isInflated ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30' :
-                        isGanga ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' :
+                      {/* Caja del Veredicto con Sello Cívico */}
+                      <div className={`rounded-xl p-3 text-xs sm:text-sm font-medium flex items-start gap-2.5 mb-3 transition-shadow ${
+                        isInflated ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.12)]' :
+                        isGanga ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.12)]' :
                         isGood ? 'bg-blue-500/10 text-blue-300 border border-blue-500/30' :
                         'bg-amber-500/10 text-amber-300 border border-amber-500/30'
                       }`}>
@@ -1146,40 +1304,17 @@ export default function App() {
                         
                         <div>
                           <span className="font-bold uppercase tracking-wider block text-[11px] mb-0.5">
-                            {isGanga && '🟢 Resultado: ¡Rebaja Real Comprobada!'}
-                            {isInflated && '🔴 Alerta: Cuidado — Precio Inflado'}
-                            {isGood && '🟢 Resultado: Descuento Real'}
-                            {!isInflated && !isGanga && !isGood && '🟡 Resultado: Mismo Precio de Siempre'}
+                            {isGanga && '🟢 Veredicto: ¡Rebaja Real Comprobada!'}
+                            {isInflated && '🔴 Alerta Art. 31 LPC: Precio Inflado Previo a Black Friday'}
+                            {isGood && '🟢 Veredicto: Descuento Real Verificado'}
+                            {!isInflated && !isGanga && !isGood && '🟡 Veredicto: Mismo Precio de Todo el Año'}
                           </span>
                           <span className="leading-relaxed">{deal.verdictMessage}</span>
                         </div>
                       </div>
 
-                      {/* Termómetro Gráfico de Ahorro Real */}
-                      {deal.baselinePrice30d > 0 && (
-                        <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5 mb-3">
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5 font-medium">
-                            <span>Precio Habitual: <strong className="text-slate-300 font-mono">${deal.baselinePrice30d.toFixed(2)}</strong></span>
-                            {pctSavings > 0 ? (
-                              <span className="text-emerald-400 font-bold font-mono">-{pctSavings}% de Rebaja Real</span>
-                            ) : (
-                              <span className="text-amber-400 font-medium font-mono">0% rebaja real</span>
-                            )}
-                            <span>Hoy: <strong className="text-white font-mono">${deal.currentPrice.toFixed(2)}</strong></span>
-                          </div>
-                          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden flex">
-                            <div 
-                              className={`h-full transition-all duration-500 ${
-                                isInflated ? 'bg-rose-500' :
-                                isGanga ? 'bg-emerald-500' :
-                                isGood ? 'bg-blue-500' :
-                                'bg-amber-500'
-                              }`}
-                              style={{ width: `${Math.min(Math.max(pctSavings, 12), 100)}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
+                      {/* Micro-Gráfica de Tendencia Histórica de Precios (Idealo/Keepa) */}
+                      <PriceSparkline deal={deal} />
 
                       {/* Podio Visual Cross-Store (🥇 🥈 🥉 ❌) */}
                       {deal.competitors && deal.competitors.length > 0 && (
@@ -1286,23 +1421,38 @@ export default function App() {
                         <span>Ver cómo calculamos el precio</span>
                       </button>
 
-                      {/* Botones de Compartir y Copiar Enlace */}
-                      <div className="grid grid-cols-2 gap-2 w-full">
+                      {/* Botones de Guardar, Compartir WhatsApp y Copiar */}
+                      <div className="grid grid-cols-3 gap-1.5 w-full">
+                        <button
+                          onClick={(e) => toggleSaveDeal(deal.id, e)}
+                          className={`min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-colors border ${
+                            isDealSaved(deal.id)
+                              ? 'bg-rose-950/60 text-rose-300 border-rose-800/80'
+                              : 'text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border-slate-700/60'
+                          }`}
+                          title={isDealSaved(deal.id) ? 'Quitar de mis guardados' : 'Guardar oferta en mi lista'}
+                          aria-label="Guardar oferta"
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${isDealSaved(deal.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                          <span className="hidden sm:inline">{isDealSaved(deal.id) ? 'Guardado' : 'Guardar'}</span>
+                        </button>
                         <button
                           onClick={(e) => handleShareWhatsApp(deal, e)}
-                          className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center gap-1.5 transition-colors"
+                          className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center gap-1 transition-colors"
                           title="Compartir por WhatsApp"
+                          aria-label="Compartir por WhatsApp"
                         >
-                          <MessageCircle className="w-4 h-4 text-emerald-400" />
-                          <span>WhatsApp</span>
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="hidden sm:inline">WhatsApp</span>
                         </button>
                         <button
                           onClick={(e) => handleCopyLink(deal, e)}
-                          className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center gap-1.5 transition-colors"
+                          className="min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center gap-1 transition-colors"
                           title="Copiar enlace"
+                          aria-label="Copiar enlace"
                         >
-                          <Copy className="w-4 h-4 text-blue-400" />
-                          <span>Copiar</span>
+                          <Copy className="w-3.5 h-3.5 text-blue-400" />
+                          <span className="hidden sm:inline">Copiar</span>
                         </button>
                       </div>
 
@@ -1510,7 +1660,7 @@ export default function App() {
       )}
 
       {/* Footer Legal & Transparencia Institucional */}
-      <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-4">
+      <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 pb-24 sm:pb-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-4">
         {/* Enlaces Directos a Subpáginas / Modales Institucionales */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-xs font-semibold text-slate-300">
           <button
@@ -1557,6 +1707,56 @@ export default function App() {
           San Salvador, El Salvador • Cero datos personales recopilados • 100% Acceso Público
         </div>
       </footer>
+
+      {/* Mobile Sticky Bottom Navigation Bar (Thumb-zone friendly) */}
+      <nav aria-label="Navegación rápida en móvil" className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800 backdrop-blur-xl px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        <button
+          onClick={() => {
+            setFilterScore(filterScore === 'reales' ? 'all' : 'reales');
+            window.scrollTo({ top: 380, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold py-1 px-2 rounded-lg transition-colors ${
+            filterScore === 'reales' ? 'text-emerald-400 bg-emerald-950/70 border border-emerald-800/50' : 'text-slate-400'
+          }`}
+        >
+          <Flame className="w-4 h-4" />
+          <span>Gangas ({facetCounts.realCount})</span>
+        </button>
+        <button
+          onClick={() => {
+            setFilterScore(filterScore === 'falsa_oferta_inflada' ? 'all' : 'falsa_oferta_inflada');
+            window.scrollTo({ top: 380, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold py-1 px-2 rounded-lg transition-colors ${
+            filterScore === 'falsa_oferta_inflada' ? 'text-rose-400 bg-rose-950/70 border border-rose-800/50' : 'text-slate-400'
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          <span>Inflados ({facetCounts.inflatedCount})</span>
+        </button>
+        <button
+          onClick={() => {
+            setFilterScore(filterScore === 'guardados' ? 'all' : 'guardados');
+            window.scrollTo({ top: 380, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold py-1 px-2 rounded-lg transition-colors ${
+            filterScore === 'guardados' ? 'text-rose-400 bg-rose-950/70 border border-rose-800/50' : 'text-slate-400'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${facetCounts.savedCount > 0 ? 'fill-rose-500 text-rose-500' : ''}`} />
+          <span>Guardados ({facetCounts.savedCount})</span>
+        </button>
+        <button
+          onClick={() => {
+            searchInputRef.current?.focus();
+            searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          className="flex flex-col items-center gap-0.5 text-[10px] font-semibold py-1 px-2 rounded-lg text-slate-400 hover:text-white"
+        >
+          <Search className="w-4 h-4" />
+          <span>Buscar</span>
+        </button>
+      </nav>
 
       {/* Modal Institucional (Aviso Legal, Metodología, Privacidad) */}
       <LegalModals
