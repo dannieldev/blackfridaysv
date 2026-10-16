@@ -399,21 +399,37 @@ export default function App() {
         setCategory("all");
         if (filter !== "all") {
           setFilter("all");
+          if (sort === "recent") setSort("compare");
         }
       } else {
         if (filter === "saved" && savedCount === 0) {
           setFilter("all");
+          if (sort === "recent") setSort("compare");
         }
         setCategory((previous) => (previous === id ? "all" : id));
       }
     });
   const toggleFilter = (id: "all" | "discounted" | "compare" | "saved") =>
-    change(() => setFilter((previous) => (previous === id ? "all" : id)));
+    change(() => {
+      const nextFilter = filter === id ? "all" : id;
+      setFilter(nextFilter);
+      if (nextFilter === "saved") {
+        setSort("recent");
+      } else if (sort === "recent") {
+        setSort("compare");
+      }
+    });
   const toggleSaved = () => {
     if (filter === "saved") {
-      change(() => setFilter("all"));
+      change(() => {
+        setFilter("all");
+        if (sort === "recent") setSort("compare");
+      });
     } else {
-      change(() => setFilter("saved"));
+      change(() => {
+        setFilter("saved");
+        setSort("recent");
+      });
       scrollToResults();
     }
   };
@@ -424,6 +440,7 @@ export default function App() {
     setBudget("all");
     setAvailableOnly(false);
     setFilter("all");
+    setSort("compare");
     setPage(1);
   };
   const categoryDeals = useMemo(
@@ -457,6 +474,9 @@ export default function App() {
       );
     });
     return result.sort((a, b) => {
+      if (sort === "recent") {
+        return savedIds.indexOf(b.id) - savedIds.indexOf(a.id);
+      }
       if (sort === "price_asc") return a.currentPrice - b.currentPrice;
       if (sort === "price_desc") return b.currentPrice - a.currentPrice;
       if (sort === "discount")
@@ -943,11 +963,23 @@ export default function App() {
                       change(() => setSort(event.target.value))
                     }
                   >
-                    <option value="compare">Disponibles en varias tiendas</option>
-                    <option value="savings">Mayor ahorro en dinero ($)</option>
-                    <option value="discount">Mayor porcentaje de descuento (%)</option>
-                    <option value="price_asc">Precio: de menor a mayor</option>
-                    <option value="price_desc">Precio: de mayor a menor</option>
+                    {filter === "saved" ? (
+                      <>
+                        <option value="recent">Más recientes primero</option>
+                        <option value="price_asc">Precio: de menor a mayor</option>
+                        <option value="price_desc">Precio: de mayor a menor</option>
+                        <option value="discount">Mayor porcentaje de descuento (%)</option>
+                        <option value="savings">Mayor ahorro en dinero ($)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="compare">Disponibles en varias tiendas</option>
+                        <option value="price_asc">Precio: de menor a mayor</option>
+                        <option value="price_desc">Precio: de mayor a menor</option>
+                        <option value="discount">Mayor porcentaje de descuento (%)</option>
+                        <option value="savings">Mayor ahorro en dinero ($)</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown aria-hidden="true" />
                 </label>
