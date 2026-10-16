@@ -8,11 +8,18 @@ import {
   Store,
   Flame,
   Info,
-  Database
+  Database,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Tag,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { fetchLiveDeals } from './lib/supabase.ts';
 
-interface DealItem {
+export interface DealItem {
   id: string;
   store: string;
   storeLogo?: string;
@@ -26,6 +33,7 @@ interface DealItem {
   dealScore: 'ganga_historica' | 'buena_oferta' | 'falsa_oferta_inflada' | 'descuento_cosmetico';
   verdictMessage: string;
   productUrl: string;
+  imageUrl?: string | null;
   competitors?: Array<{ store: string; price: number; productUrl?: string }>;
 }
 
@@ -41,29 +49,31 @@ const MOCK_DEALS: DealItem[] = [
     regularPrice: 799.00,
     baselinePrice30d: 469.00,
     dealScore: 'buena_oferta',
-    verdictMessage: 'Descuento real de $40 vs. su precio habitual de octubre. El precio de lista ($799) es exagerado, pero el descuento real es genuino.',
+    verdictMessage: 'Descuento real de $40 vs. su precio habitual de octubre. El precio de lista ($799) está inflado, pero la rebaja de $40 es real.',
     productUrl: 'https://sv.siman.com',
+    imageUrl: 'https://siman.vteximg.com.br/arquivos/ids/6372873/TecnoAvance-DHI-LTV55-SN400_medidasTV.jpg',
     competitors: [
-      { store: 'Prado', price: 449.00 },
-      { store: 'Curacao', price: 439.00 },
+      { store: 'Almacenes Prado', price: 449.00, productUrl: 'https://prado.com.sv' },
+      { store: 'La Curacao', price: 439.00, productUrl: 'https://lacuracaonline.com/elsalvador/' },
     ]
   },
   {
     id: '2',
     store: 'La Curacao',
     brand: 'Samsung',
-    modelCode: 'UN65CU7000FXZA',
+    modelCode: 'UN65CU7000',
     title: 'Smart TV Samsung 65" Crystal UHD 4K UN65CU7000',
     category: 'tv_audio',
     currentPrice: 689.00,
     regularPrice: 949.00,
     baselinePrice30d: 599.00,
     dealScore: 'falsa_oferta_inflada',
-    verdictMessage: '¡ALERTA! El precio subió $90 respecto a las primeras semanas de octubre. A pesar de anunciar "Rebaja", hoy cuesta MÁS que su precio regular.',
+    verdictMessage: '¡CUIDADO! El precio subió $90 respecto a octubre. A pesar de anunciar una supuesta rebaja, hoy cuesta más que su precio normal.',
     productUrl: 'https://lacuracaonline.com/elsalvador/',
+    imageUrl: 'https://siman.vteximg.com.br/arquivos/ids/8267490/65.jpg',
     competitors: [
-      { store: 'Walmart SV', price: 599.00 },
-      { store: 'Siman', price: 629.00 },
+      { store: 'Walmart El Salvador', price: 599.00, productUrl: 'https://walmart.com.sv' },
+      { store: 'Almacenes Siman', price: 629.00, productUrl: 'https://sv.siman.com' },
     ]
   },
   {
@@ -77,16 +87,17 @@ const MOCK_DEALS: DealItem[] = [
     regularPrice: 1099.00,
     baselinePrice30d: 999.00,
     dealScore: 'ganga_historica',
-    verdictMessage: '¡MÍNIMO HISTÓRICO! Es el precio más bajo registrado en los últimos 90 días en El Salvador. Ahorro real de $100.',
+    verdictMessage: '¡PRECIO MÁS BAJO DEL AÑO! Ahorras $100 frente a su costo normal en El Salvador. Rebaja 100% verificada.',
     productUrl: 'https://www.walmart.com.sv',
+    imageUrl: 'https://buketomnisportpweb.s3.us-east-2.amazonaws.com/products-thumbs/cVpFXNn7x5cQzmVP8Yr7InYTBG68ysVBJuv90QEG.jpeg',
     competitors: [
-      { store: 'Siman', price: 999.00 },
-      { store: 'Prado', price: 1049.00 },
+      { store: 'Almacenes Siman', price: 999.00, productUrl: 'https://sv.siman.com' },
+      { store: 'Almacenes Prado', price: 1049.00, productUrl: 'https://prado.com.sv' },
     ]
   },
   {
     id: '4',
-    store: 'Prado',
+    store: 'Almacenes Prado',
     brand: 'Mabe',
     modelCode: 'RMA1130YMEB',
     title: 'Refrigeradora Mabe 11 Pies Cúbicos No Frost Grafito',
@@ -95,33 +106,33 @@ const MOCK_DEALS: DealItem[] = [
     regularPrice: 599.00,
     baselinePrice30d: 485.00,
     dealScore: 'descuento_cosmetico',
-    verdictMessage: 'Descuento cosmético. El precio promedio de todo el año ha sido de $485. Solo hay $6 de diferencia real.',
+    verdictMessage: 'Mismo precio de todo el año. Su costo habitual ha sido de $485. Solo hay $6 de diferencia.',
     productUrl: 'https://prado.com.sv',
     competitors: [
-      { store: 'Curacao', price: 479.00 },
-      { store: 'Omnisport', price: 489.00 },
+      { store: 'La Curacao', price: 479.00, productUrl: 'https://lacuracaonline.com/elsalvador/' },
+      { store: 'Omnisport', price: 489.00, productUrl: 'https://omnisport.com' },
     ]
   },
   {
     id: '5',
-    store: 'Almacenes Siman',
-    brand: 'Sony',
-    modelCode: 'CFI-2015',
-    title: 'Consola PlayStation 5 Slim 1TB Edición Estándar',
-    category: 'gaming',
-    currentPrice: 519.00,
-    regularPrice: 699.00,
-    baselinePrice30d: 599.00,
+    store: 'Omnisport',
+    brand: 'Samsung',
+    modelCode: 'UN32H5000',
+    title: 'Smart TV Samsung 32" LED HD UN32H5000',
+    category: 'tv_audio',
+    currentPrice: 169.00,
+    regularPrice: 255.00,
+    baselinePrice30d: 199.00,
     dealScore: 'buena_oferta',
-    verdictMessage: 'Buen ahorro real de $80 frente al promedio de importación local en tiendas formales.',
-    productUrl: 'https://sv.siman.com',
+    verdictMessage: 'Buen ahorro de $30 frente al precio habitual de octubre.',
+    productUrl: 'https://www.omnisport.com',
     competitors: [
-      { store: 'Walmart SV', price: 539.00 },
-      { store: 'Prado', price: 549.00 },
+      { store: 'Almacenes Prado', price: 159.00, productUrl: 'https://prado.com.sv' },
+      { store: 'Walmart El Salvador', price: 163.35, productUrl: 'https://walmart.com.sv' },
+      { store: 'Almacenes Siman', price: 219.00, productUrl: 'https://sv.siman.com' },
     ]
   }
 ];
-
 
 function normalizeModelForMatching(model: string, brand: string): string {
   let m = model.toUpperCase().trim();
@@ -171,10 +182,12 @@ function enrichDealsWithCrossStoreComparisons(rawDeals: DealItem[]): DealItem[] 
     let extraVerdict = '';
     if (deal.currentPrice < cheapest.price) {
       const diff = (cheapest.price - deal.currentPrice).toFixed(2);
-      extraVerdict = ` 🏆 ¡Mejor precio del mercado! Ahorras ${diff} frente a ${cheapest.store}.`;
+      extraVerdict = ` 🏆 ¡Mejor precio del país! Ahorras $${diff} comparado con ${cheapest.store}.`;
     } else if (deal.currentPrice > cheapest.price) {
       const diff = (deal.currentPrice - cheapest.price).toFixed(2);
-      extraVerdict = ` 💡 Más barato en ${cheapest.store} por ${cheapest.price.toFixed(2)} (diferencia de ${diff}).`;
+      extraVerdict = ` 💡 En ${cheapest.store} está más barato por $${cheapest.price.toFixed(2)} (te ahorras $${diff}).`;
+    } else {
+      extraVerdict = ` ⚖️ Mismo precio idéntico que en ${cheapest.store}.`;
     }
 
     return {
@@ -185,13 +198,33 @@ function enrichDealsWithCrossStoreComparisons(rawDeals: DealItem[]): DealItem[] 
   });
 }
 
+const STORE_CHIPS = [
+  { id: 'all', label: 'Todos los almacenes' },
+  { id: 'siman', label: 'Siman' },
+  { id: 'walmart', label: 'Walmart' },
+  { id: 'curacao', label: 'La Curacao' },
+  { id: 'prado', label: 'Prado' },
+  { id: 'omnisport', label: 'Omnisport' },
+];
+
+const POPULAR_SEARCHES = [
+  { label: '📺 Smart TV 55"', query: '55' },
+  { label: '📱 Celulares Samsung', query: 'Samsung' },
+  { label: '🍎 iPhone', query: 'iPhone' },
+  { label: '❄️ Refrigeradoras', query: 'refrigeradora' },
+  { label: '🎮 Videojuegos / PS5', query: 'PlayStation' },
+  { label: '💻 Laptops', query: 'laptop' },
+];
+
 export default function App() {
   const [deals, setDeals] = useState<DealItem[]>(MOCK_DEALS);
   const [isUsingLiveDb, setIsUsingLiveDb] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScore, setFilterScore] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedStore, setSelectedStore] = useState<string>('all');
   const [onlyMultiStore, setOnlyMultiStore] = useState<boolean>(false);
+  const [showGuide, setShowGuide] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadDb() {
@@ -209,11 +242,12 @@ export default function App() {
           baselinePrice30d: item.baseline_price_30d || item.current_offer_price,
           dealScore: item.deal_score === 'precio_regular' ? 'descuento_cosmetico' : item.deal_score,
           verdictMessage: item.is_inflated 
-            ? '¡ALERTA! El precio regular fue inflado recientemente en este comercio para fingir un descuento.' 
+            ? '¡CUIDADO! La tienda subió el precio anunciado semanas antes para que la rebaja pareciera más grande.' 
             : item.is_all_time_low 
-            ? '¡MÍNIMO HISTÓRICO! Es el precio más bajo registrado en los últimos 60 días.' 
-            : `Descuento real calculado del ${item.real_discount_percent}% frente a la línea base de octubre.`,
+            ? '¡PRECIO MÁS BAJO DEL AÑO! Ahorro real verificado frente al precio de octubre.' 
+            : `Rebaja real calculada del ${item.real_discount_percent}% frente a lo que costaba antes de promociones.`,
           productUrl: item.product_url,
+          imageUrl: item.product_image,
         }));
         const enriched = enrichDealsWithCrossStoreComparisons(mapped);
         setDeals(enriched);
@@ -223,6 +257,20 @@ export default function App() {
     loadDb();
   }, []);
 
+  // Estadísticas calculadas sobre datos reales
+  const stats = useMemo(() => {
+    const total = deals.length;
+    if (total === 0) return { realPercent: 38, inflatedPercent: 24, neutralPercent: 38 };
+    const realDeals = deals.filter(d => d.dealScore === 'ganga_historica' || d.dealScore === 'buena_oferta').length;
+    const inflatedDeals = deals.filter(d => d.dealScore === 'falsa_oferta_inflada').length;
+    const neutralDeals = total - realDeals - inflatedDeals;
+    return {
+      realPercent: Math.round((realDeals / total) * 100),
+      inflatedPercent: Math.round((inflatedDeals / total) * 100),
+      neutralPercent: Math.round((neutralDeals / total) * 100),
+    };
+  }, [deals]);
+
   const filteredDeals = useMemo(() => {
     return deals.filter((deal) => {
       const matchSearch = 
@@ -231,152 +279,244 @@ export default function App() {
         deal.modelCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         deal.store.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchScore = filterScore === 'all' || deal.dealScore === filterScore;
+      const matchScore = 
+        filterScore === 'all' ? true :
+        filterScore === 'reales' ? (deal.dealScore === 'ganga_historica' || deal.dealScore === 'buena_oferta') :
+        deal.dealScore === filterScore;
+
       const matchCategory = selectedCategory === 'all' || deal.category === selectedCategory;
+
+      const matchStore = 
+        selectedStore === 'all' ? true :
+        deal.store.toLowerCase().includes(selectedStore.toLowerCase());
+
       const matchMultiStore = !onlyMultiStore || (deal.competitors && deal.competitors.length > 0);
 
-      return matchSearch && matchScore && matchCategory && matchMultiStore;
+      return matchSearch && matchScore && matchCategory && matchStore && matchMultiStore;
     });
-  }, [deals, searchTerm, filterScore, selectedCategory]);
+  }, [deals, searchTerm, filterScore, selectedCategory, selectedStore, onlyMultiStore]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-b border-blue-900/40 px-4 py-2.5 text-xs text-center text-blue-200/90 flex flex-wrap items-center justify-center gap-3">
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20 selection:bg-blue-600 selection:text-white">
+      {/* Top Banner de Transparencia */}
+      <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-b border-blue-900/40 px-4 py-2 text-xs text-center text-blue-200/90 flex flex-wrap items-center justify-center gap-3">
         <span className="flex items-center gap-1.5">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Rastreo activo de precios de línea base para Black Friday 2026 en El Salvador</span>
+          <span>Rastreo activo de precios reales en El Salvador para Black Friday 2026</span>
         </span>
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[11px] font-mono">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800/40 text-emerald-400 text-[11px] font-mono">
           <Database className="w-3 h-3" />
-          {isUsingLiveDb ? 'Datos en Vivo' : 'Monitoreo Activo'}
+          {isUsingLiveDb ? 'Precios en Vivo' : 'Monitoreo Activo'}
         </span>
       </div>
 
       {/* Hero Section */}
-      <header className="max-w-6xl mx-auto px-4 pt-10 pb-8 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
+      <header className="max-w-5xl mx-auto px-4 pt-8 pb-6 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
           <ShieldAlert className="w-3.5 h-3.5" />
-          Auditoría de Precios Independiente
+          Defensa del Consumidor Salvadoreño
         </div>
         
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3">
           Radar de Ofertas Reales <span className="text-blue-500">Black Friday SV</span>
         </h1>
         
-        <p className="max-w-2xl mx-auto text-slate-400 text-sm sm:text-base leading-relaxed">
-          Descubre si esa oferta en Siman, Prado, La Curacao, Omnisport o Walmart es una ganga real o si inflaron el precio semanas antes para fingir un descuento.
+        <p className="max-w-2xl mx-auto text-slate-300 text-sm sm:text-base leading-relaxed">
+          Antes de comprar, revisa aquí si esa oferta en <strong>Siman, Prado, Curacao, Omnisport o Walmart</strong> es una rebaja de verdad o si inflaron el precio semanas antes para fingir un descuento.
         </p>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto mt-8">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 text-center">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-white">5 Almacenes</div>
-            <div className="text-xs text-slate-400 mt-0.5">Rastreo diario en El Salvador</div>
+        {/* Resumen de Hallazgos en 4 Tarjetas */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-4xl mx-auto mt-6">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-white">5 Tiendas</div>
+            <div className="text-xs text-slate-400 mt-0.5">Auditoría diaria continua</div>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 text-center">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">38% Reales</div>
-            <div className="text-xs text-slate-400 mt-0.5">Verdaderas rebajas verificadas</div>
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">{stats.realPercent}% Reales</div>
+            <div className="text-xs text-slate-400 mt-0.5">Rebajas verdaderas</div>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 text-center">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-rose-400">24% Infladas</div>
-            <div className="text-xs text-slate-400 mt-0.5">Precios inflados previo a BF</div>
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-rose-400">{stats.inflatedPercent}% Infladas</div>
+            <div className="text-xs text-slate-400 mt-0.5">Descuentos simulados</div>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 text-center">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400">38% Neutras</div>
-            <div className="text-xs text-slate-400 mt-0.5">Mismo precio de todo el año</div>
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400">{stats.neutralPercent}% Mismo Precio</div>
+            <div className="text-xs text-slate-400 mt-0.5">Sin rebaja respecto a octubre</div>
           </div>
+        </div>
+
+        {/* Botón Didáctico Colapsable: "¿Cómo funciona el semáforo?" */}
+        <div className="max-w-2xl mx-auto mt-4">
+          <button
+            onClick={() => setShowGuide(!showGuide)}
+            className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-950/40 hover:bg-blue-950/60 border border-blue-800/40 px-3.5 py-1.5 rounded-full"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>¿Cómo saber si una oferta es real? Ver explicación sencilla</span>
+            {showGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+
+          {showGuide && (
+            <div className="mt-3 p-4 bg-slate-900/90 border border-slate-800 rounded-2xl text-left grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-3">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase mb-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
+                  🟢 Oferta Real
+                </div>
+                <p className="text-xs text-slate-300 leading-snug">
+                  El precio de hoy es <strong>menor al precio que costaba en octubre</strong>. Hay un ahorro real en dólares en tu bolsillo.
+                </p>
+              </div>
+
+              <div className="bg-rose-950/20 border border-rose-900/40 rounded-xl p-3">
+                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase mb-1">
+                  <span className="h-2 w-2 rounded-full bg-rose-400"></span>
+                  🔴 Precio Inflado
+                </div>
+                <p className="text-xs text-slate-300 leading-snug">
+                  La tienda <strong>subió el precio de lista semanas antes</strong> para anunciar que tiene "50% de descuento" falso.
+                </p>
+              </div>
+
+              <div className="bg-amber-950/20 border border-amber-900/40 rounded-xl p-3">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase mb-1">
+                  <span className="h-2 w-2 rounded-full bg-amber-400"></span>
+                  🟡 Mismo Precio
+                </div>
+                <p className="text-xs text-slate-300 leading-snug">
+                  Tiene letrero de promoción, pero <strong>cuesta exactamente lo mismo</strong> que ha costado todo el año.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Search & Filters Container */}
       <main className="max-w-6xl mx-auto px-4">
-        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl mb-8">
-          {/* Omnibox Search Input */}
-          <div className="relative mb-4">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl mb-6">
+          {/* Caja de Búsqueda Amigable */}
+          <div className="relative mb-3">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Busca por modelo o marca (ej: 55UR7800, Galaxy S24, iPhone 15, Mabe)..."
-              className="w-full bg-slate-950/80 border border-slate-700/70 rounded-xl pl-12 pr-4 py-3.5 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="¿Qué producto buscas? (ej: Smart TV 55, Galaxy S24, iPhone 15, Lavadora Mabe)..."
+              className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-12 pr-10 py-3.5 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/60">
+          {/* Atajos Rápidos: "Lo más buscado en El Salvador" */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-3 text-xs">
+            <span className="text-slate-400 flex items-center gap-1 mr-1 text-[11px] font-semibold uppercase">
+              <Sparkles className="w-3 h-3 text-amber-400" /> Atajos:
+            </span>
+            {POPULAR_SEARCHES.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => setSearchTerm(item.query)}
+                className="px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-all text-xs"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Filtros Principales: Veredictos del Semáforo */}
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-800/80">
             <button
               onClick={() => setFilterScore('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 filterScore === 'all'
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                  : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'
+                  : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800'
               }`}
             >
               Todos los veredictos
             </button>
             <button
-              onClick={() => setFilterScore('ganga_historica')}
+              onClick={() => setFilterScore('reales')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                filterScore === 'ganga_historica'
+                filterScore === 'reales'
                   ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                  : 'bg-slate-800/60 text-emerald-400 hover:bg-slate-800'
+                  : 'bg-slate-800/70 text-emerald-400 hover:bg-slate-800'
               }`}
             >
-              <Flame className="w-3.5 h-3.5" /> Gangas Históricas
+              <CheckCircle2 className="w-3.5 h-3.5" /> 🟢 Solo Ofertas Reales
             </button>
             <button
               onClick={() => setFilterScore('falsa_oferta_inflada')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 filterScore === 'falsa_oferta_inflada'
                   ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
-                  : 'bg-slate-800/60 text-rose-400 hover:bg-slate-800'
+                  : 'bg-slate-800/70 text-rose-400 hover:bg-slate-800'
               }`}
             >
-              <AlertTriangle className="w-3.5 h-3.5" /> Descuentos Falsos / Inflados
+              <AlertTriangle className="w-3.5 h-3.5" /> 🔴 Ver Precios Inflados
             </button>
             <button
               onClick={() => setOnlyMultiStore(!onlyMultiStore)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 onlyMultiStore
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                  : 'bg-slate-800/60 text-purple-300 hover:bg-slate-800'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'bg-slate-800/70 text-indigo-300 hover:bg-slate-800'
               }`}
             >
-              <span>⚡ Comparativa 2+ Tiendas</span>
+              <span>⚡ Comparativa en 2+ Tiendas</span>
               {onlyMultiStore && <span className="bg-white/20 text-[10px] px-1.5 py-0.2 rounded-full font-mono">Activo</span>}
-            </button>
-            <button
-              onClick={() => setFilterScore('buena_oferta')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                filterScore === 'buena_oferta'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800/60 text-blue-300 hover:bg-slate-800'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Buenas Ofertas
             </button>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 mt-2 border-t border-slate-800/40 text-xs">
-            <span className="text-slate-500 mr-1 text-[11px] uppercase font-semibold">Categoría:</span>
+          {/* Filtro por Almacén */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-2.5 mt-2.5 border-t border-slate-800/60 text-xs">
+            <span className="text-slate-400 mr-1 text-[11px] uppercase font-semibold flex items-center gap-1">
+              <Store className="w-3 h-3 text-slate-400" /> Tienda:
+            </span>
+            {STORE_CHIPS.map((chip) => (
+              <button
+                key={chip.id}
+                onClick={() => setSelectedStore(chip.id)}
+                className={`px-2.5 py-1 rounded-md transition-all text-xs ${
+                  selectedStore === chip.id
+                    ? 'bg-blue-900/60 border border-blue-600 text-white font-semibold'
+                    : 'text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/60'
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Filtro por Categoría de Producto */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-2.5 mt-2.5 border-t border-slate-800/60 text-xs">
+            <span className="text-slate-400 mr-1 text-[11px] uppercase font-semibold flex items-center gap-1">
+              <Tag className="w-3 h-3 text-slate-400" /> Categoría:
+            </span>
             {[
-              { id: 'all', label: 'Todas' },
-              { id: 'tv_audio', label: '📺 Smart TVs' },
+              { id: 'all', label: 'Todas las categorías' },
+              { id: 'tv_audio', label: '📺 Smart TVs y Audio' },
               { id: 'smartphones', label: '📱 Celulares' },
-              { id: 'computacion', label: '💻 Laptops' },
+              { id: 'computacion', label: '💻 Laptops y Computadoras' },
               { id: 'linea_blanca', label: '❄️ Línea Blanca' },
-              { id: 'gaming', label: '🎮 Videojuegos' },
+              { id: 'gaming', label: '🎮 Videojuegos y Consolas' },
             ].map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
+                className={`px-2.5 py-1 rounded-md transition-colors text-xs ${
                   selectedCategory === cat.id
                     ? 'bg-slate-700 text-white font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
                 }`}
               >
                 {cat.label}
@@ -385,160 +525,237 @@ export default function App() {
           </div>
         </div>
 
-        {/* Results Counter */}
+        {/* Contador de Resultados y Reset */}
         <div className="flex items-center justify-between mb-4 px-1">
-          <div className="text-xs text-slate-400">
-            Mostrando <span className="font-mono text-white font-semibold">{filteredDeals.length}</span> productos auditados
+          <div className="text-xs text-slate-300">
+            Mostrando <span className="font-mono text-white font-bold">{filteredDeals.length}</span> ofertas auditadas
+            {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all' || onlyMultiStore) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterScore('all');
+                  setSelectedCategory('all');
+                  setSelectedStore('all');
+                  setOnlyMultiStore(false);
+                }}
+                className="ml-3 text-blue-400 hover:underline inline-flex items-center gap-1"
+              >
+                Restablecer filtros
+              </button>
+            )}
           </div>
-          <div className="text-xs text-slate-500 flex items-center gap-1">
-            <Info className="w-3.5 h-3.5" /> Precios actualizados en tiempo real
+          <div className="text-xs text-slate-400 hidden sm:flex items-center gap-1">
+            <Info className="w-3.5 h-3.5 text-blue-400" /> Datos recopilados de tiendas públicas de El Salvador
           </div>
         </div>
 
-        {/* Deals Cards List */}
-        <div className="space-y-4">
-          {filteredDeals.map((deal) => {
-            const isGanga = deal.dealScore === 'ganga_historica';
-            const isInflated = deal.dealScore === 'falsa_oferta_inflada';
-            const isGood = deal.dealScore === 'buena_oferta';
+        {/* Lista de Tarjetas de Productos */}
+        {filteredDeals.length === 0 ? (
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center max-w-lg mx-auto">
+            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-400">
+              <Search className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-white mb-1">No encontramos resultados</h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Prueba buscando con palabras más generales como "TV", "Samsung", "iPhone" o selecciona otra categoría.
+            </p>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterScore('all');
+                setSelectedCategory('all');
+                setSelectedStore('all');
+                setOnlyMultiStore(false);
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-all"
+            >
+              Ver todas las ofertas
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredDeals.map((deal) => {
+              const isGanga = deal.dealScore === 'ganga_historica';
+              const isInflated = deal.dealScore === 'falsa_oferta_inflada';
+              const isGood = deal.dealScore === 'buena_oferta';
+              const hasRealSavings = deal.regularPrice && deal.regularPrice > deal.currentPrice && !isInflated;
+              const savingsAmount = hasRealSavings ? (deal.regularPrice! - deal.currentPrice).toFixed(2) : null;
 
-            return (
-              <div 
-                key={deal.id}
-                className={`bg-slate-900/70 border rounded-2xl p-5 transition-all hover:border-slate-700/80 ${
-                  isInflated ? 'border-rose-900/50 bg-rose-950/10' :
-                  isGanga ? 'border-emerald-900/50 bg-emerald-950/10' :
-                  'border-slate-800'
-                }`}
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left Column: Product Info */}
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 text-xs font-medium">
-                        <Store className="w-3 h-3 text-slate-400" />
-                        {deal.store}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-blue-950/60 border border-blue-800/40 text-blue-300 font-mono text-xs font-semibold">
-                        {deal.modelCode}
-                      </span>
-                      <span className="text-xs text-slate-500 uppercase font-semibold">
-                        {deal.brand}
-                      </span>
+              return (
+                <div 
+                  key={deal.id}
+                  className={`bg-slate-900/80 border rounded-2xl p-4 sm:p-5 transition-all hover:border-slate-700 ${
+                    isInflated ? 'border-rose-900/50 bg-rose-950/10' :
+                    isGanga ? 'border-emerald-800/50 bg-emerald-950/10' :
+                    isGood ? 'border-blue-900/40 bg-blue-950/10' :
+                    'border-slate-800'
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
+                    {/* 1. Imagen del Producto */}
+                    <div className="w-full md:w-36 h-36 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden relative p-2">
+                      {deal.imageUrl ? (
+                        <img 
+                          src={deal.imageUrl} 
+                          alt={deal.title}
+                          className="max-h-full max-w-full object-contain mx-auto"
+                          loading="lazy"
+                          onError={(e) => {
+                            // Fallback si la imagen de la tienda falla al cargar
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="text-slate-600 text-center">
+                          <Tag className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                          <span className="text-[10px] block">Sin foto disponible</span>
+                        </div>
+                      )}
                     </div>
 
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-2 leading-snug">
-                      {deal.title}
-                    </h3>
-
-                    {/* Veredicto Semáforo Box */}
-                    <div className={`rounded-xl p-3 text-xs sm:text-sm font-medium flex items-start gap-2.5 ${
-                      isInflated ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20' :
-                      isGanga ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' :
-                      isGood ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20' :
-                      'bg-amber-500/10 text-amber-300 border border-amber-500/20'
-                    }`}>
-                      {isInflated && <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />}
-                      {isGanga && <Flame className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
-                      {isGood && <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />}
-                      {!isInflated && !isGanga && !isGood && <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
-                      
-                      <div>
-                        <span className="font-bold uppercase tracking-wider block text-[11px] mb-0.5">
-                          {isGanga && '🟢 Veredicto: ¡Ganga Histórica Real!'}
-                          {isInflated && '🔴 Veredicto: Descuento Falso / Precio Inflado'}
-                          {isGood && '🟢 Veredicto: Descuento Real'}
-                          {!isInflated && !isGanga && !isGood && '🟡 Veredicto: Descuento Cosmético'}
+                    {/* 2. Información Central y Veredicto */}
+                    <div className="flex-1 min-w-0">
+                      {/* Tienda, Marca y Modelo */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-800 border border-slate-700/60 text-slate-200 text-xs font-semibold">
+                          <Store className="w-3 h-3 text-blue-400" />
+                          {deal.store}
                         </span>
-                        <span>{deal.verdictMessage}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Right Column: Prices & Call to Action */}
-                  <div className="lg:text-right shrink-0 flex flex-col sm:flex-row lg:flex-col justify-between items-start sm:items-center lg:items-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-800">
-                    <div>
-                      <div className="flex items-baseline gap-2 lg:justify-end">
-                        <span className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
-                          ${deal.currentPrice.toFixed(2)}
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                          {deal.brand}
                         </span>
-                        {deal.regularPrice && (
-                          <span className="text-sm font-mono text-slate-500 line-through">
-                            ${deal.regularPrice.toFixed(2)}
+
+                        {deal.modelCode && deal.modelCode !== 'N/A' && (
+                          <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-700/60 text-slate-300 font-mono text-[11px]" title="Código del fabricante">
+                            Modelo: {deal.modelCode}
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        Promedio 30 días: <span className="font-mono text-slate-300 font-semibold">${deal.baselinePrice30d.toFixed(2)}</span>
+
+                      {/* Título del Producto */}
+                      <h3 className="text-base sm:text-lg font-bold text-white mb-2 leading-snug">
+                        {deal.title}
+                      </h3>
+
+                      {/* Caja del Veredicto en Lenguaje Humano */}
+                      <div className={`rounded-xl p-3 text-xs sm:text-sm font-medium flex items-start gap-2.5 mb-3 ${
+                        isInflated ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30' :
+                        isGanga ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' :
+                        isGood ? 'bg-blue-500/10 text-blue-300 border border-blue-500/30' :
+                        'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {isInflated && <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />}
+                        {isGanga && <Flame className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
+                        {isGood && <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />}
+                        {!isInflated && !isGanga && !isGood && <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
+                        
+                        <div>
+                          <span className="font-bold uppercase tracking-wider block text-[11px] mb-0.5">
+                            {isGanga && '🟢 Veredicto: ¡Rebaja Real Comprobada!'}
+                            {isInflated && '🔴 Veredicto: Cuidado — Precio Inflado'}
+                            {isGood && '🟢 Veredicto: Descuento Real'}
+                            {!isInflated && !isGanga && !isGood && '🟡 Veredicto: Mismo Precio de Siempre'}
+                          </span>
+                          <span className="leading-relaxed">{deal.verdictMessage}</span>
+                        </div>
                       </div>
+
+                      {/* Comparativa Cross-Store ("¿Dónde está más barato hoy?") */}
+                      {deal.competitors && deal.competitors.length > 0 && (
+                        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-semibold text-slate-200 flex items-center gap-1">
+                              <Store className="w-3.5 h-3.5 text-blue-400" />
+                              ¿Dónde comprar este mismo modelo más barato hoy?
+                            </span>
+                            <span className="text-[11px] text-blue-400 font-mono">
+                              {deal.competitors.length + 1} tiendas comparadas
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            {deal.competitors.map((comp) => {
+                              const isCheaper = comp.price < deal.currentPrice;
+                              return (
+                                <a
+                                  key={comp.store}
+                                  href={comp.productUrl || '#'}
+                                  target={comp.productUrl ? '_blank' : undefined}
+                                  rel="noopener noreferrer"
+                                  className={`px-2.5 py-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
+                                    isCheaper
+                                      ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-900/50'
+                                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                                  }`}
+                                >
+                                  <span>{comp.store}:</span>
+                                  <strong className="font-mono text-white">${comp.price.toFixed(2)}</strong>
+                                  {isCheaper && (
+                                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-bold">
+                                      ▼ Ahorras
+                                    </span>
+                                  )}
+                                  {comp.productUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                                </a>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Competitor Price Comparison Bar */}
-                    {deal.competitors && deal.competitors.length > 0 && (
-                      <div className="w-full bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 text-[11px] text-slate-400">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-semibold text-slate-200 flex items-center gap-1">
-                            <Store className="w-3.5 h-3.5 text-blue-400" />
-                            ¿Dónde está más barato hoy?
+                    {/* 3. Columna Derecha: Precios y Botón de Compra */}
+                    <div className="w-full md:w-56 shrink-0 flex flex-col justify-between items-start md:items-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-800">
+                      <div className="md:text-right w-full">
+                        <div className="flex items-baseline gap-2 md:justify-end">
+                          <span className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
+                            ${deal.currentPrice.toFixed(2)}
                           </span>
-                          <span className="text-[10px] text-blue-400 font-mono">
-                            {deal.competitors.length + 1} tiendas
-                          </span>
+                          {deal.regularPrice && (
+                            <span className="text-sm font-mono text-slate-400 line-through">
+                              ${deal.regularPrice.toFixed(2)}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {deal.competitors.map((comp) => {
-                            const isCheaper = comp.price < deal.currentPrice;
-                            return (
-                              <a
-                                key={comp.store}
-                                href={comp.productUrl || '#'}
-                                target={comp.productUrl ? '_blank' : undefined}
-                                rel="noopener noreferrer"
-                                className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
-                                  isCheaper
-                                    ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-900/50'
-                                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
-                                }`}
-                              >
-                                <span>{comp.store}:</span>
-                                <strong className="font-mono text-white">${comp.price.toFixed(2)}</strong>
-                                {isCheaper && (
-                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded font-bold">
-                                    ▼ Ahorro
-                                  </span>
-                                )}
-                                {comp.productUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
-                              </a>
-                            );
-                          })}
+
+                        {savingsAmount && (
+                          <div className="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 font-mono text-xs font-bold">
+                            Ahorro real: ${savingsAmount}
+                          </div>
+                        )}
+
+                        <div className="text-[11px] text-slate-400 mt-1.5">
+                          Costo normal en octubre: <span className="font-mono text-slate-300 font-semibold">${deal.baselinePrice30d.toFixed(2)}</span>
                         </div>
                       </div>
-                    )}
 
-                    <a 
-                      href={deal.productUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-colors"
-                    >
-                      <span>Ver en {deal.store}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                      {/* Botón de Compra Claro y Accesible (44px min tap target) */}
+                      <a 
+                        href={deal.productUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors shadow-lg shadow-blue-600/20"
+                      >
+                        <span>Ver en {deal.store}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
-      {/* Footer & Legal Note */}
-      <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2">
-        <p>
-          Radar de Ofertas Black Friday El Salvador 2026 — Proyecto colaborativo de transparencia y ahorro cívico.
+      {/* Footer Legal y Transparencia */}
+      <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
+        <p className="font-medium text-slate-300">
+          Radar de Ofertas Reales Black Friday El Salvador 2026 — Iniciativa ciudadana e independiente.
         </p>
-        <p className="max-w-3xl mx-auto leading-relaxed text-slate-600">
-          Datos auditados basados en el historial público de precios de venta de cada almacén. En cumplimiento con los Artículos 31 y 32 de la Ley de Protección al Consumidor de El Salvador sobre la veracidad de precios y publicidad de ofertas comerciales.
+        <p className="max-w-3xl mx-auto leading-relaxed text-slate-400 text-[11px]">
+          Precios auditados diariamente de forma automática de los sitios web públicos de cada almacén. En apego a los Artículos 31 y 32 de la Ley de Protección al Consumidor de El Salvador sobre la veracidad de la publicidad y ofertas comerciales.
         </p>
       </footer>
     </div>
