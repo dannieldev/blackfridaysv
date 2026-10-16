@@ -367,6 +367,16 @@ export default function App() {
   const totalPages = Math.max(1, Math.ceil(sortedDeals.length / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
+  const availablePageSizes = useMemo(() => {
+    return [16, 32, 64].filter((sz) => sz < sortedDeals.length);
+  }, [sortedDeals.length]);
+
+  useEffect(() => {
+    if (pageSize < 9999 && availablePageSizes.length > 0 && !availablePageSizes.includes(pageSize)) {
+      setPageSize(availablePageSizes[0]);
+    }
+  }, [availablePageSizes, pageSize]);
+
   const paginatedDeals = useMemo(() => {
     if (pageSize >= 9999) return sortedDeals;
     const start = (safeCurrentPage - 1) * pageSize;
@@ -608,9 +618,17 @@ export default function App() {
         <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-3.5 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
           {/* Conteo y Reset */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-slate-300">
-              Mostrando <strong className="font-mono text-white">{(safeCurrentPage - 1) * pageSize + 1} - {Math.min(safeCurrentPage * pageSize, sortedDeals.length)}</strong> de <strong className="font-mono text-blue-400 font-bold">{sortedDeals.length}</strong> ofertas
-            </span>
+            {sortedDeals.length === 0 ? (
+              <span className="text-slate-400 font-medium">0 ofertas encontradas</span>
+            ) : sortedDeals.length <= pageSize || pageSize >= 9999 ? (
+              <span className="text-slate-300">
+                Mostrando <strong className="font-mono text-white">{sortedDeals.length}</strong> de <strong className="font-mono text-blue-400 font-bold">{sortedDeals.length}</strong> ofertas
+              </span>
+            ) : (
+              <span className="text-slate-300">
+                Mostrando <strong className="font-mono text-white">{(safeCurrentPage - 1) * pageSize + 1} - {Math.min(safeCurrentPage * pageSize, sortedDeals.length)}</strong> de <strong className="font-mono text-blue-400 font-bold">{sortedDeals.length}</strong> ofertas
+              </span>
+            )}
             {(searchTerm || filterScore !== 'all' || selectedCategory !== 'all' || selectedStore !== 'all' || onlyMultiStore) && (
               <button
                 onClick={() => {
@@ -650,34 +668,36 @@ export default function App() {
               </select>
             </div>
 
-            {/* Selector de Cantidad por Página */}
-            <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-xl px-2 py-1">
-              <span className="text-slate-400 text-[11px] font-medium pl-1">Por pág:</span>
-              {[16, 32, 64].map((sz) => (
+            {/* Selector de Cantidad por Página (Solo visible cuando hay suficientes productos) */}
+            {availablePageSizes.length > 0 && (
+              <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-xl px-2 py-1">
+                <span className="text-slate-400 text-[11px] font-medium pl-1">Por pág:</span>
+                {availablePageSizes.map((sz) => (
+                  <button
+                    key={sz}
+                    onClick={() => setPageSize(sz)}
+                    className={`px-2 py-0.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+                      pageSize === sz
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    {sz}
+                  </button>
+                ))}
                 <button
-                  key={sz}
-                  onClick={() => setPageSize(sz)}
+                  onClick={() => setPageSize(9999)}
                   className={`px-2 py-0.5 rounded-lg text-xs font-mono font-semibold transition-all ${
-                    pageSize === sz
+                    pageSize >= 9999
                       ? 'bg-blue-600 text-white'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
+                  title="Mostrar todas sin paginar"
                 >
-                  {sz}
+                  Todo
                 </button>
-              ))}
-              <button
-                onClick={() => setPageSize(9999)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-mono font-semibold transition-all ${
-                  pageSize >= 9999
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-                title="Mostrar todas sin paginar"
-              >
-                Todo
-              </button>
-            </div>
+              </div>
+            )}
 
             {/* Selector de Modo de Vista (Cards vs Compact) */}
             <div className="flex items-center bg-slate-950/80 border border-slate-800 rounded-xl p-1">
@@ -1128,8 +1148,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Paginación y Navegación al Pie */}
-        {sortedDeals.length > 0 && pageSize < 9999 && (
+        {/* Paginación y Navegación al Pie (Solo si hay más de 1 página) */}
+        {sortedDeals.length > 0 && totalPages > 1 && pageSize < 9999 && (
           <div className="mt-8 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-xs text-slate-400 text-center sm:text-left">
               Página <strong className="font-mono text-white">{safeCurrentPage}</strong> de{' '}
