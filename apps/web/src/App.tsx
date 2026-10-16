@@ -394,7 +394,19 @@ export default function App() {
       ),
     );
   const toggleCategory = (id: string) =>
-    change(() => setCategory((previous) => (previous === id ? "all" : id)));
+    change(() => {
+      if (id === "all") {
+        setCategory("all");
+        if (filter !== "all") {
+          setFilter("all");
+        }
+      } else {
+        if (filter === "saved" && savedCount === 0) {
+          setFilter("all");
+        }
+        setCategory((previous) => (previous === id ? "all" : id));
+      }
+    });
   const toggleFilter = (id: "all" | "discounted" | "compare" | "saved") =>
     change(() => setFilter((previous) => (previous === id ? "all" : id)));
   const toggleSaved = () => {
@@ -618,7 +630,16 @@ export default function App() {
             </span>
           </a>
           <nav aria-label="Navegación principal">
-            <a className="nav-active" href="#catalogo">
+            <a
+              className={filter !== "saved" ? "nav-active" : ""}
+              href="#catalogo"
+              onClick={() => {
+                if (filter === "saved") {
+                  change(() => setFilter("all"));
+                }
+                scrollToResults();
+              }}
+            >
               Ofertas
             </a>
             <a href="#como-comparamos">Cómo comparamos</a>
@@ -688,7 +709,15 @@ export default function App() {
                 <ArrowRight aria-hidden="true" />
               </button>
             </form>
-            <a className="hero-browse" href="#catalogo">
+            <a
+              className="hero-browse"
+              href="#catalogo"
+              onClick={() => {
+                if (filter === "saved") {
+                  change(() => setFilter("all"));
+                }
+              }}
+            >
               Ver todas las ofertas <ArrowDown aria-hidden="true" />
             </a>
             <div className="quick-search">
@@ -1080,6 +1109,17 @@ export default function App() {
                             >
                               Quitar filtros y ver mis guardados ({savedCount})
                             </button>
+                            <button
+                              className="btn btn-secondary"
+                              onClick={() =>
+                                change(() => {
+                                  setFilter("all");
+                                  setCategory("all");
+                                })
+                              }
+                            >
+                              Ver todo el catálogo
+                            </button>
                           </div>
                         </>
                       )
@@ -1092,7 +1132,12 @@ export default function App() {
                         </p>
                         <button
                           className="btn btn-primary"
-                          onClick={() => change(() => setFilter("all"))}
+                          onClick={() =>
+                            change(() => {
+                              setFilter("all");
+                              setCategory("all");
+                            })
+                          }
                         >
                           Explorar ofertas
                         </button>
