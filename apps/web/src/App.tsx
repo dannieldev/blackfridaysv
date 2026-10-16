@@ -23,9 +23,12 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Scale,
+  Lock
 } from 'lucide-react';
 import { fetchLiveDeals } from './lib/supabase.ts';
+import { LegalModals, LegalModalType } from './components/LegalModals.tsx';
 
 export interface DealItem {
   id: string;
@@ -248,6 +251,19 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'cards' | 'compact'>('cards');
   const [showGuide, setShowGuide] = useState<boolean>(false);
   const [activeModalDeal, setActiveModalDeal] = useState<DealItem | null>(null);
+  const [activeLegalModal, setActiveLegalModal] = useState<LegalModalType>(null);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'terminos' || hash === 'metodologia' || hash === 'privacidad') {
+        setActiveLegalModal(hash as LegalModalType);
+      }
+    };
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     async function loadDb() {
@@ -282,7 +298,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (activeModalDeal) {
+    if (activeModalDeal || activeLegalModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -290,7 +306,7 @@ export default function App() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [activeModalDeal]);
+  }, [activeModalDeal, activeLegalModal]);
 
   const stats = useMemo(() => {
     const total = deals.length;
@@ -1297,15 +1313,69 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer Legal */}
-      <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
+      {/* Footer Legal & Transparencia Institucional */}
+      <footer className="max-w-6xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 space-y-4">
+        {/* Enlaces Directos a Subpáginas / Modales Institucionales */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-xs font-semibold text-slate-300">
+          <button
+            onClick={() => {
+              setActiveLegalModal('terminos');
+              window.location.hash = 'terminos';
+            }}
+            className="hover:text-blue-400 transition-colors flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-900 border border-transparent hover:border-slate-800"
+          >
+            <Scale className="w-3.5 h-3.5 text-blue-400" />
+            <span>Aviso Legal y Descargo</span>
+          </button>
+          <span className="text-slate-700 hidden sm:inline">•</span>
+          <button
+            onClick={() => {
+              setActiveLegalModal('metodologia');
+              window.location.hash = 'metodologia';
+            }}
+            className="hover:text-blue-400 transition-colors flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-900 border border-transparent hover:border-slate-800"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Metodología y Legalidad</span>
+          </button>
+          <span className="text-slate-700 hidden sm:inline">•</span>
+          <button
+            onClick={() => {
+              setActiveLegalModal('privacidad');
+              window.location.hash = 'privacidad';
+            }}
+            className="hover:text-blue-400 transition-colors flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-900 border border-transparent hover:border-slate-800"
+          >
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Privacidad y Cookies</span>
+          </button>
+        </div>
+
         <p className="font-medium text-slate-300">
           Radar de Ofertas Reales Black Friday El Salvador 2026 — Iniciativa ciudadana e independiente para monitorear precios justos.
         </p>
-        <p className="max-w-3xl mx-auto leading-relaxed text-slate-400 text-[11px]">
-          Precios revisados diariamente de forma automática en las páginas web oficiales de cada almacén. Basado en la Ley de Protección al Consumidor de El Salvador para promover compras transparentes y ofertas verdaderas.
+        <p className="max-w-3xl mx-auto leading-relaxed text-slate-500 text-[11px]">
+          Precios revisados periódicamente de forma automática en los escaparates web públicos de cada almacén. Plataforma amparada en los Artículos 31 y 32 de la Ley de Protección al Consumidor de El Salvador para garantizar información veraz y compras transparentes.
         </p>
+        <div className="text-[10px] text-slate-600 font-mono pt-1">
+          San Salvador, El Salvador • Cero datos personales recopilados • 100% Acceso Público
+        </div>
       </footer>
+
+      {/* Modal Institucional (Aviso Legal, Metodología, Privacidad) */}
+      <LegalModals
+        type={activeLegalModal}
+        onClose={() => {
+          setActiveLegalModal(null);
+          if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        }}
+        onSelectTab={(tab) => {
+          setActiveLegalModal(tab);
+          window.location.hash = tab;
+        }}
+      />
     </div>
   );
 }
