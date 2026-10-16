@@ -292,6 +292,17 @@ export default function App() {
     loadDb();
   }, []);
 
+  useEffect(() => {
+    if (activeModalDeal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [activeModalDeal]);
+
   const stats = useMemo(() => {
     const total = deals.length;
     if (total === 0) return { realPercent: 38, inflatedPercent: 24, neutralPercent: 38 };
@@ -509,15 +520,23 @@ export default function App() {
             <span className="text-slate-400 flex items-center gap-1 mr-1 text-[11px] font-semibold uppercase">
               <Sparkles className="w-3 h-3 text-amber-400" /> Atajos:
             </span>
-            {POPULAR_SEARCHES.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => setSearchTerm(item.query)}
-                className="px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-all text-xs"
-              >
-                {item.label}
-              </button>
-            ))}
+            {POPULAR_SEARCHES.map((item) => {
+              const isActive = searchTerm === item.query;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => setSearchTerm(isActive ? '' : item.query)}
+                  className={`px-2.5 py-1 rounded-lg border transition-all text-xs font-medium ${
+                    isActive
+                      ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
+                      : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                  title={isActive ? 'Haz clic para deseleccionar' : undefined}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Filtros Principales */}
@@ -533,22 +552,24 @@ export default function App() {
               Todos los veredictos
             </button>
             <button
-              onClick={() => setFilterScore('reales')}
+              onClick={() => setFilterScore(filterScore === 'reales' ? 'all' : 'reales')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 filterScore === 'reales'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border border-emerald-400/30'
                   : 'bg-slate-800/70 text-emerald-400 hover:bg-slate-800'
               }`}
+              title={filterScore === 'reales' ? 'Haz clic para deseleccionar' : undefined}
             >
               <CheckCircle2 className="w-3.5 h-3.5" /> 🟢 Solo Ofertas Reales
             </button>
             <button
-              onClick={() => setFilterScore('falsa_oferta_inflada')}
+              onClick={() => setFilterScore(filterScore === 'falsa_oferta_inflada' ? 'all' : 'falsa_oferta_inflada')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 filterScore === 'falsa_oferta_inflada'
-                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
+                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30 border border-rose-400/30'
                   : 'bg-slate-800/70 text-rose-400 hover:bg-slate-800'
               }`}
+              title={filterScore === 'falsa_oferta_inflada' ? 'Haz clic para deseleccionar' : undefined}
             >
               <AlertTriangle className="w-3.5 h-3.5" /> 🔴 Ver Precios Inflados
             </button>
@@ -571,19 +592,23 @@ export default function App() {
             <span className="text-slate-400 mr-1 text-[11px] uppercase font-semibold flex items-center gap-1">
               <Store className="w-3 h-3 text-blue-400" /> Almacén:
             </span>
-            {STORE_CHIPS.map((chip) => (
-              <button
-                key={chip.id}
-                onClick={() => setSelectedStore(chip.id)}
-                className={`px-2.5 py-1 rounded-md transition-all text-xs ${
-                  selectedStore === chip.id
-                    ? 'bg-blue-900/60 border border-blue-600 text-white font-semibold'
-                    : 'text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/60'
-                }`}
-              >
-                {chip.label}
-              </button>
-            ))}
+            {STORE_CHIPS.map((chip) => {
+              const isSelected = selectedStore === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => setSelectedStore(chip.id === 'all' ? 'all' : (isSelected ? 'all' : chip.id))}
+                  className={`px-2.5 py-1 rounded-md transition-all text-xs ${
+                    isSelected
+                      ? 'bg-blue-600 border border-blue-500 text-white font-semibold shadow-sm'
+                      : 'text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/60'
+                  }`}
+                  title={isSelected && chip.id !== 'all' ? 'Haz clic para deseleccionar' : undefined}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Filtro por Categoría */}
@@ -598,19 +623,23 @@ export default function App() {
               { id: 'computacion', label: '💻 Laptops y Computadoras' },
               { id: 'linea_blanca', label: '❄️ Línea Blanca (Refrigeración y Lavado)' },
               { id: 'gaming', label: '🎮 Consolas y Videojuegos' },
-            ].map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-2.5 py-1 rounded-md transition-colors text-xs ${
-                  selectedCategory === cat.id
-                    ? 'bg-slate-700 text-white font-semibold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            ].map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id === 'all' ? 'all' : (isSelected ? 'all' : cat.id))}
+                  className={`px-2.5 py-1 rounded-md transition-colors text-xs ${
+                    isSelected
+                      ? 'bg-blue-600 border border-blue-500 text-white font-semibold shadow-sm'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50 bg-slate-950/60 border border-slate-800/60'
+                  }`}
+                  title={isSelected && cat.id !== 'all' ? 'Haz clic para deseleccionar' : undefined}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -731,13 +760,15 @@ export default function App() {
 
         {/* Lista de Tarjetas de Productos */}
         {filteredDeals.length === 0 ? (
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center max-w-lg mx-auto">
-            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-400">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 sm:p-14 text-center max-w-lg mx-auto shadow-2xl my-6">
+            <div className="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto mb-4 text-slate-400">
               <Search className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-white mb-1">No encontramos resultados</h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Prueba buscando con términos más generales como "TV", "Samsung", "iPhone" o selecciona otra tienda.
+            <h3 className="text-lg font-bold text-white mb-2">
+              {searchTerm ? `Sin resultados para "${searchTerm}"` : 'No encontramos ofertas con estos filtros'}
+            </h3>
+            <p className="text-xs text-slate-400 mb-5 leading-relaxed max-w-sm mx-auto">
+              Prueba deseleccionando filtros o buscando términos más generales como "TV", "Samsung", "iPhone" o "Lavadora".
             </p>
             <button
               onClick={() => {
@@ -747,9 +778,9 @@ export default function App() {
                 setSelectedStore('all');
                 setOnlyMultiStore(false);
               }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-all"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30"
             >
-              Ver todas las ofertas
+              Restablecer todos los filtros
             </button>
           </div>
         ) : viewMode === 'compact' ? (
