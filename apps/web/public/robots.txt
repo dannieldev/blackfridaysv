@@ -1,8 +1,8 @@
 # Robots.txt - Radar Black Friday El Salvador 2026
-# https://blackfridaysv.danielcrespin-dev.workers.dev
+# https://blackfridaysv.dannieldev.com
 
 User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://blackfridaysv.danielcrespin-dev.workers.dev/sitemap.xml
+Sitemap: https://blackfridaysv.dannieldev.com/sitemap.xml
