@@ -1104,7 +1104,7 @@ export default function App() {
             </a>
             {" y "}
             <a
-              href="https://github.com/andoqv"
+              href="https://portfolio-6g2.pages.dev/"
               target="_blank"
               rel="noopener noreferrer"
             >
