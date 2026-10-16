@@ -737,7 +737,7 @@ input::placeholder {
   color: var(--ink);
   font-size: 12px;
   padding: 12px 24px 12px 2px;
-  max-width: 220px;
+  max-width: 270px;
   cursor: pointer;
   min-height: 44px;
 }
@@ -2034,7 +2034,7 @@ input::placeholder {
   }
   .sort-control select {
     font-size: 10px;
-    max-width: 166px;
+    max-width: 220px;
   }
   .view-switch {
     display: none;

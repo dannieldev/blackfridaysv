@@ -795,8 +795,8 @@ export default function App() {
                 {(
                   [
                     { id: "all", label: "Todos" },
-                    { id: "discounted", label: "Con rebaja anunciada" },
-                    { id: "compare", label: "Para comparar" },
+                    { id: "discounted", label: "Con descuento" },
+                    { id: "compare", label: "En varias tiendas" },
                     { id: "saved", label: "Guardados" },
                   ] as const
                 ).map((item) => (
@@ -837,11 +837,11 @@ export default function App() {
                       change(() => setSort(event.target.value))
                     }
                   >
-                    <option value="compare">Comparables primero</option>
-                    <option value="price_asc">Menor precio</option>
-                    <option value="price_desc">Mayor precio</option>
-                    <option value="discount">Mayor rebaja anunciada (%)</option>
-                    <option value="savings">Mayor rebaja anunciada ($)</option>
+                    <option value="compare">Disponibles en varias tiendas</option>
+                    <option value="savings">Mayor ahorro en dinero ($)</option>
+                    <option value="discount">Mayor porcentaje de descuento (%)</option>
+                    <option value="price_asc">Precio: de menor a mayor</option>
+                    <option value="price_desc">Precio: de mayor a menor</option>
                   </select>
                   <ChevronDown aria-hidden="true" />
                 </label>
