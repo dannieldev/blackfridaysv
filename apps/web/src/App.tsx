@@ -22,6 +22,7 @@ import {
   Smartphone,
   Store,
   Tv,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -228,6 +229,7 @@ export default function App() {
   const [isOffline, setIsOffline] = useState(
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
+  const [confirmClearSaved, setConfirmClearSaved] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -347,6 +349,16 @@ export default function App() {
     } catch {
       notify("Guardado en esta sesión. El navegador no permitió conservarlo.");
     }
+  };
+  const clearAllSaved = () => {
+    setSavedIds([]);
+    try {
+      localStorage.removeItem("blackfridaysv_saved_deals");
+    } catch {
+      /* ignore */
+    }
+    setConfirmClearSaved(false);
+    notify("Todos los productos guardados fueron eliminados");
   };
   const closeOverlay = () => {
     setSelectedDeal(null);
@@ -833,17 +845,23 @@ export default function App() {
             </div>
           )}
           <div className="category-nav" aria-label="Categorías">
-            {CATEGORIES.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                aria-pressed={category === id}
-                onClick={() => toggleCategory(id)}
-                className={category === id ? "selected" : ""}
-              >
-                <Icon aria-hidden="true" />
-                <span>{label}</span>
-              </button>
-            ))}
+            {CATEGORIES.map(({ id, label, icon: Icon }) => {
+              const isSelected =
+                filter === "saved"
+                  ? category === id && id !== "all"
+                  : category === id;
+              return (
+                <button
+                  key={id}
+                  aria-pressed={isSelected}
+                  onClick={() => toggleCategory(id)}
+                  className={isSelected ? "selected" : ""}
+                >
+                  <Icon aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="catalog-layout">
             <aside className="filter-sidebar" aria-label="Filtrar catálogo">
@@ -966,8 +984,17 @@ export default function App() {
                       <X aria-label="Quitar disponibilidad" />
                     </button>
                   )}
+                  {filter === "saved" && savedCount > 0 && (
+                    <button
+                      className="clear-saved-action"
+                      onClick={() => setConfirmClearSaved(true)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                      Vaciar guardados
+                    </button>
+                  )}
                   <button className="clear-all" onClick={reset}>
-                    Limpiar todo
+                    Limpiar filtros
                   </button>
                 </div>
               )}
@@ -1317,6 +1344,46 @@ export default function App() {
               {filtered.length === 1 ? "resultado" : "resultados"}
               <ArrowRight aria-hidden="true" />
             </button>
+          </div>
+        </Dialog>
+      )}
+      {confirmClearSaved && (
+        <Dialog
+          onClose={() => setConfirmClearSaved(false)}
+          labelledBy="clear-saved-title"
+          className="confirm-modal"
+        >
+          <div className="modal-header">
+            <span>Confirmar acción</span>
+            <button
+              className="icon-button"
+              onClick={() => setConfirmClearSaved(false)}
+              aria-label="Cerrar confirmación"
+            >
+              <X aria-hidden="true" />
+            </button>
+          </div>
+          <div className="modal-body confirm-body">
+            <h2 id="clear-saved-title">
+              ¿Eliminar todos tus productos guardados?
+            </h2>
+            <p>
+              Tienes {savedCount}{" "}
+              {savedCount === 1 ? "producto guardado" : "productos guardados"}. Si
+              los eliminas, tu lista quedará vacía y tendrás que volver a
+              buscarlos y guardarlos uno por uno.
+            </p>
+            <div className="confirm-modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirmClearSaved(false)}
+              >
+                Cancelar
+              </button>
+              <button className="btn btn-danger" onClick={clearAllSaved}>
+                Sí, eliminar todos ({savedCount})
+              </button>
+            </div>
           </div>
         </Dialog>
       )}

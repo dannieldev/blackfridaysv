@@ -193,6 +193,15 @@ input::placeholder {
   border-color: var(--line);
   color: var(--ink);
 }
+.btn-danger {
+  background: #c53030;
+  border-color: #c53030;
+  color: #ffffff;
+}
+.btn-danger:hover {
+  background: #9b2c2c;
+  border-color: #9b2c2c;
+}
 .icon-button {
   width: 44px;
   min-width: 44px;
@@ -853,6 +862,18 @@ input::placeholder {
   background: none;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+.active-filters .clear-saved-action {
+  background: rgba(197, 48, 48, 0.08);
+  color: #c53030;
+  border: 1px solid rgba(197, 48, 48, 0.25);
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.active-filters .clear-saved-action:hover {
+  background: rgba(197, 48, 48, 0.16);
+  color: #9b2c2c;
+  border-color: rgba(197, 48, 48, 0.4);
 }
 .deals-grid {
   display: grid;
@@ -1711,6 +1732,35 @@ input::placeholder {
 }
 .filter-modal {
   max-width: 440px;
+}
+.confirm-modal {
+  max-width: 440px;
+}
+.confirm-body {
+  padding: 24px;
+}
+.confirm-body h2 {
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.confirm-body p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.confirm-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.confirm-modal-actions .btn {
+  padding: 10px 18px;
+  font-size: 14px;
 }
 .mobile-filter-content {
   overflow-y: auto;
