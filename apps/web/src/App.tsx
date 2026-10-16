@@ -26,7 +26,7 @@ interface DealItem {
   dealScore: 'ganga_historica' | 'buena_oferta' | 'falsa_oferta_inflada' | 'descuento_cosmetico';
   verdictMessage: string;
   productUrl: string;
-  competitors?: Array<{ store: string; price: number }>;
+  competitors?: Array<{ store: string; price: number; productUrl?: string }>;
 }
 
 const MOCK_DEALS: DealItem[] = [
@@ -122,12 +122,76 @@ const MOCK_DEALS: DealItem[] = [
   }
 ];
 
+
+function normalizeModelForMatching(model: string, brand: string): string {
+  let m = model.toUpperCase().trim();
+  if (brand.toUpperCase().includes('SAMSUNG')) {
+    m = m.replace(/FPXPA$|FXZA$|\/AP$|PSA$/i, '');
+  }
+  return m;
+}
+
+function enrichDealsWithCrossStoreComparisons(rawDeals: DealItem[]): DealItem[] {
+  const modelMap = new Map<string, DealItem[]>();
+
+  for (const deal of rawDeals) {
+    if (deal.modelCode && deal.modelCode !== 'N/A' && deal.modelCode.length > 2) {
+      const key = `${deal.brand.toUpperCase()}_${normalizeModelForMatching(deal.modelCode, deal.brand)}`;
+      const list = modelMap.get(key) || [];
+      list.push(deal);
+      modelMap.set(key, list);
+    }
+  }
+
+  return rawDeals.map((deal) => {
+    if (!deal.modelCode || deal.modelCode === 'N/A') {
+      return deal;
+    }
+
+    const key = `${deal.brand.toUpperCase()}_${normalizeModelForMatching(deal.modelCode, deal.brand)}`;
+    const group = modelMap.get(key);
+    if (!group || group.length <= 1) {
+      return deal;
+    }
+
+    const competitors = group
+      .filter((other) => other.store !== deal.store)
+      .map((other) => ({
+        store: other.store,
+        price: other.currentPrice,
+        productUrl: other.productUrl,
+      }))
+      .sort((a, b) => a.price - b.price);
+
+    if (competitors.length === 0) {
+      return deal;
+    }
+
+    const cheapest = competitors[0];
+    let extraVerdict = '';
+    if (deal.currentPrice < cheapest.price) {
+      const diff = (cheapest.price - deal.currentPrice).toFixed(2);
+      extraVerdict = ` 🏆 ¡Mejor precio del mercado! Ahorras ${diff} frente a ${cheapest.store}.`;
+    } else if (deal.currentPrice > cheapest.price) {
+      const diff = (deal.currentPrice - cheapest.price).toFixed(2);
+      extraVerdict = ` 💡 Más barato en ${cheapest.store} por ${cheapest.price.toFixed(2)} (diferencia de ${diff}).`;
+    }
+
+    return {
+      ...deal,
+      competitors,
+      verdictMessage: `${deal.verdictMessage}${extraVerdict}`,
+    };
+  });
+}
+
 export default function App() {
   const [deals, setDeals] = useState<DealItem[]>(MOCK_DEALS);
   const [isUsingLiveDb, setIsUsingLiveDb] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScore, setFilterScore] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [onlyMultiStore, setOnlyMultiStore] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadDb() {
@@ -151,7 +215,8 @@ export default function App() {
             : `Descuento real calculado del ${item.real_discount_percent}% frente a la línea base de octubre.`,
           productUrl: item.product_url,
         }));
-        setDeals(mapped);
+        const enriched = enrichDealsWithCrossStoreComparisons(mapped);
+        setDeals(enriched);
         setIsUsingLiveDb(true);
       }
     }
@@ -168,8 +233,9 @@ export default function App() {
 
       const matchScore = filterScore === 'all' || deal.dealScore === filterScore;
       const matchCategory = selectedCategory === 'all' || deal.category === selectedCategory;
+      const matchMultiStore = !onlyMultiStore || (deal.competitors && deal.competitors.length > 0);
 
-      return matchSearch && matchScore && matchCategory;
+      return matchSearch && matchScore && matchCategory && matchMultiStore;
     });
   }, [deals, searchTerm, filterScore, selectedCategory]);
 
@@ -269,6 +335,17 @@ export default function App() {
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5" /> Descuentos Falsos / Inflados
+            </button>
+            <button
+              onClick={() => setOnlyMultiStore(!onlyMultiStore)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                onlyMultiStore
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                  : 'bg-slate-800/60 text-purple-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>⚡ Comparativa 2+ Tiendas</span>
+              {onlyMultiStore && <span className="bg-white/20 text-[10px] px-1.5 py-0.2 rounded-full font-mono">Activo</span>}
             </button>
             <button
               onClick={() => setFilterScore('buena_oferta')}
@@ -398,14 +475,42 @@ export default function App() {
 
                     {/* Competitor Price Comparison Bar */}
                     {deal.competitors && deal.competitors.length > 0 && (
-                      <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-lg p-2 text-[11px] text-slate-400">
-                        <span className="font-semibold text-slate-300 block mb-1">En otras tiendas hoy:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {deal.competitors.map((comp) => (
-                            <span key={comp.store} className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-slate-300">
-                              {comp.store}: <strong className="font-mono text-white">${comp.price}</strong>
-                            </span>
-                          ))}
+                      <div className="w-full bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 text-[11px] text-slate-400">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-semibold text-slate-200 flex items-center gap-1">
+                            <Store className="w-3.5 h-3.5 text-blue-400" />
+                            ¿Dónde está más barato hoy?
+                          </span>
+                          <span className="text-[10px] text-blue-400 font-mono">
+                            {deal.competitors.length + 1} tiendas
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {deal.competitors.map((comp) => {
+                            const isCheaper = comp.price < deal.currentPrice;
+                            return (
+                              <a
+                                key={comp.store}
+                                href={comp.productUrl || '#'}
+                                target={comp.productUrl ? '_blank' : undefined}
+                                rel="noopener noreferrer"
+                                className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1.5 transition-all ${
+                                  isCheaper
+                                    ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-900/50'
+                                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                                }`}
+                              >
+                                <span>{comp.store}:</span>
+                                <strong className="font-mono text-white">${comp.price.toFixed(2)}</strong>
+                                {isCheaper && (
+                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded font-bold">
+                                    ▼ Ahorro
+                                  </span>
+                                )}
+                                {comp.productUrl && <ExternalLink className="w-3 h-3 opacity-60" />}
+                              </a>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
