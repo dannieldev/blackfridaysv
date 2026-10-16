@@ -247,12 +247,28 @@ input::placeholder {
 .site-header nav a.nav-active {
   color: var(--on-dark);
 }
+.offline-banner {
+  background: #394332;
+  color: var(--accent);
+  font-size: 13px;
+  padding: 10px 16px;
+  text-align: center;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(199, 240, 107, 0.2);
+}
 .nav-saved {
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
   font-size: 14px;
+  transition: color 0.15s ease;
+}
+.nav-saved.selected {
+  color: var(--accent);
 }
 .saved-count {
   background: #394332;
@@ -264,6 +280,12 @@ input::placeholder {
   border-radius: 6px;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nav-saved.selected .saved-count {
+  background: var(--accent);
+  color: #1e261f;
+  font-weight: 700;
 }
 .hero {
   display: grid;
@@ -324,6 +346,23 @@ input::placeholder {
   display: grid;
   place-items: center;
   background: var(--accent);
+}
+.hero-search button.search-clear-btn {
+  background: transparent;
+  color: var(--muted);
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.hero-search button.search-clear-btn:hover {
+  color: var(--ink);
+  background: var(--canvas-subtle);
+}
+.hero-search button.search-clear-btn svg {
+  width: 18px;
+  height: 18px;
 }
 .quick-search {
   display: flex;
@@ -1064,9 +1103,17 @@ input::placeholder {
 .empty-state p {
   font-size: 14px;
   line-height: 1.7;
-  max-width: 420px;
+  max-width: 460px;
   color: var(--muted);
   margin: 16px 0 24px;
+}
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  max-width: 520px;
 }
 
 .guide-section {

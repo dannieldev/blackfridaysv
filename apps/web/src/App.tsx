@@ -62,6 +62,8 @@ const normalize = (text: string) =>
   text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u201C\u201D\u2033\u201E\u201F\u2036]/g, '"')
+    .replace(/[\u2018\u2019\u2032\u00B4]/g, "'")
     .toLowerCase();
 const matchesStore = (deal: DealItem, store: string) =>
   normalize(deal.store).includes(normalize(store));
@@ -223,6 +225,9 @@ export default function App() {
   const [legal, setLegal] = useState<LegalModalType>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [missingDeal, setMissingDeal] = useState(false);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
   const searchRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -302,9 +307,21 @@ export default function App() {
       if (event.key === "blackfridaysv_saved_deals" || event.key === null)
         setSavedIds(readSaved());
     };
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
     window.addEventListener("storage", onStorage);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    if ("serviceWorker" in navigator && !import.meta.env.DEV) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
     return () => {
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
@@ -364,6 +381,18 @@ export default function App() {
           : [...previous, store],
       ),
     );
+  const toggleCategory = (id: string) =>
+    change(() => setCategory((previous) => (previous === id ? "all" : id)));
+  const toggleFilter = (id: "all" | "discounted" | "compare" | "saved") =>
+    change(() => setFilter((previous) => (previous === id ? "all" : id)));
+  const toggleSaved = () => {
+    if (filter === "saved") {
+      change(() => setFilter("all"));
+    } else {
+      change(() => setFilter("saved"));
+      scrollToResults();
+    }
+  };
   const reset = () => {
     setSearch("");
     setCategory("all");
@@ -372,11 +401,6 @@ export default function App() {
     setAvailableOnly(false);
     setFilter("all");
     setPage(1);
-  };
-  const showSaved = () => {
-    reset();
-    setFilter("saved");
-    scrollToResults();
   };
   const categoryDeals = useMemo(
     () =>
@@ -458,11 +482,11 @@ export default function App() {
   const featuredOffers = featured ? comparableOffers(featured) : [];
   const activeCount =
     stores.length + Number(budget !== "all") + Number(availableOnly);
+  const hasOtherFilters = activeCount > 0 || category !== "all";
   const hasFilters =
-    activeCount > 0 ||
-    category !== "all" ||
+    hasOtherFilters ||
     filter !== "all" ||
-    Boolean(search);
+    Boolean(search.trim());
 
   const filterControls = (mobile = false) => (
     <>
@@ -508,6 +532,12 @@ export default function App() {
               name={mobile ? "mobile-budget" : "budget"}
               checked={budget === item.id}
               onChange={() => change(() => setBudget(item.id))}
+              onClick={(event) => {
+                if (budget === item.id && item.id !== "all") {
+                  event.preventDefault();
+                  change(() => setBudget("all"));
+                }
+              }}
             />
             <span>{item.label}</span>
           </label>
@@ -559,6 +589,13 @@ export default function App() {
 
   return (
     <>
+      {isOffline && (
+        <div className="offline-banner" role="status">
+          <span>
+            Estás en modo sin conexión. Mostrando catálogo y guardados en memoria local.
+          </span>
+        </div>
+      )}
       <div className="dark-intro">
         <header className="site-header page-width">
           <a className="wordmark" href="/" aria-label="BlackFridaySV, inicio">
@@ -575,11 +612,15 @@ export default function App() {
             <a href="#como-comparamos">Cómo comparamos</a>
           </nav>
           <button
-            className="nav-saved"
-            onClick={showSaved}
+            className={`nav-saved ${filter === "saved" ? "selected" : ""}`}
+            onClick={toggleSaved}
+            aria-pressed={filter === "saved"}
             aria-label={`Ver guardados (${savedCount})`}
           >
-            <Heart aria-hidden="true" />
+            <Heart
+              aria-hidden="true"
+              fill={filter === "saved" ? "currentColor" : "none"}
+            />
             <span>Guardados</span>
             <span className="saved-count">{savedCount}</span>
           </button>
@@ -614,6 +655,19 @@ export default function App() {
                 placeholder="¿Qué estás buscando?"
                 aria-label="Buscar producto, marca o modelo"
               />
+              {search && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    change(() => setSearch(""));
+                    searchRef.current?.focus();
+                  }}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X aria-hidden="true" />
+                </button>
+              )}
               <button type="submit" aria-label="Buscar en el catálogo">
                 <ArrowRight aria-hidden="true" />
               </button>
@@ -779,7 +833,7 @@ export default function App() {
               <button
                 key={id}
                 aria-pressed={category === id}
-                onClick={() => change(() => setCategory(id))}
+                onClick={() => toggleCategory(id)}
                 className={category === id ? "selected" : ""}
               >
                 <Icon aria-hidden="true" />
@@ -803,7 +857,7 @@ export default function App() {
                 ).map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => change(() => setFilter(item.id))}
+                    onClick={() => toggleFilter(item.id)}
                     aria-pressed={filter === item.id}
                     className={filter === item.id ? "selected" : ""}
                   >
@@ -878,6 +932,16 @@ export default function App() {
                       <X aria-label="Quitar categoría" />
                     </button>
                   )}
+                  {filter !== "all" && (
+                    <button onClick={() => change(() => setFilter("all"))}>
+                      {filter === "saved"
+                        ? "Guardados"
+                        : filter === "discounted"
+                          ? "Con descuento"
+                          : "En varias tiendas"}
+                      <X aria-label="Quitar filtro" />
+                    </button>
+                  )}
                   {stores.map((store) => (
                     <button key={store} onClick={() => toggleStore(store)}>
                       {store}
@@ -934,19 +998,123 @@ export default function App() {
                   ) : (
                     <Search aria-hidden="true" />
                   )}
-                  <h3>
-                    {filter === "saved"
-                      ? "Tu lista empieza con un corazón."
-                      : "No encontramos esa combinación."}
-                  </h3>
-                  <p>
-                    {filter === "saved"
-                      ? "Guarda productos para tenerlos a mano. Si ya tienes guardados, prueba quitar los filtros."
-                      : "Prueba otra búsqueda o quita los filtros para ver más productos."}
-                  </p>
-                  <button className="btn btn-primary" onClick={reset}>
-                    Ver todo el catálogo
-                  </button>
+                  {filter === "saved" ? (
+                    savedCount > 0 ? (
+                      search.trim() ? (
+                        <>
+                          <h3>No encontramos guardados para “{search.trim()}”</h3>
+                          <p>
+                            Tienes {savedCount}{" "}
+                            {savedCount === 1
+                              ? "producto guardado"
+                              : "productos guardados"}
+                            , pero ninguno coincide con este término de búsqueda.
+                          </p>
+                          <div className="empty-state-actions">
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => change(() => setSearch(""))}
+                            >
+                              Ver mis guardados ({savedCount})
+                            </button>
+                            <button
+                              className="btn btn-secondary"
+                              onClick={() => change(() => setFilter("all"))}
+                            >
+                              Buscar “{search.trim()}” en todo el catálogo
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h3>Ninguno de tus guardados coincide con los filtros</h3>
+                          <p>
+                            Tienes {savedCount}{" "}
+                            {savedCount === 1
+                              ? "producto guardado"
+                              : "productos guardados"}
+                            , pero están ocultos por los filtros seleccionados.
+                          </p>
+                          <div className="empty-state-actions">
+                            <button
+                              className="btn btn-primary"
+                              onClick={() =>
+                                change(() => {
+                                  setCategory("all");
+                                  setStores([]);
+                                  setBudget("all");
+                                  setAvailableOnly(false);
+                                })
+                              }
+                            >
+                              Quitar filtros y ver mis guardados ({savedCount})
+                            </button>
+                          </div>
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <h3>Aún no tienes productos guardados</h3>
+                        <p>
+                          Toca el corazón en cualquier oferta para tenerla a mano y
+                          compararla cuando quieras.
+                        </p>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => change(() => setFilter("all"))}
+                        >
+                          Explorar ofertas
+                        </button>
+                      </>
+                    )
+                  ) : search.trim() ? (
+                    <>
+                      <h3>No encontramos resultados para “{search.trim()}”</h3>
+                      <p>
+                        {hasOtherFilters
+                          ? "Prueba otra palabra o quita los filtros de categoría y tienda."
+                          : "Revisa la ortografía o prueba con un término más general (como marca o modelo)."}
+                      </p>
+                      <div className="empty-state-actions">
+                        {hasOtherFilters && (
+                          <button
+                            className="btn btn-primary"
+                            onClick={() =>
+                              change(() => {
+                                setCategory("all");
+                                setStores([]);
+                                setBudget("all");
+                                setAvailableOnly(false);
+                              })
+                            }
+                          >
+                            Buscar “{search.trim()}” en todo el catálogo
+                          </button>
+                        )}
+                        <button
+                          className={
+                            hasOtherFilters
+                              ? "btn btn-secondary"
+                              : "btn btn-primary"
+                          }
+                          onClick={reset}
+                        >
+                          Ver todo el catálogo
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3>No encontramos ofertas con esos filtros</h3>
+                      <p>
+                        Prueba quitar algunos filtros de tienda o presupuesto para
+                        ver más productos.
+                      </p>
+                      <button className="btn btn-primary" onClick={reset}>
+                        Ver todo el catálogo
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
               {!isLoading && filtered.length > 0 && (

@@ -1,0 +1,17 @@
+{
+  "name": "BlackFridaySV - Compara Precios",
+  "short_name": "BlackFridaySV",
+  "description": "Compara precios de tiendas en El Salvador y decide con más información.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e261f",
+  "theme_color": "#1e261f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
