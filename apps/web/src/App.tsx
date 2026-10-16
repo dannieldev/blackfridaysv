@@ -647,13 +647,17 @@ export default function App() {
               <Search aria-hidden="true" />
               <input
                 ref={searchRef}
-                type="search"
+                type="text"
+                inputMode="search"
                 value={search}
                 onChange={(event) =>
                   change(() => setSearch(event.target.value))
                 }
                 placeholder="¿Qué estás buscando?"
                 aria-label="Buscar producto, marca o modelo"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
               />
               {search && (
                 <button
