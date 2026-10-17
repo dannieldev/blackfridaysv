@@ -2748,6 +2748,37 @@ input::placeholder {
   padding: 8px 14px;
   min-height: 38px;
 }
+.radar-active-criteria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.radar-criteria-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #e4f0d6;
+  color: #276721;
+  border: 1px solid rgba(39, 103, 33, 0.25);
+  cursor: pointer;
+  transition: all 140ms ease;
+  min-height: 28px;
+}
+.radar-criteria-tag:hover,
+.radar-criteria-tag:focus-visible {
+  background: #d4e7bf;
+  border-color: rgba(39, 103, 33, 0.5);
+  outline: none;
+}
+.radar-criteria-tag svg {
+  width: 12px;
+  height: 12px;
+}
 
 /* ==========================================================================
    MODAL DE RADAR PERSONAL
@@ -2771,6 +2802,10 @@ input::placeholder {
   position: relative;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
+}
+.radar-modal-header > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
 }
 .radar-header-icon {
   width: 44px;
@@ -2836,8 +2871,8 @@ input::placeholder {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -2867,9 +2902,12 @@ input::placeholder {
   gap: 8px;
 }
 .radar-pill {
-  min-height: 38px;
-  padding: 8px 14px;
-  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 22px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
@@ -3027,6 +3065,17 @@ input::placeholder {
   align-items: center;
   text-align: center;
   gap: 14px;
+  position: relative;
+}
+.redirect-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .redirect-badge {
   display: inline-flex;
@@ -3107,6 +3156,26 @@ input::placeholder {
   background: var(--positive);
   transition: width 40ms linear;
 }
+.redirect-blocked-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  font-size: 12px;
+  text-align: left;
+  line-height: 1.4;
+  width: 100%;
+}
+.redirect-blocked-alert svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #d97706;
+}
 .redirect-hint {
   font-size: 11px;
   color: var(--muted);
@@ -3127,13 +3196,74 @@ input::placeholder {
   font-size: 12px;
   color: var(--muted);
   cursor: pointer;
+  min-height: 36px;
 }
 .redirect-skip-checkbox input {
   accent-color: var(--positive);
 }
-.redirect-instant-btn {
+.redirect-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
+}
+.redirect-cancel-btn {
+  flex: 1;
   justify-content: center;
+  font-size: 13px;
+  min-height: 44px;
+}
+.redirect-instant-btn {
+  flex: 1.5;
+  justify-content: center;
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .radar-modal-content {
+    padding: 18px 14px;
+    gap: 16px;
+  }
+  .radar-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .radar-footer-stats {
+    justify-content: center;
+    text-align: center;
+  }
+  .radar-footer-actions {
+    flex-direction: column;
+    width: 100%;
+    margin-left: 0;
+  }
+  .radar-footer-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .redirect-modal-content {
+    padding: 20px 16px;
+    gap: 12px;
+  }
+  .redirect-footer-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+  .redirect-cancel-btn,
+  .redirect-instant-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .nav-radar-btn > span:not(.nav-radar-dot) {
+    display: none;
+  }
+  .nav-radar-btn {
+    padding: 8px 10px;
+    min-width: 44px;
+    justify-content: center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

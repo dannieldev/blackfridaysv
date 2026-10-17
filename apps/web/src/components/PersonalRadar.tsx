@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from './Dialog';
 import { Radar, X, Check, Sparkles, RotateCcw } from 'lucide-react';
 import {
   DEFAULT_RADAR_PREFERENCES,
+  matchesRadar,
   saveRadarPreferences,
   type RadarPreferences,
 } from '../lib/radar';
+import type { DealItem } from '../lib/deals';
 
 export {
   DEFAULT_RADAR_PREFERENCES,
@@ -23,6 +25,7 @@ interface PersonalRadarProps {
   availableStores: readonly string[];
   totalCatalogCount: number;
   matchingCount: number;
+  deals?: DealItem[];
 }
 
 const RADAR_CATEGORIES = [
@@ -30,7 +33,7 @@ const RADAR_CATEGORIES = [
   { id: 'computacion', label: 'Computadoras y Laptops' },
   { id: 'smartphones', label: 'Celulares y Telefonía' },
   { id: 'linea_blanca', label: 'Línea Blanca y Hogar' },
-  { id: 'videojuegos', label: 'Consolas y Gaming' },
+  { id: 'gaming', label: 'Consolas y Gaming' },
   { id: 'moda_calzado', label: 'Moda y Calzado' },
 ] as const;
 
@@ -50,8 +53,20 @@ export function PersonalRadarModal({
   availableStores,
   totalCatalogCount,
   matchingCount,
+  deals,
 }: PersonalRadarProps) {
   const [draft, setDraft] = useState<RadarPreferences>(preferences);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(preferences);
+    }
+  }, [isOpen, preferences]);
+
+  const liveMatches = useMemo(() => {
+    if (!deals) return matchingCount;
+    return deals.filter((deal) => matchesRadar(deal, { ...draft, enabled: true })).length;
+  }, [deals, draft, matchingCount]);
 
   if (!isOpen) return null;
 
@@ -104,7 +119,7 @@ export function PersonalRadarModal({
               Dinos qué buscas y el Radar auditará el catálogo por ti. Cero registro, guardado local en tu navegador.
             </p>
           </div>
-          <button className="icon-button modal-close" onClick={onClose} aria-label="Cerrar configuración del Radar">
+          <button type="button" className="icon-button modal-close" onClick={onClose} aria-label="Cerrar configuración del Radar">
             <X aria-hidden="true" />
           </button>
         </header>
@@ -241,7 +256,7 @@ export function PersonalRadarModal({
           <div className="radar-footer-stats">
             <Sparkles aria-hidden="true" />
             <span>
-              Auditoría sobre <strong>{totalCatalogCount}</strong> productos ({matchingCount} {matchingCount === 1 ? 'coincidencia activa' : 'coincidencias activas'}).
+              Auditoría sobre <strong>{totalCatalogCount}</strong> productos ({liveMatches} {liveMatches === 1 ? 'coincidencia activa' : 'coincidencias activas'}).
             </span>
           </div>
 

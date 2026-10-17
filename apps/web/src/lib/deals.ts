@@ -151,9 +151,12 @@ function toDeal(item: SupabaseDeal): DealItem {
 
 function demoDeals(): DealItem[] {
   return [
-    { id: 'demo-tv', title: 'Ejemplo de catálogo · Televisor de 55 pulgadas', category: 'tv_audio', currentPrice: 399 },
-    { id: 'demo-laptop', title: 'Ejemplo de catálogo · Computadora portátil', category: 'computacion', currentPrice: 599 },
-    { id: 'demo-fridge', title: 'Ejemplo de catálogo · Refrigeradora', category: 'linea_blanca', currentPrice: 449 },
+    { id: 'demo-tv', title: 'Ejemplo de catálogo · Televisor Smart 55″', category: 'tv_audio', currentPrice: 399 },
+    { id: 'demo-phone', title: 'Ejemplo de catálogo · Celular Inteligente 128GB', category: 'smartphones', currentPrice: 249 },
+    { id: 'demo-laptop', title: 'Ejemplo de catálogo · Computadora portátil 15.6″', category: 'computacion', currentPrice: 599 },
+    { id: 'demo-fridge', title: 'Ejemplo de catálogo · Refrigeradora Inverter', category: 'linea_blanca', currentPrice: 449 },
+    { id: 'demo-gaming', title: 'Ejemplo de catálogo · Consola de Videojuegos 512GB', category: 'gaming', currentPrice: 389 },
+    { id: 'demo-shoes', title: 'Ejemplo de catálogo · Calzado deportivo para correr', category: 'moda_calzado', currentPrice: 79 },
   ].map(item => ({
     ...item,
     store: 'Demostración',

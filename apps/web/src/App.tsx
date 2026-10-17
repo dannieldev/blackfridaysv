@@ -44,6 +44,7 @@ import { Toast } from "./components/Toast";
 import {
   PersonalRadarModal,
   loadRadarPreferences,
+  saveRadarPreferences,
   matchesRadar,
   type RadarPreferences,
 } from "./components/PersonalRadar";
@@ -386,6 +387,17 @@ export default function App() {
   const openDeal = (deal: DealItem) => {
     window.location.hash = `deal-${encodeURIComponent(deal.id)}`;
   };
+  const openStoreUrl = (deal: DealItem, url: string) => {
+    try {
+      if (sessionStorage.getItem("bfsv_skip_redirect_screen") === "true") {
+        const win = window.open(url, "_blank", "noopener,noreferrer");
+        if (win) return;
+      }
+    } catch {
+      /* ignore */
+    }
+    setRedirectDeal({ deal, url });
+  };
   const openLegal = (type: Exclude<LegalModalType, null>) => {
     window.location.hash = type;
   };
@@ -456,13 +468,52 @@ export default function App() {
     setSort("compare");
     setPage(1);
   };
+  const updateRadar = (updater: (prev: RadarPreferences) => RadarPreferences) => {
+    setRadarPrefs((prev) => {
+      const next = updater(prev);
+      saveRadarPreferences(next);
+      return next;
+    });
+  };
+  const removeRadarCategory = (catId: string) => {
+    change(() => {
+      updateRadar((prev) => ({
+        ...prev,
+        categories: prev.categories.filter((c) => c !== catId),
+      }));
+    });
+  };
+  const removeRadarBudget = () => {
+    change(() => {
+      updateRadar((prev) => ({
+        ...prev,
+        maxBudget: null,
+      }));
+    });
+  };
+  const resetRadarRigor = () => {
+    change(() => {
+      updateRadar((prev) => ({
+        ...prev,
+        minRigor: "all",
+      }));
+    });
+  };
+  const removeRadarStore = (store: string) => {
+    change(() => {
+      updateRadar((prev) => ({
+        ...prev,
+        stores: prev.stores.filter((s) => s !== store),
+      }));
+    });
+  };
   const categoryDeals = useMemo(
     () =>
       deals.filter((deal) => category === "all" || deal.category === category),
     [deals, category],
   );
   const radarCount = useMemo(
-    () => deals.filter((deal) => matchesRadar(deal, radarPrefs)).length,
+    () => deals.filter((deal) => matchesRadar(deal, { ...radarPrefs, enabled: true })).length,
     [deals, radarPrefs],
   );
   const filtered = useMemo(() => {
@@ -545,11 +596,11 @@ export default function App() {
   const featuredOffers = featured ? comparableOffers(featured) : [];
   const activeCount =
     stores.length + Number(budget !== "all") + Number(availableOnly);
-  const hasOtherFilters = activeCount > 0 || category !== "all";
+  const hasOtherFilters =
+    activeCount > 0 || category !== "all" || filter !== "all";
   const hasFilters =
     hasOtherFilters ||
-    Boolean(search.trim()) ||
-    (filter === "saved" && savedCount > 0);
+    Boolean(search.trim());
 
   const filterControls = (mobile = false) => (
     <>
@@ -1012,6 +1063,57 @@ export default function App() {
                         ? ` Encontramos ${filtered.length} ${filtered.length === 1 ? "oferta que coincide" : "ofertas que coinciden"} con tus criterios.`
                         : " Aún no hay ofertas que cumplan con todos tus criterios seleccionados."}
                     </p>
+                    <div className="radar-active-criteria" aria-label="Criterios del radar configurados">
+                      {radarPrefs.categories.map((c) => {
+                        const label = CATEGORIES.find((item) => item.id === c)?.label ?? c;
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            className="radar-criteria-tag"
+                            onClick={() => removeRadarCategory(c)}
+                            aria-label={`Quitar categoría ${label} del Radar`}
+                          >
+                            <span>{label}</span>
+                            <X aria-hidden="true" />
+                          </button>
+                        );
+                      })}
+                      {radarPrefs.maxBudget !== null && (
+                        <button
+                          type="button"
+                          className="radar-criteria-tag"
+                          onClick={removeRadarBudget}
+                          aria-label="Quitar límite de presupuesto del Radar"
+                        >
+                          <span>Presupuesto máx: {money(radarPrefs.maxBudget)}</span>
+                          <X aria-hidden="true" />
+                        </button>
+                      )}
+                      {radarPrefs.minRigor !== "all" && (
+                        <button
+                          type="button"
+                          className="radar-criteria-tag"
+                          onClick={resetRadarRigor}
+                          aria-label="Quitar filtro de rigor del Radar"
+                        >
+                          <span>Rigor: {radarPrefs.minRigor === "historic_low" ? "Mínimos históricos" : "Rebajas reales"}</span>
+                          <X aria-hidden="true" />
+                        </button>
+                      )}
+                      {radarPrefs.stores.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className="radar-criteria-tag"
+                          onClick={() => removeRadarStore(s)}
+                          aria-label={`Quitar tienda ${s} del Radar`}
+                        >
+                          <span>Tienda: {s}</span>
+                          <X aria-hidden="true" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="radar-status-actions">
                     <button
@@ -1098,6 +1200,59 @@ export default function App() {
               </div>
               {hasFilters && (
                 <div className="active-filters" aria-label="Filtros aplicados">
+                  {filter === "radar" && (
+                    <button onClick={() => change(() => setFilter("all"))}>
+                      🎯 Mi Radar activo ({filtered.length})
+                      <X aria-label="Quitar filtro de Radar" />
+                    </button>
+                  )}
+                  {filter === "radar" &&
+                    radarPrefs.categories.map((c) => {
+                      const label = CATEGORIES.find((item) => item.id === c)?.label ?? c;
+                      return (
+                        <button key={`radar-cat-${c}`} onClick={() => removeRadarCategory(c)}>
+                          Radar categoría: {label}
+                          <X aria-label={`Quitar categoría ${label} del Radar`} />
+                        </button>
+                      );
+                    })}
+                  {filter === "radar" && radarPrefs.maxBudget !== null && (
+                    <button onClick={removeRadarBudget}>
+                      Radar presupuesto: ≤ {money(radarPrefs.maxBudget)}
+                      <X aria-label="Quitar presupuesto del Radar" />
+                    </button>
+                  )}
+                  {filter === "radar" && radarPrefs.minRigor !== "all" && (
+                    <button onClick={resetRadarRigor}>
+                      Radar rigor: {radarPrefs.minRigor === "historic_low" ? "Mínimos históricos" : "Rebajas reales"}
+                      <X aria-label="Quitar rigor del Radar" />
+                    </button>
+                  )}
+                  {filter === "radar" &&
+                    radarPrefs.stores.map((s) => (
+                      <button key={`radar-store-${s}`} onClick={() => removeRadarStore(s)}>
+                        Radar tienda: {s}
+                        <X aria-label={`Quitar tienda ${s} del Radar`} />
+                      </button>
+                    ))}
+                  {filter === "discounted" && (
+                    <button onClick={() => change(() => setFilter("all"))}>
+                      Solo con descuento
+                      <X aria-label="Quitar filtro de descuento" />
+                    </button>
+                  )}
+                  {filter === "compare" && (
+                    <button onClick={() => change(() => setFilter("all"))}>
+                      En varias tiendas
+                      <X aria-label="Quitar filtro de comparables" />
+                    </button>
+                  )}
+                  {filter === "saved" && (
+                    <button onClick={() => change(() => setFilter("all"))}>
+                      Guardados ({savedCount})
+                      <X aria-label="Quitar filtro de guardados" />
+                    </button>
+                  )}
                   {search && (
                     <button onClick={() => change(() => setSearch(""))}>
                       “{search}”<X aria-label="Quitar búsqueda" />
@@ -1173,6 +1328,10 @@ export default function App() {
                 <div className="empty-state">
                   {filter === "saved" ? (
                     <Heart aria-hidden="true" />
+                  ) : filter === "radar" ? (
+                    <Radar aria-hidden="true" />
+                  ) : category === "moda_calzado" ? (
+                    <Shirt aria-hidden="true" />
                   ) : (
                     <Search aria-hidden="true" />
                   )}
@@ -1261,6 +1420,98 @@ export default function App() {
                         </button>
                       </>
                     )
+                  ) : filter === "radar" ? (
+                    (search.trim() || activeCount > 0 || category !== "all") ? (
+                      <>
+                        <h3>No encontramos ofertas en tu Radar con estos filtros</h3>
+                        <p>
+                          Tienes {radarCount} {radarCount === 1 ? "oferta monitoreada" : "ofertas monitoreadas"} en tu Radar, pero los filtros adicionales aplicados (búsqueda, categoría o tienda) ocultan los resultados.
+                        </p>
+                        <div className="empty-state-actions">
+                          <button
+                            className="btn btn-primary"
+                            onClick={() =>
+                              change(() => {
+                                setSearch("");
+                                setCategory("all");
+                                setStores([]);
+                                setBudget("all");
+                                setAvailableOnly(false);
+                              })
+                            }
+                          >
+                            Quitar filtros adicionales y ver mi Radar ({radarCount})
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => setRadarOpen(true)}
+                          >
+                            Ajustar criterios del Radar
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => change(() => setFilter("all"))}
+                          >
+                            Ver catálogo general
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h3>Ninguna oferta coincide con tu Radar Personal</h3>
+                        <p>
+                          Monitoreamos {deals.length} productos, pero tus criterios de categoría, presupuesto{radarPrefs.maxBudget ? ` (hasta ${money(radarPrefs.maxBudget)})` : ""} o rigor ({radarPrefs.minRigor === "historic_low" ? "solo mínimos históricos" : radarPrefs.minRigor === "discount_only" ? "rebajas reales comprobadas" : "todas las opciones"}) son muy estrictos para las ofertas disponibles.
+                        </p>
+                        <div className="empty-state-actions">
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => setRadarOpen(true)}
+                          >
+                            Ajustar criterios del Radar
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => change(() => setFilter("all"))}
+                          >
+                            Ver catálogo general
+                          </button>
+                        </div>
+                      </>
+                    )
+                  ) : category === "moda_calzado" && categoryDeals.length === 0 ? (
+                    <>
+                      <h3>Sección de Moda y Calzado en actualización</h3>
+                      <p>
+                        Estamos incorporando nuevas ofertas auditadas de ropa y calzado de Almacenes Siman y Walmart El Salvador.
+                      </p>
+                      <button className="btn btn-primary" onClick={reset}>
+                        Explorar otras categorías
+                      </button>
+                    </>
+                  ) : category === "moda_calzado" && search.trim() === "" && activeCount > 0 ? (
+                    <>
+                      <h3>No encontramos ofertas de Moda y Calzado con estos filtros</h3>
+                      <p>
+                        El catálogo incluye calzado y moda de Almacenes Siman y Walmart El Salvador. Prueba ampliar el presupuesto o quitar tiendas para ver más opciones.
+                      </p>
+                      <div className="empty-state-actions">
+                        <button
+                          className="btn btn-primary"
+                          onClick={() =>
+                            change(() => {
+                              setBudget("all");
+                              setStores([]);
+                              setSearch("");
+                            })
+                          }
+                        >
+                          Ver toda la sección de Moda y Calzado
+                        </button>
+                        <button className="btn btn-secondary" onClick={reset}>
+                          Ver todo el catálogo general
+                        </button>
+                      </div>
+                    </>
                   ) : search.trim() ? (
                     <>
                       <h3>No encontramos resultados para “{search.trim()}”</h3>
@@ -1630,7 +1881,7 @@ export default function App() {
                         rel="noopener noreferrer"
                         onClick={(e) => {
                           e.preventDefault();
-                          setRedirectDeal({ deal: selectedDeal, url: offer.productUrl! });
+                          openStoreUrl(selectedDeal, offer.productUrl!);
                         }}
                         aria-label={`Ver en ${storeLabel(offer.store)}`}
                       >
@@ -1735,7 +1986,7 @@ export default function App() {
                 rel="noopener noreferrer"
                 onClick={(e) => {
                   e.preventDefault();
-                  setRedirectDeal({ deal: selectedDeal, url: selectedDeal.productUrl });
+                  openStoreUrl(selectedDeal, selectedDeal.productUrl);
                 }}
               >
                 Ver en la tienda
@@ -1755,11 +2006,14 @@ export default function App() {
             if (prefs.enabled) {
               setFilter("radar");
               scrollToResults();
+            } else if (filter === "radar") {
+              setFilter("all");
             }
           }}
           availableStores={STORES}
           totalCatalogCount={deals.length}
           matchingCount={radarCount}
+          deals={deals}
         />
       )}
       {redirectDeal && (

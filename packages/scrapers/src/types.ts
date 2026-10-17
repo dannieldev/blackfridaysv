@@ -3,7 +3,8 @@ export type ProductCategory =
   | 'smartphones' 
   | 'computacion' 
   | 'linea_blanca' 
-  | 'gaming';
+  | 'gaming'
+  | 'moda_calzado';
 
 export interface ScrapedProduct {
   storeId: string;

@@ -99,8 +99,15 @@ test('advertised discounts and money formatting use their stated basis', () => {
   assert.equal(discountPercent({ currentPrice: 110, regularPrice: 100 }), null);
   assert.equal(discountPercent({ currentPrice: 100, regularPrice: null }), null);
   assert.equal(discountPercent({ currentPrice: Number.NaN, regularPrice: 100 }), null);
+  assert.equal(discountPercent({ currentPrice: -10, regularPrice: 100 }), null);
+  assert.equal(discountPercent({ currentPrice: 50, regularPrice: Number.POSITIVE_INFINITY }), null);
   assert.equal(money(1234.5), '$1,234.50');
   assert.equal(storeLabel('Almacenes Siman'), 'Siman');
+  assert.equal(storeLabel('Walmart El Salvador'), 'Walmart');
+  assert.equal(storeLabel('La Curacao El Salvador'), 'La Curacao');
+  assert.equal(storeLabel('Prado El Salvador'), 'Prado');
+  assert.equal(storeLabel('Omnisport'), 'Omnisport');
+  assert.equal(storeLabel('Tienda Desconocida'), 'Tienda Desconocida');
 });
 
 test('database IDs match snapshot links and saved IDs only when store slug and SKU are known', () => {
@@ -129,7 +136,10 @@ test('unavailable catalog falls back to labeled examples without purchase links 
   mock.method(globalThis, 'fetch', async () => { throw new Error('offline'); });
   const catalog = await loadCatalog();
   assert.equal(catalog.source, 'demo');
-  assert.equal(catalog.deals.length, 3);
+  assert.equal(catalog.deals.length, 6);
+  assert.ok(catalog.deals.some(d => d.category === 'moda_calzado'));
+  assert.ok(catalog.deals.some(d => d.category === 'smartphones'));
+  assert.ok(catalog.deals.some(d => d.category === 'gaming'));
   for (const deal of catalog.deals) {
     assert.equal(deal.dataSource, 'demo');
     assert.equal(deal.productUrl, '');
@@ -149,11 +159,16 @@ test('snapshot timeout aborts the request and reaches contingency', async contex
   assert.equal((await pending).source, 'demo');
 });
 
-test('real snapshot retains the catalog and safe cross-store matches', async () => {
+test('real snapshot retains the catalog, moda_calzado items, and safe cross-store matches', async () => {
   const snapshot = JSON.parse(await readFile(new URL('../public/data/deals-snapshot.json', import.meta.url), 'utf8'));
   serve(snapshot);
   const catalog = await loadCatalog();
   assert.equal(catalog.deals.length, snapshot.length);
   assert.equal(catalog.deals.filter(deal => deal.competitors?.length).length, 10);
   assert.ok(catalog.deals.every(deal => deal.history === undefined && deal.inStock === null));
+  const modaDeals = catalog.deals.filter(deal => deal.category === 'moda_calzado');
+  assert.equal(modaDeals.length, 10);
+  assert.ok(modaDeals.some(deal => deal.store === 'Almacenes Siman'));
+  assert.ok(modaDeals.some(deal => deal.store === 'Walmart El Salvador'));
+  assert.ok(modaDeals.every(deal => deal.currentPrice > 0));
 });

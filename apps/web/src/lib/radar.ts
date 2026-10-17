@@ -24,12 +24,31 @@ export function loadRadarPreferences(): RadarPreferences {
     const raw = localStorage.getItem(RADAR_STORAGE_KEY);
     if (!raw) return DEFAULT_RADAR_PREFERENCES;
     const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return DEFAULT_RADAR_PREFERENCES;
+    const categories: string[] = Array.isArray(parsed.categories)
+      ? Array.from(
+          new Set(
+            parsed.categories
+              .map((c: unknown) => (c === 'videojuegos' ? 'gaming' : String(c).trim()))
+              .filter((c: string): c is string => Boolean(c)),
+          ),
+        )
+      : [];
+    const stores: string[] = Array.isArray(parsed.stores)
+      ? Array.from(
+          new Set(
+            parsed.stores
+              .filter((s: unknown): s is string => typeof s === 'string' && s.trim().length > 0)
+              .map((s: string) => s.trim()),
+          ),
+        )
+      : [];
     return {
       enabled: Boolean(parsed.enabled),
-      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+      categories,
       maxBudget: typeof parsed.maxBudget === 'number' && parsed.maxBudget > 0 ? parsed.maxBudget : null,
       minRigor: ['all', 'discount_only', 'historic_low'].includes(parsed.minRigor) ? parsed.minRigor : 'all',
-      stores: Array.isArray(parsed.stores) ? parsed.stores : [],
+      stores,
     };
   } catch {
     return DEFAULT_RADAR_PREFERENCES;
@@ -49,8 +68,14 @@ export function matchesRadar(deal: DealItem, prefs: RadarPreferences): boolean {
   if (!prefs.enabled) return true;
 
   // Filtro por categorías si seleccionó alguna
-  if (prefs.categories.length > 0 && !prefs.categories.includes(deal.category)) {
-    return false;
+  if (prefs.categories.length > 0) {
+    const matchesCat = prefs.categories.some((cat) => {
+      if (cat === deal.category) return true;
+      if (cat === 'videojuegos' && deal.category === 'gaming') return true;
+      if (cat === 'gaming' && deal.category === 'videojuegos') return true;
+      return false;
+    });
+    if (!matchesCat) return false;
   }
 
   // Filtro por presupuesto máximo
@@ -67,10 +92,20 @@ export function matchesRadar(deal: DealItem, prefs: RadarPreferences): boolean {
     if (!hasDiscount && !isGoodScore) return false;
   }
 
-  // Filtro por almacenes si seleccionó alguno
+  // Filtro por almacenes si seleccionó alguno (bidireccional y tolerante a prefijos como "Almacenes" o "La")
   if (prefs.stores.length > 0) {
     const dealStore = deal.store.toLowerCase();
-    const matchesStore = prefs.stores.some((store) => dealStore.includes(store.toLowerCase()));
+    const dealStoreNormalized = dealStore.replace(/^almacenes\s+/, '').replace(/\s+el\s+salvador$/, '').replace(/^la\s+/, '').trim();
+    const matchesStore = prefs.stores.some((store) => {
+      const s = store.toLowerCase();
+      const sNormalized = s.replace(/^almacenes\s+/, '').replace(/\s+el\s+salvador$/, '').replace(/^la\s+/, '').trim();
+      return (
+        dealStore.includes(s) ||
+        s.includes(dealStore) ||
+        dealStoreNormalized.includes(sNormalized) ||
+        sNormalized.includes(dealStoreNormalized)
+      );
+    });
     if (!matchesStore) return false;
   }
 
