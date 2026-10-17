@@ -23,6 +23,7 @@ import {
   Store,
   Tv,
   Trash2,
+  Shirt,
   X,
 } from "lucide-react";
 import {
@@ -40,6 +41,14 @@ import { NotFoundPage } from "./components/NotFoundPage";
 import { PriceSparkline } from "./components/PriceSparkline";
 import { SkeletonCard } from "./components/SkeletonCard";
 import { Toast } from "./components/Toast";
+import {
+  PersonalRadarModal,
+  loadRadarPreferences,
+  matchesRadar,
+  type RadarPreferences,
+} from "./components/PersonalRadar";
+import { RedirectTransitionModal } from "./components/RedirectTransitionModal";
+import { getRegionalBenchmark } from "./lib/regionalBenchmark";
 
 export type { DealItem } from "./lib/deals";
 
@@ -50,6 +59,7 @@ const CATEGORIES = [
   { id: "computacion", label: "Computación", icon: Laptop },
   { id: "linea_blanca", label: "Electrodomésticos", icon: Refrigerator },
   { id: "gaming", label: "Videojuegos", icon: Gamepad2 },
+  { id: "moda_calzado", label: "Moda y calzado", icon: Shirt },
 ];
 const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport"];
 const BUDGETS = [
@@ -214,13 +224,16 @@ export default function App() {
   const [budget, setBudget] = useState("all");
   const [availableOnly, setAvailableOnly] = useState(false);
   const [filter, setFilter] = useState<
-    "all" | "discounted" | "compare" | "saved"
+    "all" | "discounted" | "compare" | "saved" | "radar"
   >("all");
   const [sort, setSort] = useState("compare");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [savedIds, setSavedIds] = useState(readSaved);
+  const [radarPrefs, setRadarPrefs] = useState<RadarPreferences>(loadRadarPreferences);
+  const [radarOpen, setRadarOpen] = useState(false);
+  const [redirectDeal, setRedirectDeal] = useState<{ deal: DealItem; url: string } | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<DealItem | null>(null);
   const [legal, setLegal] = useState<LegalModalType>(null);
@@ -409,7 +422,7 @@ export default function App() {
         setCategory((previous) => (previous === id ? "all" : id));
       }
     });
-  const toggleFilter = (id: "all" | "discounted" | "compare" | "saved") =>
+  const toggleFilter = (id: "all" | "discounted" | "compare" | "saved" | "radar") =>
     change(() => {
       const nextFilter = filter === id ? "all" : id;
       setFilter(nextFilter);
@@ -448,6 +461,10 @@ export default function App() {
       deals.filter((deal) => category === "all" || deal.category === category),
     [deals, category],
   );
+  const radarCount = useMemo(
+    () => deals.filter((deal) => matchesRadar(deal, radarPrefs)).length,
+    [deals, radarPrefs],
+  );
   const filtered = useMemo(() => {
     const terms = normalize(search.trim()).split(/\s+/).filter(Boolean);
     const result = categoryDeals.filter((deal) => {
@@ -470,7 +487,8 @@ export default function App() {
         (filter === "all" ||
           (filter === "discounted" && (discountPercent(deal) ?? 0) > 0) ||
           (filter === "compare" && comparableOffers(deal).length > 1) ||
-          (filter === "saved" && savedIds.includes(deal.id)))
+          (filter === "saved" && savedIds.includes(deal.id)) ||
+          (filter === "radar" && matchesRadar(deal, radarPrefs)))
       );
     });
     return result.sort((a, b) => {
@@ -498,6 +516,7 @@ export default function App() {
     budget,
     availableOnly,
     filter,
+    radarPrefs,
     savedIds,
     sort,
   ]);
@@ -664,19 +683,30 @@ export default function App() {
             </a>
             <a href="#como-comparamos">Cómo comparamos</a>
           </nav>
-          <button
-            className={`nav-saved ${filter === "saved" ? "selected" : ""}`}
-            onClick={toggleSaved}
-            aria-pressed={filter === "saved"}
-            aria-label={`Ver guardados (${savedCount})`}
-          >
-            <Heart
-              aria-hidden="true"
-              fill={filter === "saved" ? "currentColor" : "none"}
-            />
-            <span>Guardados</span>
-            <span className="saved-count">{savedCount}</span>
-          </button>
+          <div className="nav-actions">
+            <button
+              className={`nav-radar-btn ${radarPrefs.enabled ? "is-active" : ""}`}
+              onClick={() => setRadarOpen(true)}
+              aria-label="Configurar mi Radar Personal"
+            >
+              <Radar aria-hidden="true" />
+              <span>Mi Radar</span>
+              {radarPrefs.enabled && <span className="nav-radar-dot" aria-hidden="true" />}
+            </button>
+            <button
+              className={`nav-saved ${filter === "saved" ? "selected" : ""}`}
+              onClick={toggleSaved}
+              aria-pressed={filter === "saved"}
+              aria-label={`Ver guardados (${savedCount})`}
+            >
+              <Heart
+                aria-hidden="true"
+                fill={filter === "saved" ? "currentColor" : "none"}
+              />
+              <span>Guardados</span>
+              <span className="saved-count">{savedCount}</span>
+            </button>
+          </div>
         </header>
         <section className="hero page-width" aria-labelledby="hero-title">
           <div className="hero-copy">
@@ -729,17 +759,38 @@ export default function App() {
                 <ArrowRight aria-hidden="true" />
               </button>
             </form>
-            <a
-              className="hero-browse"
-              href="#catalogo"
-              onClick={() => {
-                if (filter === "saved") {
-                  change(() => setFilter("all"));
-                }
-              }}
-            >
-              Ver todas las ofertas <ArrowDown aria-hidden="true" />
-            </a>
+            <div className="hero-actions-row">
+              <button
+                type="button"
+                className={`hero-radar-cta ${radarPrefs.enabled ? "is-active" : ""}`}
+                onClick={() => {
+                  if (radarPrefs.enabled) {
+                    change(() => setFilter("radar"));
+                    scrollToResults();
+                  } else {
+                    setRadarOpen(true);
+                  }
+                }}
+              >
+                <Radar aria-hidden="true" />
+                <span>
+                  {radarPrefs.enabled
+                    ? `🎯 Mi Radar activo (${radarCount} ofertas)`
+                    : "🎯 ¿Buscas algo específico? Configura tu Radar"}
+                </span>
+              </button>
+              <a
+                className="hero-browse"
+                href="#catalogo"
+                onClick={() => {
+                  if (filter === "saved" || filter === "radar") {
+                    change(() => setFilter("all"));
+                  }
+                }}
+              >
+                Ver todas las ofertas <ArrowDown aria-hidden="true" />
+              </a>
+            </div>
             <div className="quick-search">
               <span>Prueba con</span>
               {["Smart TV", "Samsung", "Laptop"].map((term) => (
@@ -923,20 +974,63 @@ export default function App() {
                     { id: "all", label: "Todos" },
                     { id: "discounted", label: "Con descuento" },
                     { id: "compare", label: "En varias tiendas" },
+                    { id: "radar", label: "🎯 Mi Radar" },
                     { id: "saved", label: "Guardados" },
                   ] as const
                 ).map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => toggleFilter(item.id)}
+                    onClick={() => {
+                      if (item.id === "radar" && !radarPrefs.enabled) {
+                        setRadarOpen(true);
+                        return;
+                      }
+                      toggleFilter(item.id);
+                    }}
                     aria-pressed={filter === item.id}
                     className={filter === item.id ? "selected" : ""}
                   >
                     {item.label}
+                    {item.id === "radar" && radarPrefs.enabled && (
+                      <span>{radarCount}</span>
+                    )}
                     {item.id === "saved" && <span>{savedCount}</span>}
                   </button>
                 ))}
               </div>
+              {filter === "radar" && (
+                <div className="radar-status-banner" role="region" aria-label="Estado del Radar Personal">
+                  <div className="radar-status-info">
+                    <div className="radar-status-badge">
+                      <Radar aria-hidden="true" />
+                      <span>Radar Personal Activo</span>
+                    </div>
+                    <p>
+                      Monitoreando <strong>{deals.length} productos</strong> en{" "}
+                      <strong>{storeCount} tiendas</strong>.
+                      {filtered.length > 0
+                        ? ` Encontramos ${filtered.length} ${filtered.length === 1 ? "oferta que coincide" : "ofertas que coinciden"} con tus criterios.`
+                        : " Aún no hay ofertas que cumplan con todos tus criterios seleccionados."}
+                    </p>
+                  </div>
+                  <div className="radar-status-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary radar-action-btn"
+                      onClick={() => setRadarOpen(true)}
+                    >
+                      Ajustar preferencias
+                    </button>
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={() => toggleFilter("radar")}
+                    >
+                      Ver catálogo general
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="results-toolbar">
                 <button
                   className="btn btn-secondary mobile-filter-trigger"
@@ -1534,6 +1628,10 @@ export default function App() {
                         href={offer.productUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setRedirectDeal({ deal: selectedDeal, url: offer.productUrl! });
+                        }}
                         aria-label={`Ver en ${storeLabel(offer.store)}`}
                       >
                         <ArrowUpRight aria-hidden="true" />
@@ -1548,12 +1646,22 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              {comparableOffers(selectedDeal).length < 2 && (
-                <p className="detail-reference">
-                  Aún no tenemos otra tienda con una coincidencia de modelo para
-                  comparar.
-                </p>
-              )}
+              {comparableOffers(selectedDeal).length < 2 && (() => {
+                const benchmark = getRegionalBenchmark(selectedDeal);
+                return (
+                  <div className={`regional-benchmark-card status-${benchmark.status}`}>
+                    <div className="regional-benchmark-header">
+                      <span className="regional-benchmark-pill">
+                        {benchmark.statusLabel}
+                      </span>
+                      <span className="regional-benchmark-market">
+                        {benchmark.referenceMarket}
+                      </span>
+                    </div>
+                    <p className="regional-benchmark-note">{benchmark.note}</p>
+                  </div>
+                );
+              })()}
               <p className="detail-reference">
                 Confirma la variante, el costo de envío y las condiciones en
                 cada tienda.
@@ -1625,6 +1733,10 @@ export default function App() {
                 href={selectedDeal.productUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setRedirectDeal({ deal: selectedDeal, url: selectedDeal.productUrl });
+                }}
               >
                 Ver en la tienda
                 <ArrowUpRight aria-hidden="true" />
@@ -1632,6 +1744,30 @@ export default function App() {
             )}
           </div>
         </Dialog>
+      )}
+      {radarOpen && (
+        <PersonalRadarModal
+          isOpen={radarOpen}
+          onClose={() => setRadarOpen(false)}
+          preferences={radarPrefs}
+          onSave={(prefs) => {
+            setRadarPrefs(prefs);
+            if (prefs.enabled) {
+              setFilter("radar");
+              scrollToResults();
+            }
+          }}
+          availableStores={STORES}
+          totalCatalogCount={deals.length}
+          matchingCount={radarCount}
+        />
+      )}
+      {redirectDeal && (
+        <RedirectTransitionModal
+          deal={redirectDeal.deal}
+          targetUrl={redirectDeal.url}
+          onClose={() => setRedirectDeal(null)}
+        />
       )}
       {missingDeal && (
         <Dialog onClose={closeOverlay} labelledBy="missing-deal-title">
