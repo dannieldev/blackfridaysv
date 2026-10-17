@@ -787,7 +787,7 @@ export default function App() {
                 onChange={(event) =>
                   change(() => setSearch(event.target.value))
                 }
-                placeholder="¿Qué estás buscando?"
+                placeholder="Buscar producto, marca o modelo (ej. Samsung, Laptop)..."
                 aria-label="Buscar producto, marca o modelo"
                 autoComplete="off"
                 autoCorrect="off"
@@ -810,38 +810,6 @@ export default function App() {
                 <ArrowRight aria-hidden="true" />
               </button>
             </form>
-            <div className="hero-actions-row">
-              <button
-                type="button"
-                className={`hero-radar-cta ${radarPrefs.enabled ? "is-active" : ""}`}
-                onClick={() => {
-                  if (radarPrefs.enabled) {
-                    change(() => setFilter("radar"));
-                    scrollToResults();
-                  } else {
-                    setRadarOpen(true);
-                  }
-                }}
-              >
-                <Radar aria-hidden="true" />
-                <span>
-                  {radarPrefs.enabled
-                    ? `🎯 Mi Radar activo (${radarCount} ofertas)`
-                    : "🎯 ¿Buscas algo específico? Configura tu Radar"}
-                </span>
-              </button>
-              <a
-                className="hero-browse"
-                href="#catalogo"
-                onClick={() => {
-                  if (filter === "saved" || filter === "radar") {
-                    change(() => setFilter("all"));
-                  }
-                }}
-              >
-                Ver todas las ofertas <ArrowDown aria-hidden="true" />
-              </a>
-            </div>
             <div className="quick-search">
               <span>Prueba con</span>
               {["Smart TV", "Samsung", "Laptop"].map((term) => (
@@ -857,6 +825,39 @@ export default function App() {
                   <ArrowUpRight aria-hidden="true" />
                 </button>
               ))}
+            </div>
+            <div className="hero-radar-hint">
+              <span>¿Compras con presupuesto fijo?</span>
+              <button
+                type="button"
+                className={`hero-radar-pill-btn ${radarPrefs.enabled ? "is-active" : ""}`}
+                onClick={() => {
+                  if (radarPrefs.enabled) {
+                    change(() => setFilter("radar"));
+                    scrollToResults();
+                  } else {
+                    setRadarOpen(true);
+                  }
+                }}
+              >
+                <Radar aria-hidden="true" />
+                <span>
+                  {radarPrefs.enabled
+                    ? `Mi Radar activo (${radarCount} ofertas)`
+                    : "Activar Radar Personal"}
+                </span>
+              </button>
+              <a
+                className="hero-browse"
+                href="#catalogo"
+                onClick={() => {
+                  if (filter === "saved" || filter === "radar") {
+                    change(() => setFilter("all"));
+                  }
+                }}
+              >
+                Ver todas las ofertas <ArrowDown aria-hidden="true" />
+              </a>
             </div>
           </div>
           {isLoading ? (
