@@ -1,8 +1,8 @@
-name: Automated Price Scraper
+name: Automated Price Scraper & Snapshot Sync
 
 on:
   schedule:
-    # 2 veces al día durante Octubre (9:00 AM y 9:00 PM CST = 15:00 y 03:00 UTC)
+    # 2 veces al día durante temporada de compras (9:00 AM y 9:00 PM CST = 15:00 y 03:00 UTC)
     - cron: '0 15,3 * * *'
   workflow_dispatch:
     inputs:
@@ -19,15 +19,20 @@ on:
           - production
           - dry-run
 
+permissions:
+  contents: write
+
 jobs:
-  scrape-and-sync:
-    name: Scrape Stores and Sync to Supabase
+  scrape-sync-and-deploy:
+    name: Scrape Stores, Update Snapshot & Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -38,7 +43,7 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Scrapers
+      - name: Run Scrapers & Generate Snapshot
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -47,3 +52,41 @@ jobs:
           SCRAPE_MAX_ITEMS_PER_CATEGORY: 50
         run: |
           npm run scrape
+
+      - name: Commit and Push Updated Snapshot
+        id: commit_snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ -f apps/web/public/data/deals-snapshot.json ]; then
+            git add apps/web/public/data/deals-snapshot.json
+
+            if git diff --staged --quiet; then
+              echo "SNAPSHOT_CHANGED=false" >> $GITHUB_ENV
+              echo "✔ No hay cambios nuevos en deals-snapshot.json."
+            else
+              echo "SNAPSHOT_CHANGED=true" >> $GITHUB_ENV
+              TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+              git commit -m "chore(data): auto-update deals snapshot ($TIMESTAMP) [skip ci]"
+              git push origin main
+              echo "✔ Snapshot actualizado y enviado a origin/main con éxito."
+            fi
+          else
+            echo "SNAPSHOT_CHANGED=false" >> $GITHUB_ENV
+            echo "⚠ El archivo deals-snapshot.json no se encontró."
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        if: env.CLOUDFLARE_API_TOKEN != '' && (env.SNAPSHOT_CHANGED == 'true' || github.event_name == 'workflow_dispatch')
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🚀 Desplegando versión actualizada a Cloudflare Workers..."
+          npm run deploy --workspace=apps/web
+
+      - name: Informative Notice
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: |
+          echo "ℹ️ CLOUDFLARE_API_TOKEN no está definido en los Secretos de GitHub. El snapshot fue versionado en Git exitosamente. Si tienes conectado Cloudflare a este repositorio, el despliegue se iniciará automáticamente por Git push."

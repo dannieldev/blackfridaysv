@@ -72,6 +72,7 @@ async function main() {
   console.log(`- Precios históricos registrados: ${stats.pricesRecorded}`);
   console.log(`- Estado: ${stats.dryRun ? '✔ Simulación completada (Dry-run)' : '✔ Sincronizado en Supabase'}`);
   console.log('====================================================\n');
+  process.exit(0);
 }
 
 main().catch((err) => {
