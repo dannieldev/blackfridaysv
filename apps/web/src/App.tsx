@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
+  BarChart2,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -25,6 +26,7 @@ import {
   Trash2,
   Shirt,
   X,
+  Zap,
 } from "lucide-react";
 import {
   comparableOffers,
@@ -33,6 +35,7 @@ import {
   money,
   storeLabel,
 } from "./lib/deals";
+import { priceEvidence } from "./lib/priceHistory";
 import type { DataSource, DealItem } from "./lib/deals";
 import { Dialog } from "./components/Dialog";
 import { LegalModals } from "./components/LegalModals";
@@ -150,20 +153,77 @@ function PriceEvidence({ deal }: { deal: DealItem }) {
   );
 }
 
-function DealCard({
+export function DealBadge({ deal }: { deal: DealItem }) {
+
+  const discount = discountPercent(deal);
+  const evidence = priceEvidence(deal);
+  const offers = comparableOffers(deal);
+  const others = offers.filter((o) => !o.isCurrent);
+  const cheaper = others.length > 0 && others[0].price < deal.currentPrice;
+
+  if (evidence.isObservedLow) {
+    return (
+      <span className="deal-verdict-badge verdict-historic-low">
+        <Check size={11} aria-hidden="true" />
+        Mínimo comprobado
+      </span>
+    );
+  }
+
+  if (cheaper) {
+    return (
+      <span className="deal-verdict-badge verdict-cheaper-elsewhere">
+        <Store size={11} aria-hidden="true" />
+        Mejor en {storeLabel(others[0].store)}
+      </span>
+    );
+  }
+
+  if (evidence.trend === "good_discount") {
+    return (
+      <span className="deal-verdict-badge verdict-good-discount">
+        <ArrowDown size={11} aria-hidden="true" />
+        Bajó de precio
+      </span>
+    );
+  }
+
+  if (evidence.trend === "higher") {
+    return (
+      <span className="deal-verdict-badge verdict-price-up">
+        <ArrowUpRight size={11} aria-hidden="true" />
+        Subió de precio
+      </span>
+    );
+  }
+
+  if (discount !== null && discount > 0) {
+    return (
+      <span className="deal-verdict-badge verdict-advertised">
+        −{discount}% anunciado
+      </span>
+    );
+  }
+
+  return null;
+}
+
+export function DealCard({
   deal,
   saved,
   onSave,
   onOpen,
+  mode = "simple",
 }: {
   deal: DealItem;
   saved: boolean;
   onSave: () => void;
   onOpen: () => void;
+  mode?: "simple" | "detailed";
 }) {
-  const discount = discountPercent(deal);
+
   return (
-    <article className="deal-card">
+    <article className={`deal-card deal-card-${mode}`}>
       <div className="product-visual">
         <button
           className="product-image-button"
@@ -180,9 +240,7 @@ function DealCard({
         >
           <Heart fill={saved ? "currentColor" : "none"} aria-hidden="true" />
         </button>
-        {discount !== null && discount > 0 && (
-          <span className="advertised-discount">−{discount}% anunciado</span>
-        )}
+        <DealBadge deal={deal} />
       </div>
       <div className="product-content">
         <div className="product-meta">
@@ -202,11 +260,15 @@ function DealCard({
               </span>
             )}
         </div>
-        <PriceSparkline deal={deal} compact />
-        {deal.dataSource !== "demo" && <CaptureStatus item={deal} />}
+        {mode === "detailed" && (
+          <>
+            <PriceSparkline deal={deal} compact />
+            {deal.dataSource !== "demo" && <CaptureStatus item={deal} />}
+          </>
+        )}
         <PriceEvidence deal={deal} />
         <button className="card-action" onClick={onOpen}>
-          Ver precio y detalles
+          {mode === "simple" ? "Ver oferta" : "Ver precio y detalles"}
           <ArrowUpRight aria-hidden="true" />
         </button>
       </div>
@@ -249,6 +311,25 @@ export default function App() {
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
   const [confirmClearSaved, setConfirmClearSaved] = useState(false);
+  const [viewMode, setViewMode] = useState<"simple" | "detailed">(() => {
+    if (typeof window === "undefined") return "simple";
+    try {
+      const saved = localStorage.getItem("bfsv_view_mode");
+      if (saved === "simple" || saved === "detailed") return saved;
+    } catch {
+      /* ignore */
+    }
+    return window.innerWidth < 768 ? "simple" : "detailed";
+  });
+  const handleViewModeChange = (nextMode: "simple" | "detailed") => {
+    setViewMode(nextMode);
+    try {
+      localStorage.setItem("bfsv_view_mode", nextMode);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const searchRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1165,6 +1246,30 @@ export default function App() {
                     ? "Cargando…"
                     : `${filtered.length} ${filtered.length === 1 ? "resultado" : "resultados"}`}
                 </span>
+                                <div className="catalog-mode-toggle" role="radiogroup" aria-label="Modo de catálogo">
+                  <button
+                    type="button"
+                    className={`mode-btn ${viewMode === "simple" ? "is-active" : ""}`}
+                    onClick={() => handleViewModeChange("simple")}
+                    aria-checked={viewMode === "simple"}
+                    role="radio"
+                    title="Modo Simple: tarjetas compactas y visuales"
+                  >
+                    <Zap size={13} aria-hidden="true" />
+                    <span>Simple</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`mode-btn ${viewMode === "detailed" ? "is-active" : ""}`}
+                    onClick={() => handleViewModeChange("detailed")}
+                    aria-checked={viewMode === "detailed"}
+                    role="radio"
+                    title="Modo Detallado: con historial y capturas"
+                  >
+                    <BarChart2 size={13} aria-hidden="true" />
+                    <span>Detallado</span>
+                  </button>
+                </div>
                 <label className="sort-control">
                   <span className="sort-label">Ordenar:</span>
                   <select
@@ -1336,6 +1441,7 @@ export default function App() {
                       saved={savedIds.includes(deal.id)}
                       onSave={() => save(deal)}
                       onOpen={() => openDeal(deal)}
+                      mode={viewMode}
                     />
                   ))}
                 </div>
