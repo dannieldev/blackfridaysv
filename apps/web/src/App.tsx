@@ -827,6 +827,31 @@ export default function App() {
             <a href="#como-comparamos">Cómo comparamos</a>
           </nav>
           <div className="nav-actions">
+            <div className="header-mode-toggle" role="radiogroup" aria-label="Modo de visualización">
+              <button
+                type="button"
+                className={`header-mode-btn ${viewMode === "simple" ? "is-active" : ""}`}
+                onClick={() => handleViewModeChange("simple")}
+                aria-checked={viewMode === "simple"}
+                role="radio"
+                title="Modo Simple: navegación rápida y directa"
+              >
+                <Zap size={12} aria-hidden="true" />
+                <span>Simple</span>
+              </button>
+              <button
+                type="button"
+                className={`header-mode-btn ${viewMode === "detailed" ? "is-active" : ""}`}
+                onClick={() => handleViewModeChange("detailed")}
+                aria-checked={viewMode === "detailed"}
+                role="radio"
+                title="Modo Detallado: con auditoría y análisis"
+              >
+                <BarChart2 size={12} aria-hidden="true" />
+                <span>Detallado</span>
+              </button>
+            </div>
+
             <button
               className={`nav-radar-btn ${radarPrefs.enabled ? "is-active" : ""}`}
               onClick={() => setRadarOpen(true)}
@@ -851,7 +876,7 @@ export default function App() {
             </button>
           </div>
         </header>
-        <section className="hero page-width" aria-labelledby="hero-title">
+        <section className={`hero page-width ${viewMode === "simple" ? "hero-simple" : ""}`} aria-labelledby="hero-title">
           <div className="hero-copy">
             <h1 id="hero-title">
               El buen precio
@@ -952,75 +977,77 @@ export default function App() {
               </a>
             </div>
           </div>
-          {isLoading ? (
-            <div className="hero-feature loading-feature" aria-busy="true">
-              <span>Cargando comparación…</span>
-            </div>
-          ) : featured ? (
-            <article className="hero-feature">
-              <div className="feature-heading">
-                <span>Un mismo modelo. Distintos precios.</span>
-                <ArrowDown aria-hidden="true" />
+          {viewMode === "detailed" && (
+            isLoading ? (
+              <div className="hero-feature loading-feature" aria-busy="true">
+                <span>Cargando comparación…</span>
               </div>
-              <div className="feature-product">
-                <div className="feature-image">
-                  <ProductImage deal={featured} eager />
+            ) : featured ? (
+              <article className="hero-feature">
+                <div className="feature-heading">
+                  <span>Un mismo modelo. Distintos precios.</span>
+                  <ArrowDown aria-hidden="true" />
                 </div>
-                <div>
-                  <span className="feature-brand">{featured.brand}</span>
-                  <h2>
-                    {featured.modelCode === "UN65U8000"
-                      ? "Smart TV 65″ Crystal UHD 4K"
-                      : featured.title}
-                  </h2>
-                  <span className="model-label">{featured.modelCode}</span>
-                </div>
-              </div>
-              <div className="feature-offers">
-                {featuredOffers.slice(0, 3).map((offer, index) => (
-                  <div
-                    className={
-                      index === 0 ? "feature-offer lowest" : "feature-offer"
-                    }
-                    key={offer.store}
-                  >
-                    <span>
-                      {storeLabel(offer.store)}
-                      {index === 0 && (
-                        <span className="lowest-label">
-                          Menor de esta comparación
-                        </span>
-                      )}
-                    </span>
-                    <strong>{money(offer.price)}</strong>
-                    {index === 0 && <Check aria-hidden="true" />}
+                <div className="feature-product">
+                  <div className="feature-image">
+                    <ProductImage deal={featured} eager />
                   </div>
-                ))}
+                  <div>
+                    <span className="feature-brand">{featured.brand}</span>
+                    <h2>
+                      {featured.modelCode === "UN65U8000"
+                        ? "Smart TV 65″ Crystal UHD 4K"
+                        : featured.title}
+                    </h2>
+                    <span className="model-label">{featured.modelCode}</span>
+                  </div>
+                </div>
+                <div className="feature-offers">
+                  {featuredOffers.slice(0, 3).map((offer, index) => (
+                    <div
+                      className={
+                        index === 0 ? "feature-offer lowest" : "feature-offer"
+                      }
+                      key={offer.store}
+                    >
+                      <span>
+                        {storeLabel(offer.store)}
+                        {index === 0 && (
+                          <span className="lowest-label">
+                            Menor de esta comparación
+                          </span>
+                        )}
+                      </span>
+                      <strong>{money(offer.price)}</strong>
+                      {index === 0 && <Check aria-hidden="true" />}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  className="feature-link"
+                  onClick={() => openDeal(featured)}
+                >
+                  Ver la comparación completa
+                  <ArrowUpRight aria-hidden="true" />
+                </button>
+              </article>
+            ) : (
+              <div className="hero-feature feature-empty">
+                <Radar aria-hidden="true" />
+                <h2>
+                  Busca. Compara.
+                  <br />
+                  Decide a tu ritmo.
+                </h2>
+                <p>
+                  Los detalles de cada producto te ayudan a entender el precio
+                  publicado.
+                </p>
+                <a className="btn btn-primary" href="#catalogo">
+                  Ver catálogo
+                </a>
               </div>
-              <button
-                className="feature-link"
-                onClick={() => openDeal(featured)}
-              >
-                Ver la comparación completa
-                <ArrowUpRight aria-hidden="true" />
-              </button>
-            </article>
-          ) : (
-            <div className="hero-feature feature-empty">
-              <Radar aria-hidden="true" />
-              <h2>
-                Busca. Compara.
-                <br />
-                Decide a tu ritmo.
-              </h2>
-              <p>
-                Los detalles de cada producto te ayudan a entender el precio
-                publicado.
-              </p>
-              <a className="btn btn-primary" href="#catalogo">
-                Ver catálogo
-              </a>
-            </div>
+            )
           )}
         </section>
         <div className="store-strip page-width">
@@ -1058,6 +1085,7 @@ export default function App() {
                   : `${deals.length} productos. ${storeCount} tiendas. Más contexto para elegir.`}
               </p>
             </div>
+            {viewMode === "detailed" && (
             <div className="catalog-source">
               <span className="source-dot" aria-hidden="true" />
               <span>
@@ -1071,8 +1099,9 @@ export default function App() {
                 </small>
               </span>
             </div>
+            )}
           </div>
-          {!isLoading && source !== "demo" && deals.length > 0 && (
+          {viewMode === "detailed" && !isLoading && source !== "demo" && deals.length > 0 && (
             <CatalogHealth deals={deals} onReload={() => setReloadKey(key => key + 1)} />
           )}
           {(source === "demo" || loadError) && !isLoading && (
@@ -1738,6 +1767,8 @@ export default function App() {
             </div>
           </div>
         </section>
+        {viewMode === "detailed" && (
+          <>
         <section
           className="guide-section"
           id="como-comparamos"
@@ -1816,6 +1847,8 @@ export default function App() {
           <div><h2 id="subscription-title">Las bajadas que te interesan, en tu correo.</h2><p>Elige categorías y presupuesto. Un resumen al día como máximo, sólo cuando haya coincidencias.</p></div>
           <button className="btn btn-primary" onClick={() => { setSubscriptionProduct(null); setSubscriptionOpen(true); }}>Elegir mis avisos</button>
         </section>
+          </>
+        )}
       </main>
       <footer className="site-footer page-width">
         <div>
