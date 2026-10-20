@@ -119,7 +119,8 @@ test('database IDs match snapshot links and saved IDs only when store slug and S
   assert.equal(catalogProductId({ ...database, store_id: '' }), database.store_product_id);
 });
 
-test('only explicit valid observations become history', async () => {
+test('only explicit valid observations become history', async context => {
+  context.mock.method(Date, 'now', () => Date.parse('2026-10-20T00:00:00Z'));
   serve([row({ history: [
     { date: '2026-10-15T00:00:00Z', price: 219 },
     { date: '2026-10-01T00:00:00Z', price: 230 },
@@ -164,11 +165,15 @@ test('real snapshot retains the catalog, moda_calzado items, and safe cross-stor
   serve(snapshot);
   const catalog = await loadCatalog();
   assert.equal(catalog.deals.length, snapshot.length);
-  assert.equal(catalog.deals.filter(deal => deal.competitors?.length).length, 10);
-  assert.ok(catalog.deals.every(deal => deal.history === undefined && deal.inStock === null));
+  assert.ok(catalog.deals.filter(deal => deal.competitors?.length).every(deal => deal.modelCode !== 'N/A'));
+  assert.ok(catalog.deals.every(deal => deal.inStock === null || typeof deal.inStock === 'boolean'));
+  for (const deal of catalog.deals) {
+    const original = snapshot.find((item: { id: string }) => item.id === deal.id);
+    assert.equal(deal.currentPrice, original.currentPrice);
+    assert.equal(deal.checkedAt, original.updatedAt);
+    assert.ok((deal.history ?? []).every(p => Number.isFinite(Date.parse(p.date)) && p.price > 0));
+  }
   const modaDeals = catalog.deals.filter(deal => deal.category === 'moda_calzado');
-  assert.equal(modaDeals.length, 10);
-  assert.ok(modaDeals.some(deal => deal.store === 'Almacenes Siman'));
-  assert.ok(modaDeals.some(deal => deal.store === 'Walmart El Salvador'));
+  assert.equal(modaDeals.length, snapshot.filter((item: { category: string }) => item.category === 'moda_calzado').length);
   assert.ok(modaDeals.every(deal => deal.currentPrice > 0));
 });

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p tsconfig.worker.json && vite build",
+    "dev:api": "wrangler dev --port 8787 --local",
     "preview": "vite preview",
     "test": "node --import tsx/esm --test tests/*.ts",
     "deploy": "npm run build && wrangler deploy"

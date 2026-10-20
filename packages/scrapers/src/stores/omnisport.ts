@@ -128,6 +128,7 @@ export class OmnisportStoreScraper implements StoreScraper {
             page++;
           }
         } catch (err) {
+          options?.onIssue?.();
           // Resiliencia: una subcategoría fallida jamás interrumpe la extracción de las demás
           console.warn(`[${this.storeName}] Advertencia en subcategoría "${subcatSlug}":`, (err as Error).message);
         }
@@ -149,6 +150,7 @@ export class OmnisportStoreScraper implements StoreScraper {
       try {
         const res = await undiciFetch(url, {
           dispatcher,
+          signal: AbortSignal.timeout(20000),
           headers: {
             'User-Agent': UA,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -173,13 +175,13 @@ export class OmnisportStoreScraper implements StoreScraper {
       } catch (err) {
         if (attempts >= maxAttempts) {
           console.warn(`[${this.storeName}] Falló fetch en ${url} tras ${maxAttempts} intentos:`, (err as Error).message);
-          return null;
+          throw err;
         }
         await new Promise((r) => setTimeout(r, 800 * attempts));
       }
     }
 
-    return null;
+    throw new Error('Omnisport no respondió después de los reintentos.');
   }
 
   private parseProducts(html: string, category: ProductCategory): ScrapedProduct[] {

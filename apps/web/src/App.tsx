@@ -49,7 +49,8 @@ import {
   type RadarPreferences,
 } from "./components/PersonalRadar";
 import { RedirectTransitionModal } from "./components/RedirectTransitionModal";
-import { getRegionalBenchmark } from "./lib/regionalBenchmark";
+import { CatalogHealth, CaptureStatus } from "./components/CatalogHealth";
+import { SubscriptionModal } from "./components/SubscriptionModal";
 
 export type { DealItem } from "./lib/deals";
 
@@ -202,6 +203,7 @@ function DealCard({
             )}
         </div>
         <PriceSparkline deal={deal} compact />
+        {deal.dataSource !== "demo" && <CaptureStatus item={deal} />}
         <PriceEvidence deal={deal} />
         <button className="card-action" onClick={onOpen}>
           Ver precio y detalles
@@ -219,6 +221,7 @@ export default function App() {
   const [isLoading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [evaluationTime, setEvaluationTime] = useState(Date.now);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [stores, setStores] = useState<string[]>([]);
@@ -234,6 +237,8 @@ export default function App() {
   const [savedIds, setSavedIds] = useState(readSaved);
   const [radarPrefs, setRadarPrefs] = useState<RadarPreferences>(loadRadarPreferences);
   const [radarOpen, setRadarOpen] = useState(false);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [subscriptionProduct, setSubscriptionProduct] = useState<DealItem | null>(null);
   const [redirectDeal, setRedirectDeal] = useState<{ deal: DealItem; url: string } | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<DealItem | null>(null);
@@ -247,6 +252,11 @@ export default function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setEvaluationTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -513,8 +523,8 @@ export default function App() {
     [deals, category],
   );
   const radarCount = useMemo(
-    () => deals.filter((deal) => matchesRadar(deal, { ...radarPrefs, enabled: true })).length,
-    [deals, radarPrefs],
+    () => deals.filter((deal) => matchesRadar(deal, { ...radarPrefs, enabled: true }, evaluationTime)).length,
+    [deals, radarPrefs, evaluationTime],
   );
   const filtered = useMemo(() => {
     const terms = normalize(search.trim()).split(/\s+/).filter(Boolean);
@@ -539,7 +549,7 @@ export default function App() {
           (filter === "discounted" && (discountPercent(deal) ?? 0) > 0) ||
           (filter === "compare" && comparableOffers(deal).length > 1) ||
           (filter === "saved" && savedIds.includes(deal.id)) ||
-          (filter === "radar" && matchesRadar(deal, radarPrefs)))
+          (filter === "radar" && matchesRadar(deal, radarPrefs, evaluationTime)))
       );
     });
     return result.sort((a, b) => {
@@ -568,6 +578,7 @@ export default function App() {
     availableOnly,
     filter,
     radarPrefs,
+    evaluationTime,
     savedIds,
     sort,
   ]);
@@ -971,7 +982,7 @@ export default function App() {
               <span>
                 {source === "demo"
                   ? "Catálogo de demostración"
-                  : "Última captura"}
+                  : "Captura más antigua"}
                 <small>
                   {source === "demo"
                     ? "Los ejemplos no son ofertas vigentes"
@@ -980,6 +991,9 @@ export default function App() {
               </span>
             </div>
           </div>
+          {!isLoading && source !== "demo" && deals.length > 0 && (
+            <CatalogHealth deals={deals} onReload={() => setReloadKey(key => key + 1)} />
+          )}
           {(source === "demo" || loadError) && !isLoading && (
             <div className="catalog-warning" role="status">
               <CircleHelp aria-hidden="true" />
@@ -1096,9 +1110,9 @@ export default function App() {
                           type="button"
                           className="radar-criteria-tag"
                           onClick={resetRadarRigor}
-                          aria-label="Quitar filtro de rigor del Radar"
+                          aria-label="Quitar filtro de precio del Radar"
                         >
-                          <span>Rigor: {radarPrefs.minRigor === "historic_low" ? "Mínimos históricos" : "Rebajas reales"}</span>
+                          <span>{radarPrefs.minRigor === "historic_low" ? "Mínimos del periodo" : "Rebajas anunciadas"}</span>
                           <X aria-hidden="true" />
                         </button>
                       )}
@@ -1225,8 +1239,8 @@ export default function App() {
                   )}
                   {filter === "radar" && radarPrefs.minRigor !== "all" && (
                     <button onClick={resetRadarRigor}>
-                      Radar rigor: {radarPrefs.minRigor === "historic_low" ? "Mínimos históricos" : "Rebajas reales"}
-                      <X aria-label="Quitar rigor del Radar" />
+                      Radar: {radarPrefs.minRigor === "historic_low" ? "Mínimos del periodo" : "Rebajas anunciadas"}
+                      <X aria-label="Quitar filtro de precio del Radar" />
                     </button>
                   )}
                   {filter === "radar" &&
@@ -1461,7 +1475,7 @@ export default function App() {
                       <>
                         <h3>Ninguna oferta coincide con tu Radar Personal</h3>
                         <p>
-                          Monitoreamos {deals.length} productos, pero tus criterios de categoría, presupuesto{radarPrefs.maxBudget ? ` (hasta ${money(radarPrefs.maxBudget)})` : ""} o rigor ({radarPrefs.minRigor === "historic_low" ? "solo mínimos históricos" : radarPrefs.minRigor === "discount_only" ? "rebajas reales comprobadas" : "todas las opciones"}) son muy estrictos para las ofertas disponibles.
+                          Ninguno de los {deals.length} productos cumple ahora con tus categorías, presupuesto{radarPrefs.maxBudget ? ` (hasta ${money(radarPrefs.maxBudget)})` : ""} y filtro de precio ({radarPrefs.minRigor === "historic_low" ? "mínimos del periodo con captura reciente e historial suficiente" : radarPrefs.minRigor === "discount_only" ? "rebajas anunciadas" : "todas las opciones"}).
                         </p>
                         <div className="empty-state-actions">
                           <button
@@ -1483,7 +1497,7 @@ export default function App() {
                     <>
                       <h3>Sección de Moda y Calzado en actualización</h3>
                       <p>
-                        Estamos incorporando nuevas ofertas auditadas de ropa y calzado de Almacenes Siman y Walmart El Salvador.
+                        Estamos incorporando precios publicados de ropa y calzado de Almacenes Siman y Walmart El Salvador.
                       </p>
                       <button className="btn btn-primary" onClick={reset}>
                         Explorar otras categorías
@@ -1692,6 +1706,10 @@ export default function App() {
             </div>
           </div>
         </section>
+        <section className="subscription-invitation page-width" aria-labelledby="subscription-title">
+          <div><h2 id="subscription-title">Las bajadas que te interesan, en tu correo.</h2><p>Elige categorías y presupuesto. Un resumen al día como máximo, sólo cuando haya coincidencias.</p></div>
+          <button className="btn btn-primary" onClick={() => { setSubscriptionProduct(null); setSubscriptionOpen(true); }}>Elegir mis avisos</button>
+        </section>
       </main>
       <footer className="site-footer page-width">
         <div>
@@ -1872,6 +1890,7 @@ export default function App() {
                           ? " · Menor de esta comparación"
                           : ""}
                       </span>
+                      <CaptureStatus item={offer} />
                     </div>
                     <strong>{money(offer.price)}</strong>
                     {offer.productUrl && selectedDeal.dataSource !== "demo" ? (
@@ -1898,22 +1917,9 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              {comparableOffers(selectedDeal).length < 2 && (() => {
-                const benchmark = getRegionalBenchmark(selectedDeal);
-                return (
-                  <div className={`regional-benchmark-card status-${benchmark.status}`}>
-                    <div className="regional-benchmark-header">
-                      <span className="regional-benchmark-pill">
-                        {benchmark.statusLabel}
-                      </span>
-                      <span className="regional-benchmark-market">
-                        {benchmark.referenceMarket}
-                      </span>
-                    </div>
-                    <p className="regional-benchmark-note">{benchmark.note}</p>
-                  </div>
-                );
-              })()}
+              {comparableOffers(selectedDeal).length < 2 && (
+                <p className="detail-reference">Aún no tenemos otro precio del mismo modelo para comparar. No contamos con una referencia regional verificada.</p>
+              )}
               <p className="detail-reference">
                 Confirma la variante, el costo de envío y las condiciones en
                 cada tienda.
@@ -1925,12 +1931,13 @@ export default function App() {
               <p>
                 {selectedDeal.dataSource === "demo"
                   ? "Datos de demostración. No representan una oferta vigente."
-                  : `Precio capturado de la tienda. ${dateLabel(selectedDeal.checkedAt ?? updatedAt)} (El Salvador).`}
+                  : `Precio capturado de la tienda. ${dateLabel(selectedDeal.checkedAt)} (El Salvador).`}
                 <br />
                 La rebaja anunciada no es una verificación de ahorro histórico.
               </p>
             </div>
             <div className="detail-secondary">
+              {selectedDeal.dataSource !== "demo" && <button className="btn btn-primary" onClick={() => { setSubscriptionProduct(selectedDeal); setSubscriptionOpen(true); }}>Avisarme de una bajada</button>}
               <button
                 className="btn btn-secondary"
                 onClick={() => save(selectedDeal)}
@@ -2042,6 +2049,7 @@ export default function App() {
         onClose={closeOverlay}
         onSelectTab={openLegal}
       />
+      {subscriptionOpen && <SubscriptionModal product={subscriptionProduct} onClose={() => setSubscriptionOpen(false)} />}
       <Toast
         message={selectedDeal ? null : toast}
         onClose={() => setToast(null)}

@@ -7,7 +7,6 @@ import {
   saveRadarPreferences,
   type RadarPreferences,
 } from '../src/lib/radar.ts';
-import { getRegionalBenchmark } from '../src/lib/regionalBenchmark.ts';
 import type { DealItem } from '../src/lib/deals.ts';
 
 function makeDeal(overrides: Partial<DealItem> = {}): DealItem {
@@ -108,7 +107,14 @@ test('matchesRadar applies civic rigor levels', () => {
     minRigor: 'historic_low',
     stores: [],
   };
-  assert.equal(matchesRadar(makeDeal({ dealScore: 'ganga_historica' }), historicLowPrefs), true);
+  assert.equal(matchesRadar(makeDeal({ dealScore: 'ganga_historica' }), historicLowPrefs), false);
+  const checkedAt = new Date().toISOString();
+  const history = [
+    { date: new Date(Date.now() - 2 * 86400000).toISOString(), price: 499 },
+    { date: checkedAt, price: 399 },
+  ];
+  assert.equal(matchesRadar(makeDeal({ checkedAt, history }), historicLowPrefs), true);
+  assert.equal(matchesRadar(makeDeal({ checkedAt, history, refreshStatus: 'retained' }), historicLowPrefs), false);
   assert.equal(matchesRadar(makeDeal({ dealScore: 'buena_oferta' }), historicLowPrefs), false);
   assert.equal(matchesRadar(makeDeal({ dealScore: 'falsa_oferta_inflada' }), historicLowPrefs), false);
 
@@ -257,66 +263,6 @@ test('loadRadarPreferences and saveRadarPreferences handle edge cases and malfor
   assert.equal(reloaded.maxBudget, 500);
   assert.equal(reloaded.minRigor, 'historic_low');
   assert.deepEqual(reloaded.stores, ['Prado']);
-});
-
-test('getRegionalBenchmark provides context for exclusive products and handles edge cases', () => {
-  const inflatedDeal = makeDeal({
-    dealScore: 'falsa_oferta_inflada',
-    currentPrice: 2399,
-    regularPrice: 3099,
-    baselinePrice30d: 2749,
-  });
-  const benchmarkInflated = getRegionalBenchmark(inflatedDeal);
-  assert.equal(benchmarkInflated.status, 'overpriced');
-  assert.match(benchmarkInflated.statusLabel, /inflado/i);
-  assert.ok(benchmarkInflated.differencePercent > 0);
-
-  const gangaDeal = makeDeal({
-    dealScore: 'ganga_historica',
-    currentPrice: 649,
-    regularPrice: 799,
-    baselinePrice30d: 724,
-  });
-  const benchmarkGanga = getRegionalBenchmark(gangaDeal);
-  assert.equal(benchmarkGanga.status, 'exceptional_deal');
-  assert.match(benchmarkGanga.statusLabel, /competitivo/i);
-  assert.ok(benchmarkGanga.differencePercent > 0);
-
-  // Buena oferta with real discount against baseline
-  const buenaDeal = makeDeal({
-    dealScore: 'buena_oferta',
-    currentPrice: 150,
-    regularPrice: 220,
-    baselinePrice30d: 200,
-  });
-  const benchmarkBuena = getRegionalBenchmark(buenaDeal);
-  assert.equal(benchmarkBuena.status, 'fair_price');
-  assert.equal(benchmarkBuena.differencePercent, 25);
-  assert.match(benchmarkBuena.note, /25%/);
-
-  // Deal with zero or missing baseline falls back gracefully without NaN or divide-by-zero
-  const zeroBaseDeal = makeDeal({
-    dealScore: 'buena_oferta',
-    currentPrice: 150,
-    regularPrice: 200,
-    baselinePrice30d: 0,
-  });
-  const benchmarkZero = getRegionalBenchmark(zeroBaseDeal);
-  assert.equal(benchmarkZero.status, 'fair_price');
-  assert.equal(benchmarkZero.differencePercent, 0);
-  assert.equal(Number.isNaN(benchmarkZero.estimatedReferenceUSD), false);
-  assert.equal(Number.isFinite(benchmarkZero.estimatedReferenceUSD), true);
-
-  // Cosmetic discount
-  const cosmeticDeal = makeDeal({
-    dealScore: 'descuento_cosmetico',
-    currentPrice: 89,
-    regularPrice: null,
-    baselinePrice30d: 89,
-  });
-  const benchmarkCosmetic = getRegionalBenchmark(cosmeticDeal);
-  assert.equal(benchmarkCosmetic.status, 'fair_price');
-  assert.match(benchmarkCosmetic.statusLabel, /estándar/i);
 });
 
 test('matchesRadar with enabled=true and empty criteria matches all products in catalog', () => {

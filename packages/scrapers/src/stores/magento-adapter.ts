@@ -93,6 +93,7 @@ export class MagentoStoreAdapter {
         }
         console.log(`[${this.config.storeName}] ${products.length} productos en ${catConfig.path}`);
       } catch (err) {
+        options?.onIssue?.();
         // Fallback graceful: una categoría caída nunca tira el proceso completo
         console.error(`[${this.config.storeName}] Error en categoría "${catConfig.path}":`, err);
       }
@@ -113,7 +114,7 @@ export class MagentoStoreAdapter {
     while (attempts < maxAttempts) {
       attempts++;
       try {
-        const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': '*/*' } });
+        const res = await fetch(url, { signal: AbortSignal.timeout(20000), headers: { 'User-Agent': UA, 'Accept': '*/*' } });
         if (res.ok) return await res.text();
         // 503/429 = overload; 406/403 = el CDN de algunas tiendas alterna bloqueos
         // transitorios por ruta. Reintentar con backoff antes de rendirse.
@@ -144,6 +145,7 @@ export class MagentoStoreAdapter {
       const undici = await import('undici');
       const agent = new undici.Agent({ maxHeaderSize: 131072 });
       const res = await undici.fetch(url, {
+        signal: AbortSignal.timeout(20000),
         headers: { 'User-Agent': UA, 'Accept': '*/*' },
         dispatcher: agent,
       });

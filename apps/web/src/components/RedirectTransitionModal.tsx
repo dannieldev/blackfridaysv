@@ -118,7 +118,7 @@ export function RedirectTransitionModal({
 
         <div className="redirect-badge">
           <ShieldCheck aria-hidden="true" />
-          <span>Auditoría Cívica Verificada</span>
+          <span>Consulta en la tienda</span>
         </div>
 
         <h2 id="redirect-modal-title">Te estamos redirigiendo a {store}</h2>
@@ -127,21 +127,16 @@ export function RedirectTransitionModal({
 
         <div className="redirect-deal-summary">
           <div className="redirect-price-row">
-            <span>Precio auditado:</span>
+            <span>Último precio capturado:</span>
             <strong>{money(deal.currentPrice)}</strong>
           </div>
           {deal.dealScore === 'ganga_historica' && (
-            <span className="redirect-verdict verdict-green">Mínimo histórico comprobado en El Salvador</span>
+            <span className="redirect-verdict verdict-green">Mínimo del periodo observado en esta tienda</span>
           )}
           {deal.dealScore === 'buena_oferta' && (
-            <span className="redirect-verdict verdict-green">Rebaja real frente a su línea base de octubre</span>
+            <span className="redirect-verdict verdict-green">Bajó frente a la primera captura del periodo</span>
           )}
-          {deal.dealScore === 'falsa_oferta_inflada' && (
-            <span className="redirect-verdict verdict-warning">Alerta: la tienda infló la referencia previa a Black Friday</span>
-          )}
-          {deal.dealScore === 'descuento_cosmetico' && (
-            <span className="redirect-verdict">Precio estándar de mercado en El Salvador</span>
-          )}
+          <span className="redirect-verdict">Confirma el precio y la disponibilidad al llegar.</span>
         </div>
 
         {/* Barra de progreso de redirección */}

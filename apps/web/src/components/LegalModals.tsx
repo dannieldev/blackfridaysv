@@ -70,7 +70,7 @@ export function LegalModals({ type, onClose, onSelectTab }: LegalModalsProps) {
             </section>
             <section>
               <h3>El historial necesita registros</h3>
-              <p>Mostramos una gráfica cuando disponemos de al menos dos observaciones con fecha y precio. Si faltan registros, lo indicamos. No completamos las curvas con precios estimados ni usamos un descuento anunciado como prueba de un mínimo histórico.</p>
+              <p>Mostramos una gráfica con capturas de al menos dos días distintos, dentro de los últimos 90 días. Si faltan registros, lo indicamos. El mínimo se limita al periodo observado y a esa tienda. No completamos las curvas con precios estimados ni usamos un descuento anunciado como prueba de un mínimo histórico.</p>
             </section>
             <section>
               <h3>Comparamos el mismo modelo</h3>
@@ -109,6 +109,12 @@ export function LegalModals({ type, onClose, onSelectTab }: LegalModalsProps) {
 
         {type === 'privacidad' && (
           <>
+            <section>
+              <h3>Suscripción y alertas por correo</h3>
+              <p>Si solicitas avisos, guardamos tu correo, las categorías y el presupuesto que elijas, los productos y precios objetivo, y la fecha y versión de tu consentimiento. Sólo activamos los avisos después de que confirmas el correo. Una alerta de producto no te suscribe al resumen general salvo que selecciones esa opción.</p>
+              <p>Los datos se almacenan en Supabase con acceso privado del servidor. Resend procesa tu dirección y el contenido de los mensajes para enviarlos. La lista de suscriptores no forma parte del catálogo público.</p>
+              <p>Cada resumen incluye la baja de todos tus avisos, sin iniciar sesión. Conservamos el registro de baja para respetar tu elección. La limpieza del sistema elimina las solicitudes de confirmación con más de siete días y los registros de envío con más de noventa días. Para solicitar la eliminación de tu correo, escribe a <a href="mailto:Danielcrespin.dev@gmail.com">Danielcrespin.dev@gmail.com</a>.</p>
+            </section>
             <section>
               <h3>Tus guardados, en este navegador</h3>
               <p>Usamos el almacenamiento local del navegador (localStorage) para recordar los productos que guardas. No necesitas crear una cuenta. La lista no se sincroniza automáticamente entre dispositivos y se pierde si borras los datos del sitio.</p>

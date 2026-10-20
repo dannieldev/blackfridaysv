@@ -21,6 +21,7 @@ export interface ScrapedProduct {
 }
 
 export interface ScrapeOptions {
+  onIssue?: () => void;
   maxItemsPerCategory?: number;
   categories?: ProductCategory[];
   searchTerms?: string[];

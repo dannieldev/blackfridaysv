@@ -174,11 +174,10 @@ export function PersonalRadarModal({
             </div>
           </fieldset>
 
-          {/* Sección 3: Nivel de Rigor Cívico */}
           <fieldset className="radar-section">
             <legend className="radar-section-title">
-              <span>3. Rigor del semáforo de veracidad</span>
-              <small>Filtra por la calidad de la rebaja auditada según la ley salvadoreña.</small>
+              <span>3. Qué precios quieres ver</span>
+              <small>Distingue las rebajas anunciadas de los mínimos que sí tienen historial.</small>
             </legend>
             <div className="radar-rigor-options">
               <label className={`radar-radio-box ${draft.minRigor === 'all' ? 'is-selected' : ''}`}>
@@ -204,8 +203,8 @@ export function PersonalRadarModal({
                   onChange={() => setDraft((prev) => ({ ...prev, minRigor: 'discount_only' }))}
                 />
                 <div>
-                  <strong>Rebajas reales comprobadas</strong>
-                  <span>Excluye precios inflados y descuentos cosméticos sin ahorro real.</span>
+                  <strong>Rebajas anunciadas</strong>
+                  <span>Precio inferior a la referencia publicada por la tienda. No demuestra ahorro histórico.</span>
                 </div>
               </label>
 
@@ -218,8 +217,8 @@ export function PersonalRadarModal({
                   onChange={() => setDraft((prev) => ({ ...prev, minRigor: 'historic_low' }))}
                 />
                 <div>
-                  <strong>Solo mínimos históricos</strong>
-                  <span>Únicamente gangas con el precio más bajo registrado en el año.</span>
+                  <strong>Mínimos del periodo observado</strong>
+                  <span>Captura reciente, registros de al menos dos días y un precio inferior a alguna captura previa.</span>
                 </div>
               </label>
             </div>

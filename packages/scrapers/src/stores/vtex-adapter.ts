@@ -65,6 +65,7 @@ export class VtexStoreAdapter {
             }
           }
         } catch (err) {
+          options?.onIssue?.();
           console.error(`[${this.config.storeName}] Error buscando término "${term}":`, err);
         }
       }
@@ -90,6 +91,7 @@ export class VtexStoreAdapter {
       attempts++;
       try {
         res = await fetch(url, {
+          signal: AbortSignal.timeout(20000),
           headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             'Accept': 'application/json',
@@ -111,11 +113,11 @@ export class VtexStoreAdapter {
     }
 
     if (!res || !res.ok) {
-      return [];
+      throw new Error('VTEX no respondió después de los reintentos.');
     }
 
     const data: VtexProduct[] = await res.json();
-    if (!Array.isArray(data)) return [];
+    if (!Array.isArray(data)) throw new Error('VTEX devolvió un catálogo con formato inválido.');
 
     const products: ScrapedProduct[] = [];
 

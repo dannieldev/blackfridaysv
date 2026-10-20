@@ -9,8 +9,11 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
-    "build": "npm run build --workspace=apps/web",
-    "test": "npm run test --workspace=apps/web",
+    "build": "npm run build --workspace=packages/notifications && npm run build --workspace=apps/web",
+    "test": "npm run test --workspace=apps/web && npm run test --workspace=packages/scrapers && npm run test --workspace=packages/notifications",
+    "notifications:preview": "EMAIL_SEND=false npm run dispatch --workspace=packages/notifications",
+    "notifications:send": "EMAIL_SEND=true npm run dispatch --workspace=packages/notifications",
+    "dev:api": "npm run dev:api --workspace=apps/web",
     "scrape": "npm run scrape --workspace=packages/scrapers",
     "scrape:dry": "npm run scrape:dry --workspace=packages/scrapers",
     "scrape:siman": "npm run scrape:siman --workspace=packages/scrapers",

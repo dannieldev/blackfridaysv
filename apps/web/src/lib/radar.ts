@@ -1,4 +1,6 @@
 import type { DealItem } from './deals.ts';
+import { priceEvidence } from './priceHistory.ts';
+import { freshness } from './freshness.ts';
 
 export interface RadarPreferences {
   enabled: boolean;
@@ -64,7 +66,7 @@ export function saveRadarPreferences(prefs: RadarPreferences): void {
   }
 }
 
-export function matchesRadar(deal: DealItem, prefs: RadarPreferences): boolean {
+export function matchesRadar(deal: DealItem, prefs: RadarPreferences, now = Date.now()): boolean {
   if (!prefs.enabled) return true;
 
   // Filtro por categorías si seleccionó alguna
@@ -83,13 +85,11 @@ export function matchesRadar(deal: DealItem, prefs: RadarPreferences): boolean {
     return false;
   }
 
-  // Filtro por rigor cívico de ofertas
   if (prefs.minRigor === 'historic_low') {
-    if (deal.dealScore !== 'ganga_historica') return false;
+    if (!priceEvidence(deal, now).isObservedLow || freshness(deal, now) !== 'recent') return false;
   } else if (prefs.minRigor === 'discount_only') {
     const hasDiscount = (deal.regularPrice ?? 0) > deal.currentPrice;
-    const isGoodScore = deal.dealScore === 'ganga_historica' || deal.dealScore === 'buena_oferta';
-    if (!hasDiscount && !isGoodScore) return false;
+    if (!hasDiscount) return false;
   }
 
   // Filtro por almacenes si seleccionó alguno (bidireccional y tolerante a prefijos como "Almacenes" o "La")

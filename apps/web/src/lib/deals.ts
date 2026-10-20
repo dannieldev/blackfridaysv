@@ -1,4 +1,5 @@
 import { fetchLiveDeals, type SupabaseDeal } from './supabase.ts';
+import { priceEvidence } from './priceHistory.ts';
 
 export type DataSource = 'snapshot' | 'database' | 'demo';
 
@@ -18,9 +19,10 @@ export interface DealItem {
   productUrl: string;
   imageUrl?: string | null;
   inStock: boolean | null;
-  competitors?: Array<{ store: string; price: number; productUrl?: string; inStock?: boolean | null }>;
+  competitors?: Array<{ store: string; price: number; productUrl?: string; inStock?: boolean | null; checkedAt?: string; refreshStatus?: 'updated' | 'retained' }>;
   dataSource: DataSource;
   checkedAt?: string;
+  refreshStatus?: 'updated' | 'retained';
   history?: { date: string; price: number }[];
 }
 
@@ -36,6 +38,8 @@ export interface ComparableOffer {
   productUrl?: string;
   inStock: boolean | null;
   isCurrent: boolean;
+  checkedAt?: string;
+  refreshStatus?: 'updated' | 'retained';
 }
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -58,7 +62,7 @@ export function discountPercent(deal: Pick<DealItem, 'currentPrice' | 'regularPr
 
 export function comparableOffers(deal: DealItem): ComparableOffer[] {
   const offers: ComparableOffer[] = [
-    { store: deal.store, price: deal.currentPrice, productUrl: deal.productUrl, inStock: deal.inStock, isCurrent: true },
+    { store: deal.store, price: deal.currentPrice, productUrl: deal.productUrl, inStock: deal.inStock, isCurrent: true, checkedAt: deal.checkedAt, refreshStatus: deal.refreshStatus },
     ...(deal.competitors ?? []).map(offer => ({ ...offer, inStock: offer.inStock ?? null, isCurrent: false })),
   ];
   const stores = new Set<string>();
@@ -110,7 +114,7 @@ function enrichComparisons(deals: DealItem[]): DealItem[] {
     const key = modelKey(deal);
     const matches = key ? models.get(key) ?? [] : [];
     const competitors = matches.filter(other => storeLabel(other.store) !== storeLabel(deal.store))
-      .map(other => ({ store: other.store, price: other.currentPrice, productUrl: other.productUrl, inStock: other.inStock }))
+      .map(other => ({ store: other.store, price: other.currentPrice, productUrl: other.productUrl, inStock: other.inStock, checkedAt: other.checkedAt, refreshStatus: other.refreshStatus }))
       .sort((a, b) => a.price - b.price);
     return competitors.length ? { ...deal, competitors } : deal;
   });
@@ -124,7 +128,8 @@ export function catalogProductId(item: Pick<SupabaseDeal, 'source' | 'store_id' 
 }
 
 function toDeal(item: SupabaseDeal): DealItem {
-  const history = item.history;
+  const evidence = priceEvidence({ history: item.history, checkedAt: item.updated_at, currentPrice: item.current_offer_price });
+  const history = evidence.points;
   const reference = item.current_regular_price;
   return {
     id: catalogProductId(item),
@@ -135,8 +140,8 @@ function toDeal(item: SupabaseDeal): DealItem {
     category: item.category,
     currentPrice: item.current_offer_price,
     regularPrice: reference,
-    baselinePrice30d: item.baseline_price_30d ?? item.current_offer_price,
-    dealScore: item.deal_score === 'precio_regular' ? 'descuento_cosmetico' : item.deal_score,
+    baselinePrice30d: item.current_offer_price,
+    dealScore: evidence.isObservedLow ? 'ganga_historica' : evidence.trend === 'good_discount' ? 'buena_oferta' : 'descuento_cosmetico',
     verdictMessage: reference && reference > item.current_offer_price
       ? `La tienda anuncia ${money(item.current_offer_price)} frente a una referencia de ${money(reference)}. Esa diferencia no demuestra un ahorro histórico.`
       : 'Precio publicado por la tienda. No hay una rebaja anunciada que podamos comparar.',
@@ -145,6 +150,7 @@ function toDeal(item: SupabaseDeal): DealItem {
     inStock: item.in_stock,
     dataSource: item.source,
     checkedAt: item.updated_at,
+    refreshStatus: item.refresh_status,
     ...(history?.length ? { history } : {}),
   };
 }

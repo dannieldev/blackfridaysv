@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ScrapedProduct } from '../types.js';
 import dotenv from 'dotenv';
+import type { Observation } from '../core/catalog.js';
 
 dotenv.config();
 
@@ -10,7 +11,7 @@ export function getSupabaseClient(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
 
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
     return null;
@@ -28,6 +29,7 @@ export interface SyncStats {
   canonicalMatched: number;
   productsSynced: number;
   pricesRecorded: number;
+  errors: number;
   dryRun: boolean;
 }
 
@@ -36,7 +38,7 @@ export interface SyncStats {
  */
 export async function syncProductsToDatabase(
   products: ScrapedProduct[],
-  options?: { dryRun?: boolean }
+  options?: { dryRun?: boolean; capturedAt?: string }
 ): Promise<SyncStats> {
   const isDryRun = options?.dryRun ?? (process.env.SCRAPER_MODE === 'dry-run');
   const stats: SyncStats = {
@@ -44,6 +46,7 @@ export async function syncProductsToDatabase(
     canonicalMatched: 0,
     productsSynced: 0,
     pricesRecorded: 0,
+    errors: 0,
     dryRun: isDryRun,
   };
 
@@ -59,9 +62,7 @@ export async function syncProductsToDatabase(
 
   const supabase = getSupabaseClient();
   if (!supabase) {
-    console.warn('[AVISO] No se encontraron credenciales de Supabase. Corriendo en modo DRY-RUN automático.');
-    stats.dryRun = true;
-    return stats;
+    throw new Error('Faltan credenciales de escritura. Usa SCRAPER_MODE=dry-run para una simulación explícita.');
   }
 
   for (const prod of products) {
@@ -85,7 +86,7 @@ export async function syncProductsToDatabase(
             { onConflict: 'model_code' }
           )
           .select('id')
-          .single();
+          .abortSignal(AbortSignal.timeout(20000)).single();
 
         if (canonical) {
           canonicalId = canonical.id;
@@ -104,14 +105,15 @@ export async function syncProductsToDatabase(
             product_url: prod.productUrl,
             image_url: prod.imageUrl,
             in_stock: prod.inStock,
-            last_scraped_at: new Date().toISOString(),
+            last_scraped_at: options?.capturedAt ?? new Date().toISOString(),
           },
           { onConflict: 'store_id,store_sku' }
         )
         .select('id')
-        .single();
+        .abortSignal(AbortSignal.timeout(20000)).single();
 
       if (storeProdErr || !storeProd) {
+        stats.errors++;
         console.error(`Error guardando store_product ${prod.storeSku}:`, storeProdErr?.message);
         continue;
       }
@@ -123,16 +125,59 @@ export async function syncProductsToDatabase(
         store_product_id: storeProd.id,
         regular_price: prod.regularPrice,
         offer_price: prod.offerPrice,
-        captured_at: new Date().toISOString(),
-      });
+        captured_at: options?.capturedAt ?? new Date().toISOString(),
+      }).abortSignal(AbortSignal.timeout(20000));
 
       if (!priceErr) {
         stats.pricesRecorded++;
+      } else {
+        stats.errors++;
+        console.error(`No se pudo registrar el precio de ${prod.storeId}/${prod.storeSku}.`);
       }
     } catch (err) {
+      stats.errors++;
       console.error(`Error en pipeline para ${prod.title}:`, err);
     }
   }
 
   return stats;
+}
+
+/** Export observations in batches; browsers keep reading the cacheable snapshot. */
+export async function readPriceHistory(
+  now = new Date().toISOString(),
+  client = getSupabaseClient(),
+): Promise<Record<string, (Observation & { regularPrice: number | null })[]>> {
+  if (!client) throw new Error('No hay acceso a la fuente histórica.');
+  const products: { id: string; store_id: string; store_sku: string }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await client.from('store_products')
+      .select('id,store_id,store_sku').order('id').range(offset, offset + 999)
+      .abortSignal(AbortSignal.timeout(20000));
+    if (error) throw new Error('No se pudo leer el catálogo histórico.');
+    products.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  const history: Record<string, (Observation & { regularPrice: number | null })[]> = {};
+  const since = new Date(Date.parse(now) - 90 * 86400000).toISOString();
+  for (let index = 0; index < products.length; index += 100) {
+    const batch = products.slice(index, index + 100);
+    const ids = new Map(batch.map(p => [p.id, `${p.store_id}-${p.store_sku}`]));
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await client.from('price_history')
+        .select('id,store_product_id,offer_price,regular_price,captured_at')
+        .in('store_product_id', [...ids.keys()]).gte('captured_at', since).lte('captured_at', now)
+        .order('id').range(offset, offset + 999).abortSignal(AbortSignal.timeout(20000));
+      if (error) throw new Error('No se pudieron leer todas las observaciones; se conserva el historial del snapshot.');
+      for (const point of data ?? []) {
+        const id = ids.get(point.store_product_id);
+        if (id) (history[id] ??= []).push({
+          date: point.captured_at, price: Number(point.offer_price),
+          regularPrice: point.regular_price === null ? null : Number(point.regular_price),
+        });
+      }
+      if (!data || data.length < 1000) break;
+    }
+  }
+  return history;
 }

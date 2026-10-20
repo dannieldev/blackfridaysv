@@ -1,81 +1,78 @@
+import { fileURLToPath } from 'node:url';
 import { simanScraper } from './stores/siman.js';
 import { walmartScraper } from './stores/walmart.js';
 import { curacaoScraper } from './stores/curacao.js';
 import { pradoScraper } from './stores/prado.js';
 import { omnisportScraper } from './stores/omnisport.js';
-import { syncProductsToDatabase } from './db/supabase.js';
-import { generateDealsSnapshot } from './core/snapshot.js';
-import { StoreScraper, ScrapedProduct } from './types.js';
+import { getSupabaseClient, readPriceHistory, syncProductsToDatabase } from './db/supabase.js';
+import { mergeCatalog, type Observation, type StoreResult } from './core/catalog.js';
+import { readSnapshot, writeJsonAtomic, writeSnapshot } from './core/snapshot.js';
+import type { StoreScraper } from './types.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const ALL_SCRAPERS: Record<string, StoreScraper> = {
-  siman: simanScraper,
-  walmart: walmartScraper,
-  curacao: curacaoScraper,
-  prado: pradoScraper,
-  omnisport: omnisportScraper,
+const scrapers: Record<string, StoreScraper> = {
+  siman: simanScraper, walmart: walmartScraper, curacao: curacaoScraper,
+  prado: pradoScraper, omnisport: omnisportScraper,
 };
+const reportPath = fileURLToPath(new URL('../../../.reports/crawler.json', import.meta.url));
 
-async function main() {
-  console.log('====================================================');
-  console.log('🛒 RADAR BLACK FRIDAY EL SALVADOR 2026 - SCRAPER CLI');
-  console.log('====================================================\n');
-
-  const selectedStore = process.env.SCRAPER_STORE; // 'siman', 'walmart', o undefined (todos)
-  const maxItems = process.env.SCRAPE_MAX_ITEMS_PER_CATEGORY 
-    ? parseInt(process.env.SCRAPE_MAX_ITEMS_PER_CATEGORY, 10) 
-    : 15;
-
-  const scrapersToRun = selectedStore && ALL_SCRAPERS[selectedStore]
-    ? [ALL_SCRAPERS[selectedStore]]
-    : Object.values(ALL_SCRAPERS);
-
-  console.log(`Tiendas a procesar: ${scrapersToRun.map(s => s.storeName).join(', ')}`);
-  console.log(`Límite por término: ${maxItems}`);
-  console.log(`Modo: ${process.env.SCRAPER_MODE === 'dry-run' ? 'DRY-RUN (Simulado)' : 'PRODUCCIÓN (Supabase)'}\n`);
-
-  const startTime = Date.now();
-  let totalProducts: ScrapedProduct[] = [];
-
-  for (const scraper of scrapersToRun) {
+async function main(): Promise<number> {
+  const startedAt = new Date().toISOString();
+  if (process.env.SCRAPER_MODE && !['dry-run', 'production'].includes(process.env.SCRAPER_MODE)) {
+    throw new Error('Modo no reconocido; usa production o dry-run.');
+  }
+  const dryRun = process.env.SCRAPER_MODE === 'dry-run';
+  const selected = process.env.SCRAPER_STORE;
+  if (selected && !scrapers[selected]) throw new Error('Tienda no reconocida; no se ejecutará otra por defecto.');
+  const maxItems = Number(process.env.SCRAPE_MAX_ITEMS_PER_CATEGORY ?? 50);
+  if (!Number.isInteger(maxItems) || maxItems < 1) throw new Error('Límite de extracción inválido.');
+  if (!dryRun && !getSupabaseClient()) throw new Error('Faltan credenciales de Supabase. No se simulará una ejecución de producción.');
+  const previous = readSnapshot();
+  const results: StoreResult[] = [];
+  for (const scraper of selected ? [scrapers[selected]] : Object.values(scrapers)) {
+    const result: StoreResult = { storeId: scraper.storeId, products: [] };
     try {
-      console.log(`\n▶ Iniciando extracción: ${scraper.storeName}`);
-      const prods = await scraper.scrape({ maxItemsPerCategory: maxItems });
-      totalProducts = totalProducts.concat(prods);
-      console.log(`✔ Completado ${scraper.storeName} (${prods.length} productos)`);
-    } catch (err) {
-      console.error(`✖ Error en ${scraper.storeName}:`, err);
+      result.products = await scraper.scrape({
+        maxItemsPerCategory: maxItems,
+        onIssue: () => { result.failed = true; },
+      });
+    } catch {
+      result.failed = true;
+      console.error(`[${scraper.storeId}] Falló la extracción; se conservarán las capturas anteriores.`);
     }
+    results.push(result);
   }
-
-  console.log('\n----------------------------------------------------');
-  console.log(`📦 Sincronizando ${totalProducts.length} productos con la base de datos...`);
-  const stats = await syncProductsToDatabase(totalProducts);
-
-  // Plan B: Generar snapshot estático para Cloudflare Pages
-  try {
-    await generateDealsSnapshot(totalProducts);
-  } catch (err) {
-    console.warn('No se pudo generar el snapshot estático:', err);
+  const capturedAt = new Date().toISOString();
+  let history: Record<string, Observation[]> = {};
+  let historyStatus = dryRun ? 'not_requested' : 'loaded';
+  if (!dryRun) {
+    try { history = await readPriceHistory(capturedAt); }
+    catch { historyStatus = 'unavailable'; }
   }
-
-  const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
-
-  console.log('\n====================================================');
-  console.log('📊 RESUMEN DE EJECUCIÓN:');
-  console.log(`- Duración total: ${durationSec}s`);
-  console.log(`- Total productos extraídos: ${stats.total}`);
-  console.log(`- Modelos identificados (MPN): ${stats.canonicalMatched}`);
-  console.log(`- Productos sincronizados: ${stats.productsSynced}`);
-  console.log(`- Precios históricos registrados: ${stats.pricesRecorded}`);
-  console.log(`- Estado: ${stats.dryRun ? '✔ Simulación completada (Dry-run)' : '✔ Sincronizado en Supabase'}`);
-  console.log('====================================================\n');
-  process.exit(0);
+  const merged = mergeCatalog(previous, results, capturedAt, history);
+  const stats = await syncProductsToDatabase(merged.acceptedProducts, { dryRun, capturedAt });
+  const degraded = merged.stores.some(store => store.status !== 'updated')
+    || historyStatus === 'unavailable' || stats.errors > 0;
+  const status = !merged.acceptedProducts.length ? 'failed' : degraded ? 'partial' : 'complete';
+  if (!dryRun && merged.items.length) writeSnapshot(merged.items);
+  const report = {
+    startedAt, finishedAt: new Date().toISOString(), mode: dryRun ? 'dry-run' : 'production',
+    status, historyStatus, stores: merged.stores, database: stats,
+    catalogProducts: merged.items.length, published: !dryRun && merged.items.length > 0,
+  };
+  writeJsonAtomic(reportPath, report);
+  console.log(JSON.stringify(report, null, 2));
+  // CI publishes the preserved catalog first, then marks partial runs as needing attention.
+  return status === 'complete' ? 0 : 2;
 }
 
-main().catch((err) => {
-  console.error('Error fatal en el runner:', err);
+main().then(code => process.exit(code)).catch(error => {
+  writeJsonAtomic(reportPath, {
+    status: 'failed', published: false, finishedAt: new Date().toISOString(),
+    message: error instanceof Error ? error.message : 'Error inesperado',
+  });
+  console.error(error instanceof Error ? error.message : 'Error inesperado');
   process.exit(1);
 });

@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --import tsx/esm --test tests/*.ts",
+    "history:export": "tsx src/export-history.ts",
     "scrape": "tsx src/index.ts",
     "scrape:dry": "SCRAPER_MODE=dry-run tsx src/index.ts",
     "scrape:siman": "SCRAPER_STORE=siman tsx src/index.ts",

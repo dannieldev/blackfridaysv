@@ -17,6 +17,7 @@ colors:
   positive-bg: "#e9f0dd"
   caution: "#725322"
   caution-bg: "#f5eddd"
+  danger: "#a12a21"
   focus: "#56772d"
 typography:
   display:
@@ -307,6 +308,8 @@ El detalle identifica la referencia como anunciada por la tienda, ofrece filas p
 El historial necesita al menos dos observaciones válidas con fechas distintas. Si faltan, se muestra «Historial aún no disponible». Cuando hay serie, la línea está acompañada de fechas y una tabla accesible desplegable de registros; no hay una gráfica ficticia para decorar.
 
 ### Dialogs
+
+La suscripción reutiliza el diálogo nativo con un máximo de 580 px y un formulario en columna. Campos de 16 px y altura mínima de 48 px; etiquetas de selección con área mínima de 44 px. Categorías en dos columnas, una bajo 600 px. El consentimiento comienza desmarcado. Carga, servicio no disponible, error y solicitud pendiente de confirmación tienen mensajes propios. Los errores usan `danger`, siempre acompañados de texto; la ausencia de configuración usa `caution`. La opción de resumen general se mantiene separada del seguimiento de un producto.
 
 Los detalles, filtros y contenido legal se abren sobre un `dialog` nativo con `showModal()`. El panel tiene anchura máxima de 780 px; el panel de filtros limita a 440 px. La altura útil es el viewport dinámico menos 48 px en escritorio y 24 px en móvil; el cuerpo hace scroll y las franjas de acción permanecen fuera de él.
 

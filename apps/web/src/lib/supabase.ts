@@ -41,6 +41,7 @@ export interface SupabaseDeal {
   deal_score: 'ganga_historica' | 'buena_oferta' | 'falsa_oferta_inflada' | 'descuento_cosmetico' | 'precio_regular';
   source: 'snapshot' | 'database';
   updated_at?: string;
+  refresh_status?: 'updated' | 'retained';
   history?: { date: string; price: number }[];
 }
 
@@ -125,7 +126,8 @@ function normalizeRows(data: unknown, source: SupabaseDeal['source']): SupabaseD
         && Number.isFinite(item.real_discount_percent) ? item.real_discount_percent : 0,
       deal_score: scores.has(score) ? score : 'precio_regular',
       source,
-      updated_at: timestamp(snapshot ? item.updatedAt : item.last_scraped_at ?? item.updated_at ?? item.latest_captured_at),
+      updated_at: timestamp(snapshot ? item.updatedAt : item.latest_captured_at),
+      refresh_status: snapshot && item.refreshStatus === 'retained' ? 'retained' : undefined,
       ...(history?.length ? { history } : {}),
     });
     seen.add(id);
