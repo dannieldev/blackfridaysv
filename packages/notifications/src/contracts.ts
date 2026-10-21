@@ -1,7 +1,7 @@
 export const CONSENT_VERSION = '2026-10-20-v1';
 export const CATEGORY_LABELS: Record<string, string> = {
   tv_audio: 'TV y audio', smartphones: 'Celulares', computacion: 'Computación',
-  linea_blanca: 'Electrodomésticos', gaming: 'Videojuegos', moda_calzado: 'Moda y calzado',
+  linea_blanca: 'Electrodomésticos', gaming: 'Videojuegos', moda_calzado: 'Moda y calzado', fotografia: 'Fotografía',
 };
 export interface SubscriptionInput {
   email: string;
@@ -41,7 +41,7 @@ export function validateSubscription(value: unknown): SubscriptionInput {
   let alert: SubscriptionInput['alert'] = null;
   if (input.alert != null) {
     const a = input.alert as Record<string, unknown>;
-    if (typeof a.productId !== 'string' || !/^(siman|walmart|curacao|prado|omnisport)-[A-Za-z0-9._-]{1,100}$/.test(a.productId)
+    if (typeof a.productId !== 'string' || !/^(siman|walmart|curacao|prado|omnisport|radioshack|raf|prismamoda)-[A-Za-z0-9._-]{1,100}$/.test(a.productId)
       || typeof a.targetPrice !== 'number' || !Number.isFinite(a.targetPrice) || a.targetPrice < 0.01 || a.targetPrice > 1000000) {
       throw new Error('Revisa el producto y el precio objetivo.');
     }

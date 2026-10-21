@@ -35,6 +35,7 @@ const RADAR_CATEGORIES = [
   { id: 'linea_blanca', label: 'Línea Blanca y Hogar' },
   { id: 'gaming', label: 'Consolas y Gaming' },
   { id: 'moda_calzado', label: 'Moda y Calzado' },
+  { id: 'fotografia', label: 'Fotografía' },
 ] as const;
 
 const BUDGET_OPTIONS = [

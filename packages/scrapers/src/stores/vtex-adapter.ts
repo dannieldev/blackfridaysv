@@ -1,5 +1,6 @@
 import { ScrapedProduct, ProductCategory, ScrapeOptions } from '../types.js';
 import { extractModelCode, normalizeBrand, cleanTitle } from '../core/normalizer.js';
+import { isExcludedFromCatalog } from '../core/catalog-policy.js';
 
 export interface VtexStoreConfig {
   storeId: string;
@@ -7,7 +8,8 @@ export interface VtexStoreConfig {
   baseUrl: string; // ej: 'https://sv.siman.com' o 'https://www.walmart.com.sv'
   categoriesToSearch: {
     category: ProductCategory;
-    terms: string[];
+    terms?: string[];
+    categoryPaths?: string[];
   }[];
 }
 
@@ -15,10 +17,16 @@ interface VtexProduct {
   productId: string;
   productName: string;
   brand: string;
+  categories?: string[];
   link: string;
   items?: Array<{
+    itemId?: string;
+    variations?: string[];
+    [key: string]: unknown;
     images?: Array<{ imageUrl: string }>;
     sellers?: Array<{
+      sellerId?: string;
+      sellerName?: string;
       commertialOffer?: {
         Price: number;
         ListPrice: number;
@@ -55,9 +63,13 @@ export class VtexStoreAdapter {
 
       console.log(`[${this.config.storeName}] Extrayendo categoría: ${catConfig.category}...`);
 
-      for (const term of catConfig.terms) {
+      const searches = [
+        ...(catConfig.terms ?? []).map(term => ({ key: 'ft', value: term })),
+        ...(catConfig.categoryPaths ?? []).map(path => ({ key: 'fq', value: `C:/${path}/` })),
+      ];
+      for (const search of searches) {
         try {
-          const products = await this.searchVtexCatalog(term, maxPerCat, catConfig.category);
+          const products = await this.searchVtexCatalog(search, maxPerCat, catConfig.category);
           for (const prod of products) {
             if (!seenSkus.has(prod.storeSku)) {
               seenSkus.add(prod.storeSku);
@@ -66,7 +78,7 @@ export class VtexStoreAdapter {
           }
         } catch (err) {
           options?.onIssue?.();
-          console.error(`[${this.config.storeName}] Error buscando término "${term}":`, err);
+          console.error(`[${this.config.storeName}] Error consultando "${search.value}":`, err);
         }
       }
     }
@@ -76,12 +88,12 @@ export class VtexStoreAdapter {
   }
 
   private async searchVtexCatalog(
-    query: string,
+    query: { key: string; value: string },
     limit: number,
     category: ProductCategory
   ): Promise<ScrapedProduct[]> {
-    const to = Math.min(limit - 1, 49); // VTEX soporta hasta 50 por página
-    const url = `${this.config.baseUrl}/api/catalog_system/pub/products/search?ft=${encodeURIComponent(query)}&_from=0&_to=${to}`;
+    const to = Math.min(limit - 1, 49);
+    const url = `${this.config.baseUrl}/api/catalog_system/pub/products/search?${query.key}=${encodeURIComponent(query.value)}&_from=0&_to=${to}`;
 
     let res: Response | null = null;
     let attempts = 0;
@@ -119,37 +131,44 @@ export class VtexStoreAdapter {
     const data: VtexProduct[] = await res.json();
     if (!Array.isArray(data)) throw new Error('VTEX devolvió un catálogo con formato inválido.');
 
-    const products: ScrapedProduct[] = [];
-
-    for (const p of data) {
-      const item = p.items?.[0];
-      const seller = item?.sellers?.[0];
-      const offer = seller?.commertialOffer;
-
-      if (!offer || typeof offer.Price !== 'number' || offer.Price <= 0) {
-        continue; // Ignorar productos sin precio válido
-      }
-
-      const brand = normalizeBrand(p.brand || 'Genérico');
-      const title = cleanTitle(p.productName || '');
-      const modelCode = extractModelCode(p.productName, brand);
-      const regularPrice = offer.ListPrice && offer.ListPrice > offer.Price ? offer.ListPrice : null;
-
-      products.push({
-        storeId: this.config.storeId,
-        storeSku: p.productId,
-        title,
-        brand,
-        category,
-        regularPrice,
-        offerPrice: offer.Price,
-        productUrl: p.link,
-        imageUrl: item?.images?.[0]?.imageUrl || null,
-        inStock: (offer.AvailableQuantity ?? 0) > 0,
-        modelCode,
-      });
-    }
-
-    return products;
+    return parseVtexProducts(data, this.config, category);
   }
+}
+
+export function parseVtexProducts(data: VtexProduct[], config: Pick<VtexStoreConfig, 'storeId' | 'baseUrl'>, category: ProductCategory): ScrapedProduct[] {
+  return data.flatMap(p => {
+    if (!p.productName || isExcludedFromCatalog({ title: p.productName, categories: p.categories, productUrl: p.link })) return [];
+    const fashion = category === 'moda_calzado';
+    if (fashion && !p.categories?.some(path => /\/(?:Moda|Ropa[^/]*|Calzado[^/]*|Accesorios)\//i.test(path))) return [];
+    const candidates = (fashion ? p.items ?? [] : p.items?.slice(0, 1) ?? []).flatMap(item =>
+      (fashion ? item.sellers ?? [] : item.sellers?.slice(0, 1) ?? []).map(seller => ({ item, seller, offer: seller.commertialOffer })))
+      .filter(c => c.offer && Number.isFinite(c.offer.Price) && c.offer.Price > 0);
+    // Fashion history belongs to one SKU and seller; changing size must not create a fake price drop.
+    if (fashion) candidates.sort((a, b) => Number((b.offer!.AvailableQuantity ?? 0) > 0) - Number((a.offer!.AvailableQuantity ?? 0) > 0)
+      || a.offer!.Price - b.offer!.Price || String(a.item.itemId).localeCompare(String(b.item.itemId))
+      || String(a.seller.sellerId).localeCompare(String(b.seller.sellerId)));
+    const selected = candidates[0];
+    if (!selected || !p.productId || !p.productName) return [];
+    const { item, seller, offer } = selected;
+    if (typeof p.link !== 'string' || !p.link) return [];
+    let productUrl: URL;
+    try { productUrl = new URL(p.link, config.baseUrl); } catch { return []; }
+    if (productUrl.origin !== new URL(config.baseUrl).origin) return [];
+    const sellerId = seller.sellerId ?? '1';
+    if (fashion && (!item.itemId || !/^[A-Za-z0-9_-]+$/.test(item.itemId) || !/^[A-Za-z0-9_-]+$/.test(sellerId))) return [];
+    const variants = (item.variations ?? []).flatMap(key => Array.isArray(item[key]) ? [`${key}: ${(item[key] as string[]).join(', ')}`] : []);
+    const brand = fashion ? (p.brand?.trim() || 'Sin marca') : normalizeBrand(p.brand || 'Genérico');
+    const title = cleanTitle(p.productName);
+    const modelCode = extractModelCode(title, brand);
+    if (fashion) productUrl.searchParams.set('skuId', item.itemId!);
+    return [{
+      storeId: config.storeId, storeSku: fashion ? `${p.productId}.${item.itemId}.${sellerId}` : p.productId,
+      title: title + (fashion && variants.length ? ` · ${variants.join(' / ')}` : '')
+        + (fashion && sellerId !== '1' && seller.sellerName ? ` · Vende ${seller.sellerName}` : ''),
+      brand, category, modelCode: fashion ? null : modelCode,
+      regularPrice: offer!.ListPrice > offer!.Price ? offer!.ListPrice : null,
+      offerPrice: offer!.Price, productUrl: productUrl.href, imageUrl: item.images?.[0]?.imageUrl ?? null,
+      inStock: typeof offer!.AvailableQuantity === 'number' ? offer!.AvailableQuantity > 0 : null,
+    }];
+  });
 }

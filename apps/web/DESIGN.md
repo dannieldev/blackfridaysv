@@ -18,6 +18,7 @@ colors:
   caution: "#725322"
   caution-bg: "#f5eddd"
   danger: "#a12a21"
+  danger-bg: "#f9eae6"
   focus: "#56772d"
 typography:
   display:
@@ -270,6 +271,12 @@ Los radios crecen con el tamaño y la función del objeto: insignias pequeñas, 
 Los divisores son de un píxel. La categoría seleccionada cambia también de fondo y texto, mientras el filtro aplicado conserva una superficie suave y un cierre reconocible. En móvil, imágenes y diálogos reducen sus radios para mantener proporción con el espacio disponible.
 
 ## Components
+
+### Semáforo de ofertas
+
+Franja de cuatro filtros entre categorías y resultados: Vale la pena, Para comparar, Mejor esperar y Por verificar. Representa evaluación de precios observados, no urgencia comercial. Usa `positive`, `caution`, `danger` y `muted` con texto permanente, recuentos tabulares y `aria-pressed`. La selección tiene fondo semántico y borde doble visible; ninguna señal depende sólo del color. El fondo rojo suave `danger-bg` es `#f9eae6`.
+
+Los filtros ocupan cuatro columnas en escritorio y dos bajo 1024 px, con altura mínima de 52 px. Sólo muestran señal, nombre y contador; se retiraron el encabezado y los párrafos explicativos a petición de Danniel. El fondo semántico y el borde identifican cada opción; la selección aumenta el grosor interior del borde. La ficha repite una etiqueta compacta y el detalle añade el motivo. La metodología completa permanece en «Cómo comparamos». No hay animación adicional ni nuevas fuentes. Los criterios y límites de cobertura están en [catálogo y semáforo](docs/catalogo-y-semaforo.md).
 
 ### Buttons
 

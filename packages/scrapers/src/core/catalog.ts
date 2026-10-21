@@ -1,4 +1,6 @@
 import type { ScrapedProduct } from '../types.js';
+import { STORE_METADATA } from '../stores/metadata.js';
+import { isExcludedFromCatalog } from './catalog-policy.js';
 
 export interface Observation { date: string; price: number }
 export interface SnapshotItem {
@@ -33,10 +35,7 @@ export interface StoreReport {
   reason?: 'fetch_failed' | 'low_coverage' | 'invalid_products';
 }
 
-export const STORE_NAMES: Record<string, string> = {
-  siman: 'Almacenes Siman', walmart: 'Walmart El Salvador', curacao: 'La Curacao',
-  prado: 'Almacenes Prado', omnisport: 'Omnisport',
-};
+export const STORE_NAMES: Record<string, string> = Object.fromEntries(STORE_METADATA.map(store => [store.id, store.name]));
 
 export function storeIdOf(item: SnapshotItem): string {
   return item.storeId ?? Object.keys(STORE_NAMES).find(id => item.id.startsWith(`${id}-`)) ?? '';
@@ -72,7 +71,7 @@ export function mergeCatalog(
 ): { items: SnapshotItem[]; stores: StoreReport[]; acceptedProducts: ScrapedProduct[] } {
   const items = new Map<string, SnapshotItem>();
   for (const item of previous) {
-    if (!item.id || !Number.isFinite(item.currentPrice) || item.currentPrice <= 0) continue;
+    if (!item.id || !Number.isFinite(item.currentPrice) || item.currentPrice <= 0 || isExcludedFromCatalog(item)) continue;
     // Copy only supported fields: legacy scores and estimated baselines are not evidence.
     items.set(item.id, {
       id: item.id, store: item.store, storeId: storeIdOf(item), brand: item.brand,
@@ -90,10 +89,11 @@ export function mergeCatalog(
   const acceptedProducts: ScrapedProduct[] = [];
   for (const result of results) {
     const old = [...items.values()].filter(item => storeIdOf(item) === result.storeId);
-    const valid = new Map(result.products.filter(p => validProduct(p, result.storeId)).map(p => [p.storeSku, p]));
+    const eligible = result.products.filter(p => !isExcludedFromCatalog(p));
+    const valid = new Map(eligible.filter(p => validProduct(p, result.storeId)).map(p => [p.storeSku, p]));
     const lowCoverage = valid.size === 0 || (old.length >= 10 && valid.size < old.length * 0.5);
     const reason = result.failed ? 'fetch_failed' : lowCoverage ? 'low_coverage'
-      : result.products.some(p => !validProduct(p, result.storeId)) ? 'invalid_products' : undefined;
+      : eligible.some(p => !validProduct(p, result.storeId)) ? 'invalid_products' : undefined;
     const accept = !lowCoverage;
     for (const item of old) {
       items.set(item.id, { ...item, refreshStatus: 'retained', lastAttemptAt: capturedAt });

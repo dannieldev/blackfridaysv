@@ -5,6 +5,7 @@ export const walmartScraper = new VtexStoreAdapter({
   storeName: 'Walmart El Salvador',
   baseUrl: 'https://www.walmart.com.sv',
   categoriesToSearch: [
+    { category: 'moda_calzado', terms: ['camiseta hombre', 'blusa mujer', 'pantalon', 'zapatos', 'tenis'] },
     {
       category: 'tv_audio',
       terms: ['pantalla', 'smart tv', 'soundbar'],
@@ -15,7 +16,7 @@ export const walmartScraper = new VtexStoreAdapter({
     },
     {
       category: 'computacion',
-      terms: ['laptop', 'impresora', 'tablet'],
+      terms: ['laptop', 'impresora', 'tablet samsung', 'tablet lenovo', 'ipad'],
     },
     {
       category: 'linea_blanca',

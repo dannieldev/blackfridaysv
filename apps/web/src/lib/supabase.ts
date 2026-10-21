@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isExcludedFromCatalog } from '../../../../packages/scrapers/src/core/catalog-policy';
 
 const environment = import.meta.env ?? {};
 const supabaseUrl = environment.VITE_SUPABASE_URL;
@@ -88,6 +89,7 @@ function normalizeRows(data: unknown, source: SupabaseDeal['source']): SupabaseD
     const productUrl = url(snapshot ? item.productUrl : item.product_url);
     const currentPrice = price(snapshot ? item.currentPrice : item.current_offer_price);
     if (!id || !title || !store || !productUrl || currentPrice === null || seen.has(id)) continue;
+    if (isExcludedFromCatalog({ title, category: string(item.category), productUrl })) continue;
 
     const score = (snapshot ? item.dealScore : item.deal_score) as SupabaseDeal['deal_score'];
     const stock = snapshot ? item.inStock : item.in_stock;
@@ -106,7 +108,7 @@ function normalizeRows(data: unknown, source: SupabaseDeal['source']): SupabaseD
       product_url: productUrl,
       product_image: url(snapshot ? item.imageUrl : item.product_image),
       in_stock: typeof stock === 'boolean' ? stock : null,
-      store_id: string(item.store_id) || (snapshot ? ['siman', 'walmart', 'curacao', 'prado', 'omnisport']
+      store_id: string(item.store_id) || string(item.storeId) || (snapshot ? ['siman', 'walmart', 'curacao', 'prado', 'omnisport', 'radioshack', 'raf', 'prismamoda']
         .find(name => store.toLowerCase().includes(name)) || store.toLowerCase() : ''),
       store_name: store,
       canonical_id: string(item.canonical_id) || null,

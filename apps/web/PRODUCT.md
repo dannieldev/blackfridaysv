@@ -26,6 +26,8 @@ La gráfica necesita capturas de al menos dos días distintos en El Salvador. «
 
 La copia local se enriqueció el 19 de octubre de 2026 con 5.984 observaciones para 596 productos, sin modificar Supabase. La operación y sus límites están documentados en `docs/historial-y-actualizacion.md`.
 
+El 20 de octubre se amplió a 2,027 referencias de ocho tiendas, incluyendo 728 de moda y calzado. Se incorporaron Prisma Moda, RadioShack y RAF. El semáforo visible separa oportunidades con evidencia, precios para comparar, precios para esperar y registros por verificar; cada ficha explica su motivo. Los productos nuevos empiezan con una captura, no con un historial inferido. Cobertura, reglas y límites: [catálogo y semáforo](docs/catalogo-y-semaforo.md).
+
 Las comparaciones se limitan a coincidencias identificables de fabricante y modelo. No todo el catálogo tiene MPN. Las cifras visibles deben derivarse del catálogo cargado; la contingencia debe identificarse como demostración.
 
 ## Compromisos de marca

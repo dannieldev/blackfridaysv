@@ -5,7 +5,7 @@ export interface ServiceEnvironment {
 }
 
 export class Database {
-  constructor(private env: Pick<ServiceEnvironment, 'SUPABASE_URL' | 'SUPABASE_SERVICE_ROLE_KEY'>, private transport: typeof fetch = fetch) {}
+  constructor(private env: Pick<ServiceEnvironment, 'SUPABASE_URL' | 'SUPABASE_SERVICE_ROLE_KEY'>, private transport: typeof fetch = (url, init) => fetch(url, init)) {}
   async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const response = await this.transport(`${this.env.SUPABASE_URL}/rest/v1/${path}`, {
       ...init, signal: AbortSignal.timeout(15000),

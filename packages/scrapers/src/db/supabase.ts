@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ScrapedProduct } from '../types.js';
 import dotenv from 'dotenv';
 import type { Observation } from '../core/catalog.js';
+import { STORE_METADATA } from '../stores/metadata.js';
 
 dotenv.config();
 
@@ -63,6 +64,20 @@ export async function syncProductsToDatabase(
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw new Error('Faltan credenciales de escritura. Usa SCRAPER_MODE=dry-run para una simulación explícita.');
+  }
+
+  const storeIds = new Set(products.map(product => product.storeId));
+  const stores = STORE_METADATA.filter(store => storeIds.has(store.id));
+  if (stores.length) {
+    try {
+      const { error } = await supabase.from('stores').upsert(stores, { onConflict: 'id', ignoreDuplicates: true })
+        .abortSignal(AbortSignal.timeout(20000));
+      if (error) throw new Error('store_registry_failed');
+    } catch {
+      stats.errors = products.length;
+      console.error('No se pudieron registrar las tiendas. Se conservará la captura en el snapshot.');
+      return stats;
+    }
   }
 
   for (const prod of products) {
