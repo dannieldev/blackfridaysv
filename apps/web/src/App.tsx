@@ -22,7 +22,6 @@ import {
   Search,
   SlidersHorizontal,
   Smartphone,
-  Sparkles,
   Store,
   Tag,
   Tv,
@@ -59,8 +58,6 @@ import { RedirectTransitionModal } from "./components/RedirectTransitionModal";
 import { CatalogHealth, CaptureStatus } from "./components/CatalogHealth";
 import { SubscriptionModal } from "./components/SubscriptionModal";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
-import { BlackFridayLeadModal } from "./components/BlackFridayLeadModal";
-import { PrelaunchPage } from "./components/PrelaunchPage";
 import { OfferSignals, SignalBadge } from "./components/OfferSignals";
 import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
 import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference } from "./lib/analytics";
@@ -326,38 +323,12 @@ export default function App() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<DealItem | null>(null);
   const [legal, setLegal] = useState<LegalModalType>(null);
-  const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [missingDeal, setMissingDeal] = useState(false);
   const [isOffline, setIsOffline] = useState(
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
   const [confirmClearSaved, setConfirmClearSaved] = useState(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, "?"));
-      const adminParam = params.get("admin") || hashParams.get("admin");
-      if (adminParam && adminParam.trim().toLowerCase() === "dannieldev") {
-        localStorage.setItem("bfsv_admin_access", "true");
-        try {
-          const cleanSearch = new URLSearchParams(window.location.search);
-          cleanSearch.delete("admin");
-          const searchStr = cleanSearch.toString() ? `?${cleanSearch.toString()}` : "";
-          const hashClean = window.location.hash.replace(/[?&]admin=[^&]+/, "");
-          window.history.replaceState({}, document.title, window.location.pathname + searchStr + hashClean);
-        } catch {
-          // noop
-        }
-        return true;
-      }
-      return localStorage.getItem("bfsv_admin_access") === "true";
-    } catch {
-      return false;
-    }
-  });
-  const [previewAsVisitor, setPreviewAsVisitor] = useState(false);
   const [viewMode, setViewMode] = useState<"simple" | "detailed">(() => {
     if (typeof window === "undefined") return "simple";
     try {
@@ -388,26 +359,6 @@ export default function App() {
 
   useEffect(() => {
     initAnalytics();
-  }, []);
-
-  useEffect(() => {
-    // Si la URL viene con ?wishlist=true, ?wishlist=1 o #wishlist, abrir inmediatamente
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("wishlist") === "true" || params.get("wishlist") === "1" || window.location.hash === "#wishlist") {
-        setLeadModalOpen(true);
-        return;
-      }
-      const dismissed = localStorage.getItem("blackfridaysv_lead_popup_dismissed");
-      if (!dismissed) {
-        const timer = setTimeout(() => {
-          setLeadModalOpen(true);
-        }, 2200);
-        return () => clearTimeout(timer);
-      }
-    } catch {
-      // noop
-    }
   }, []);
 
   useEffect(() => {
@@ -503,22 +454,6 @@ export default function App() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
-
-  useEffect(() => {
-    try {
-      const dismissed = localStorage.getItem("blackfridaysv_lead_popup_dismissed");
-      if (!dismissed) {
-        const timer = setTimeout(() => {
-          if (!selectedDeal && !legal && !subscriptionOpen && !radarOpen && !redirectDeal) {
-            setLeadModalOpen(true);
-          }
-        }, 8000);
-        return () => clearTimeout(timer);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [selectedDeal, legal, subscriptionOpen, radarOpen, redirectDeal]);
 
   const notify = (message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -891,81 +826,8 @@ export default function App() {
   };
   if (window.location.pathname !== "/") return <NotFoundPage />;
 
-  if (!isAdmin || previewAsVisitor) {
-    return (
-      <>
-        {isAdmin && previewAsVisitor && (
-          <div className="admin-visitor-bar" role="region" aria-label="Aviso de vista previa">
-            <div className="admin-status-inner page-width">
-              <div className="admin-status-info">
-                <span className="admin-status-badge">Vista Previa Pública</span>
-                <span className="admin-status-note">
-                  Así ven el sitio tus visitantes. El catálogo completo está oculto para ellos.
-                </span>
-              </div>
-              <button
-                type="button"
-                className="admin-preview-btn"
-                onClick={() => setPreviewAsVisitor(false)}
-              >
-                Volver al Catálogo Admin
-              </button>
-            </div>
-          </div>
-        )}
-        <PrelaunchPage
-          isAdminUnlocked={isAdmin}
-          onEnterAdmin={() => {
-            setIsAdmin(true);
-            setPreviewAsVisitor(false);
-          }}
-          onOpenLegal={(type) => setLegal(type)}
-        />
-        <LegalModals
-          type={legal}
-          onClose={() => setLegal(null)}
-          onSelectTab={(tab) => setLegal(tab)}
-        />
-        <CookieConsentBanner onOpenCookies={() => setLegal("cookies")} />
-      </>
-    );
-  }
-
   return (
     <>
-      <div className="admin-status-bar" role="region" aria-label="Barra de administración">
-        <div className="admin-status-inner page-width">
-          <div className="admin-status-info">
-            <span className="admin-status-badge">Modo Administrador Activo</span>
-            <span className="admin-status-note">
-              Catálogo completo visible para ti (@dannieldev). El público solo ve la Wishlist de prelanzamiento.
-            </span>
-          </div>
-          <div className="admin-status-actions">
-            <button
-              type="button"
-              className="admin-preview-btn"
-              onClick={() => setPreviewAsVisitor(true)}
-            >
-              Ver como visitante (Wishlist)
-            </button>
-            <button
-              type="button"
-              className="admin-lock-btn"
-              onClick={() => {
-                try {
-                  localStorage.removeItem("bfsv_admin_access");
-                } catch {
-                  // noop
-                }
-                setIsAdmin(false);
-              }}
-            >
-              Bloquear catálogo
-            </button>
-          </div>
-        </div>
-      </div>
       {isOffline && (
         <div className="offline-banner" role="status">
           <span>
@@ -996,10 +858,6 @@ export default function App() {
               Ofertas
             </a>
             <button type="button" className="nav-link-btn" onClick={() => openLegal("metodologia")}>Cómo comparamos</button>
-            <button type="button" className="nav-link-btn nav-wishlist-link" onClick={() => setLeadModalOpen(true)}>
-              <Sparkles size={13} aria-hidden="true" />
-              <span>Wishlist</span>
-            </button>
           </nav>
           <div className="nav-actions">
             <div className="header-mode-toggle" role="radiogroup" aria-label="Modo de visualización">
@@ -1143,14 +1001,6 @@ export default function App() {
                     ? `Mi Presupuesto activo (${radarCount} ofertas)`
                     : "Definir mi presupuesto"}
                 </span>
-              </button>
-              <button
-                type="button"
-                className="hero-radar-pill-btn hero-wishlist-pill"
-                onClick={() => setLeadModalOpen(true)}
-              >
-                <Sparkles size={14} aria-hidden="true" />
-                <span>Unirme a la Wishlist</span>
               </button>
               <a
                 className="hero-browse"
@@ -2101,7 +1951,6 @@ export default function App() {
           <button onClick={() => openLegal("metodologia")}>Cómo comparamos</button>
           <button onClick={() => openLegal("privacidad")}>Privacidad</button>
           <button onClick={() => openLegal("cookies")}>Cookies y Publicidad</button>
-          <button onClick={() => setLeadModalOpen(true)}>Alertas de Ofertas</button>
           <span className="footer-by">
             Por:{" "}
             <a
@@ -2426,14 +2275,6 @@ export default function App() {
         type={legal}
         onClose={closeOverlay}
         onSelectTab={openLegal}
-      />
-      <BlackFridayLeadModal
-        isOpen={leadModalOpen}
-        onClose={() => setLeadModalOpen(false)}
-        onOpenCookies={() => {
-          setLeadModalOpen(false);
-          openLegal("cookies");
-        }}
       />
       <CookieConsentBanner
         onOpenCookies={() => openLegal("cookies")}
