@@ -6,9 +6,6 @@ import {
   CheckCircle2,
   Lock,
   ArrowRight,
-  TrendingDown,
-  Layers,
-  Scale,
   X,
   KeyRound,
   Eye,
@@ -408,189 +405,72 @@ export function PrelaunchPage({
           ))}
           <span className="country-badge">El Salvador · USD</span>
         </div>
-      </div>
 
-      {/* 2. SECCIÓN CANVAS LIGHT: Con el Semáforo de Ofertas original ("los colorcitos") y Pilares */}
-      <div className="prelaunch-canvas-section">
-        <div className="page-width">
-          {/* El Semáforo de Ofertas Original de BlackFridaySV */}
-          <div className="prelaunch-signals-container">
-            <div className="prelaunch-section-header">
-              <span className="prelaunch-kicker">Auditoría con Criterio</span>
-              <h2>El Semáforo de Ofertas de BlackFridaySV</h2>
-              <p>
-                Cada producto es auditado contra su historial de precios para clasificarlo con
-                honestidad antes de que compres:
-              </p>
-            </div>
-
-            <div className="signal-options prelaunch-signal-grid">
-              <div className="signal-option signal-worth">
-                <div className="signal-option-top">
-                  <span className="signal-dot" aria-hidden="true" />
-                  <strong>Vale la pena</strong>
-                </div>
-                <p className="signal-explanation">
-                  Ganga histórica comprobada o precio menor al de los competidores.
-                </p>
-              </div>
-
-              <div className="signal-option signal-regular">
-                <div className="signal-option-top">
-                  <span className="signal-dot" aria-hidden="true" />
-                  <strong>Para comparar</strong>
-                </div>
-                <p className="signal-explanation">
-                  Descuento anunciado pero sin suficiente historial para calificarlo de ganga.
-                </p>
-              </div>
-
-              <div className="signal-option signal-wait">
-                <div className="signal-option-top">
-                  <span className="signal-dot" aria-hidden="true" />
-                  <strong>Mejor esperar</strong>
-                </div>
-                <p className="signal-explanation">
-                  El precio subió recientemente o un competidor lo tiene al menos 10% más barato.
-                </p>
-              </div>
-
-              <div className="signal-option signal-unknown">
-                <div className="signal-option-top">
-                  <span className="signal-dot" aria-hidden="true" />
-                  <strong>Por verificar</strong>
-                </div>
-                <p className="signal-explanation">
-                  Producto nuevo en seguimiento sin registro suficiente de 30 días.
-                </p>
-              </div>
-            </div>
+        {/* 2. FOOTER CANÓNICO DEL SITIO ORIGINAL */}
+        <footer className="site-footer page-width">
+          <div>
+            <a className="wordmark" href="/">
+              <Radar aria-hidden="true" />
+              <span>
+                blackfriday<span className="wordmark-sv">sv</span>
+                <span className="wordmark-dot">.</span>
+              </span>
+            </a>
+            <p>Compara con calma. Compra con criterio.</p>
           </div>
+          <div className="footer-links">
+            <button type="button" onClick={() => onOpenLegal("terminos")}>
+              Aviso legal
+            </button>
+            <button type="button" onClick={() => onOpenLegal("metodologia")}>
+              Cómo comparamos
+            </button>
+            <button type="button" onClick={() => onOpenLegal("privacidad")}>
+              Privacidad
+            </button>
+            <button type="button" onClick={() => onOpenLegal("cookies")}>
+              Cookies y Publicidad
+            </button>
 
-          {/* 3 Pilares del Radar */}
-          <div className="prelaunch-features-grid">
-            <div className="prelaunch-feature-box">
-              <div className="feature-icon-wrapper">
-                <TrendingDown size={22} aria-hidden="true" />
-              </div>
-              <h3>Detección de Precios Inflados</h3>
-              <p>
-                Guardamos capturas históricas de precios. Si un almacén subió el precio días antes
-                para simular un falso 50% de descuento, el semáforo te lo advertirá al instante
-                según los Art. 31-32 de la Ley de Protección al Consumidor.
-              </p>
-            </div>
+            {/* Acceso discreto para Administrador */}
+            <button
+              type="button"
+              className="footer-admin-btn"
+              onClick={() => setAdminModalOpen(true)}
+              aria-label="Acceso de administrador"
+              title="Acceso de administrador"
+            >
+              <Lock size={12} aria-hidden="true" />
+              <span>Acceso</span>
+            </button>
 
-            <div className="prelaunch-feature-box">
-              <div className="feature-icon-wrapper">
-                <Scale size={22} aria-hidden="true" />
-              </div>
-              <h3>Comparador Cross-Store</h3>
-              <p>
-                No pierdas tiempo saltando entre 8 sitios web lentos. Comparamos el mismo código
-                de modelo de televisor, laptop o teléfono en todos los comercios de El Salvador en
-                una sola pantalla.
-              </p>
-            </div>
-
-            <div className="prelaunch-feature-box">
-              <div className="feature-icon-wrapper">
-                <Layers size={22} aria-hidden="true" />
-              </div>
-              <h3>Alertas a tu Medida</h3>
-              <p>
-                Elige exactamente qué productos te interesan y define tu presupuesto límite. Te
-                notificaremos por correo únicamente cuando haya una bajada real de precio.
-              </p>
-            </div>
-          </div>
-
-          {/* Estadísticas en Vivo */}
-          <div className="prelaunch-metrics-strip">
-            <div className="metric-item">
-              <span className="metric-number">1,199+</span>
-              <span className="metric-label">Productos auditados en tiempo real</span>
-            </div>
-            <div className="metric-item">
-              <span className="metric-number">8</span>
-              <span className="metric-label">Almacenes salvadoreños monitoreados</span>
-            </div>
-            <div className="metric-item">
-              <span className="metric-number">0%</span>
-              <span className="metric-label">Tolerancia a inflaciones cosméticas</span>
-            </div>
-            <div className="metric-item">
-              <span className="metric-number">100%</span>
-              <span className="metric-label">Iniciativa cívica e independiente</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. FOOTER CANÓNICO DEL SITIO ORIGINAL */}
-      <footer className="site-footer page-width">
-        <div>
-          <a className="wordmark" href="/">
-            <Radar aria-hidden="true" />
-            <span>
-              blackfriday<span className="wordmark-sv">sv</span>
-              <span className="wordmark-dot">.</span>
+            <span className="footer-by">
+              Por:{" "}
+              <a
+                href="https://dannieldev.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                dannieldev
+                <ArrowUpRight aria-hidden="true" />
+              </a>
+              {" y "}
+              <a
+                href="https://elite-portfolio-1.pages.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                AndresDev
+                <ArrowUpRight aria-hidden="true" />
+              </a>
             </span>
-          </a>
-          <p>Compara con calma. Compra con criterio.</p>
-        </div>
-        <div className="footer-links">
-          <button type="button" onClick={() => onOpenLegal("terminos")}>
-            Aviso legal
-          </button>
-          <button type="button" onClick={() => onOpenLegal("metodologia")}>
-            Cómo comparamos
-          </button>
-          <button type="button" onClick={() => onOpenLegal("privacidad")}>
-            Privacidad
-          </button>
-          <button type="button" onClick={() => onOpenLegal("cookies")}>
-            Cookies y Publicidad
-          </button>
-
-          {/* Acceso discreto para Administrador */}
-          <button
-            type="button"
-            className="footer-admin-btn"
-            onClick={() => setAdminModalOpen(true)}
-            aria-label="Acceso de administrador"
-            title="Acceso de administrador"
-          >
-            <Lock size={12} aria-hidden="true" />
-            <span>Acceso</span>
-          </button>
-
-          <span className="footer-by">
-            Por:{" "}
-            <a
-              href="https://dannieldev.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              dannieldev
-              <ArrowUpRight aria-hidden="true" />
-            </a>
-            {" y "}
-            <a
-              href="https://elite-portfolio-1.pages.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              AndresDev
-              <ArrowUpRight aria-hidden="true" />
-            </a>
-          </span>
-        </div>
-        <div className="footer-bottom">
-          <span>Una iniciativa independiente en El Salvador.</span>
-          <span>Los precios pueden cambiar. Confírmalos en la tienda.</span>
-        </div>
-      </footer>
+          </div>
+          <div className="footer-bottom">
+            <span>Una iniciativa independiente en El Salvador.</span>
+            <span>Los precios pueden cambiar. Confírmalos en la tienda.</span>
+          </div>
+        </footer>
+      </div>
 
       {/* Modal de Desbloqueo Administrador con Estética Original */}
       {adminModalOpen && (
