@@ -879,9 +879,10 @@ export default function App() {
                 aria-checked={viewMode === "simple"}
                 role="radio"
                 title="Modo Simple: navegación rápida y directa"
+                aria-label="Modo Simple"
               >
-                <Zap size={12} aria-hidden="true" />
-                <span>Simple</span>
+                <Zap size={13} aria-hidden="true" />
+                <span className="header-mode-text">Simple</span>
               </button>
               <button
                 type="button"
@@ -890,9 +891,10 @@ export default function App() {
                 aria-checked={viewMode === "detailed"}
                 role="radio"
                 title="Modo Detallado: con auditoría y análisis"
+                aria-label="Modo Detallado"
               >
-                <BarChart2 size={12} aria-hidden="true" />
-                <span>Detallado</span>
+                <BarChart2 size={13} aria-hidden="true" />
+                <span className="header-mode-text">Detallado</span>
               </button>
             </div>
 
@@ -900,10 +902,10 @@ export default function App() {
               <button
                 className={`nav-radar-btn ${radarPrefs.enabled ? "is-active" : ""}`}
                 onClick={() => setRadarOpen(true)}
-                aria-label="Definir Mi Presupuesto"
+                aria-label={radarPrefs.enabled ? "Mi Presupuesto activo (clic para configurar)" : "Definir Mi Presupuesto"}
               >
                 <Radar aria-hidden="true" />
-                <span>Mi Presupuesto</span>
+                <span className="nav-radar-text">Mi Presupuesto</span>
                 {radarPrefs.enabled && <span className="nav-radar-dot" aria-hidden="true" />}
               </button>
             )}
@@ -917,7 +919,7 @@ export default function App() {
                 aria-hidden="true"
                 fill={filter === "saved" ? "currentColor" : "none"}
               />
-              <span>Guardados</span>
+              <span className="nav-saved-text">Guardados</span>
               <span className="saved-count">{savedCount}</span>
             </button>
           </div>
