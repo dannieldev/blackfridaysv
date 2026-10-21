@@ -43,7 +43,7 @@ test('DealBadge renders historic low when observed price history confirms it', (
   };
   const html = renderToStaticMarkup(createElement(DealBadge, { deal: dealWithHistory }));
   assert.match(html, /verdict-historic-low/);
-  assert.match(html, /Mínimo comprobado/);
+  assert.match(html, /Con descuento/);
 });
 
 test('DealBadge warns when a competitor is cheaper', () => {
@@ -55,7 +55,24 @@ test('DealBadge warns when a competitor is cheaper', () => {
   };
   const html = renderToStaticMarkup(createElement(DealBadge, { deal: dealWithCompetitor }));
   assert.match(html, /verdict-cheaper-elsewhere/);
-  assert.match(html, /Mejor en Prado/);
+  assert.match(html, /Más barato en Prado/);
+});
+
+test('DealBadge warns when price increased', () => {
+  const yesterday = new Date(Date.now() - 86400000 * 2).toISOString();
+  const today = new Date().toISOString();
+  const dealPriceUp: DealItem = {
+    ...baseDeal,
+    checkedAt: today,
+    currentPrice: 500,
+    history: [
+      { date: yesterday, price: 400 },
+      { date: today, price: 500 },
+    ],
+  };
+  const html = renderToStaticMarkup(createElement(DealBadge, { deal: dealPriceUp }));
+  assert.match(html, /verdict-price-up/);
+  assert.match(html, /Precio aumentado/);
 });
 
 test('DealCard in simple mode is lightweight and omits sparkline and capture status', () => {

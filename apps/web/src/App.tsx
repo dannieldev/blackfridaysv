@@ -22,6 +22,7 @@ import {
   SlidersHorizontal,
   Smartphone,
   Store,
+  Tag,
   Tv,
   Trash2,
   Shirt,
@@ -154,52 +155,47 @@ function PriceEvidence({ deal }: { deal: DealItem }) {
 }
 
 export function DealBadge({ deal }: { deal: DealItem }) {
-
   const discount = discountPercent(deal);
   const evidence = priceEvidence(deal);
   const offers = comparableOffers(deal);
   const others = offers.filter((o) => !o.isCurrent);
   const cheaper = others.length > 0 && others[0].price < deal.currentPrice;
 
-  if (evidence.isObservedLow) {
-    return (
-      <span className="deal-verdict-badge verdict-historic-low">
-        <Check size={11} aria-hidden="true" />
-        Mínimo comprobado
-      </span>
-    );
-  }
-
+  // 1. Naranja: hay otra tienda más barata
   if (cheaper) {
     return (
-      <span className="deal-verdict-badge verdict-cheaper-elsewhere">
-        <Store size={11} aria-hidden="true" />
-        Mejor en {storeLabel(others[0].store)}
+      <span className="deal-verdict-badge verdict-orange verdict-cheaper-elsewhere">
+        <Store size={12} strokeWidth={2.5} aria-hidden="true" />
+        Más barato en {storeLabel(others[0].store)}
       </span>
     );
   }
 
-  if (evidence.trend === "good_discount") {
-    return (
-      <span className="deal-verdict-badge verdict-good-discount">
-        <ArrowDown size={11} aria-hidden="true" />
-        Bajó de precio
-      </span>
-    );
-  }
-
+  // 2. Rojo: precio aumentado
   if (evidence.trend === "higher") {
     return (
-      <span className="deal-verdict-badge verdict-price-up">
-        <ArrowUpRight size={11} aria-hidden="true" />
-        Subió de precio
+      <span className="deal-verdict-badge verdict-red verdict-price-up">
+        <ArrowUpRight size={12} strokeWidth={2.5} aria-hidden="true" />
+        Precio aumentado
       </span>
     );
   }
 
+  // 3. Verde: con descuento (rebaja comprobada o mínimo histórico)
+  if (evidence.isObservedLow || evidence.trend === "good_discount") {
+    return (
+      <span className="deal-verdict-badge verdict-green verdict-historic-low">
+        <Check size={12} strokeWidth={2.5} aria-hidden="true" />
+        Con descuento
+      </span>
+    );
+  }
+
+  // 4. Amarillo: descuento anunciado por la tienda
   if (discount !== null && discount > 0) {
     return (
-      <span className="deal-verdict-badge verdict-advertised">
+      <span className="deal-verdict-badge verdict-yellow verdict-advertised">
+        <Tag size={12} strokeWidth={2.5} aria-hidden="true" />
         −{discount}% anunciado
       </span>
     );
