@@ -76,6 +76,16 @@ export function comparableOffers(deal: DealItem): ComparableOffer[] {
     });
 }
 
+export function isGreenDeal(deal: DealItem): boolean {
+  const offers = comparableOffers(deal);
+  const others = offers.filter((o) => !o.isCurrent);
+  const cheaper = others.length > 0 && others[0].price < deal.currentPrice;
+  if (cheaper) return false;
+  const evidence = priceEvidence(deal);
+  if (evidence.trend === 'higher') return false;
+  return evidence.isObservedLow || evidence.trend === 'good_discount';
+}
+
 const entities: Record<string, string> = {
   amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp: ' ',
   aacute: 'á', eacute: 'é', iacute: 'í', oacute: 'ó', uacute: 'ú',

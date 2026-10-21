@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DealBadge, DealCard } from '../src/App.tsx';
+import { isGreenDeal } from '../src/lib/deals.ts';
 import type { DealItem } from '../src/lib/deals.ts';
 
 const baseDeal: DealItem = {
@@ -46,19 +47,23 @@ test('DealBadge renders historic low when observed price history confirms it', (
   assert.match(html, /Con descuento/);
 });
 
-test('DealBadge warns when a competitor is cheaper', () => {
+test('DealBadge warns when a competitor is cheaper in detailed mode only', () => {
   const dealWithCompetitor: DealItem = {
     ...baseDeal,
     competitors: [
       { store: 'Prado', price: 320, inStock: true },
     ],
   };
-  const html = renderToStaticMarkup(createElement(DealBadge, { deal: dealWithCompetitor }));
-  assert.match(html, /verdict-cheaper-elsewhere/);
-  assert.match(html, /Más barato en Prado/);
+  const htmlDetailed = renderToStaticMarkup(createElement(DealBadge, { deal: dealWithCompetitor, mode: 'detailed' }));
+  assert.match(htmlDetailed, /verdict-cheaper-elsewhere/);
+  assert.match(htmlDetailed, /Más barato en Prado/);
+
+  // In simple mode, it omits competitor warnings to keep cards clean
+  const htmlSimple = renderToStaticMarkup(createElement(DealBadge, { deal: dealWithCompetitor, mode: 'simple' }));
+  assert.equal(htmlSimple, '');
 });
 
-test('DealBadge warns when price increased', () => {
+test('DealBadge warns when price increased in detailed mode only', () => {
   const yesterday = new Date(Date.now() - 86400000 * 2).toISOString();
   const today = new Date().toISOString();
   const dealPriceUp: DealItem = {
@@ -70,9 +75,36 @@ test('DealBadge warns when price increased', () => {
       { date: today, price: 500 },
     ],
   };
-  const html = renderToStaticMarkup(createElement(DealBadge, { deal: dealPriceUp }));
-  assert.match(html, /verdict-price-up/);
-  assert.match(html, /Precio aumentado/);
+  const htmlDetailed = renderToStaticMarkup(createElement(DealBadge, { deal: dealPriceUp, mode: 'detailed' }));
+  assert.match(htmlDetailed, /verdict-price-up/);
+  assert.match(htmlDetailed, /Precio aumentado/);
+
+  // In simple mode, it omits price-up warning to keep cards clean
+  const htmlSimple = renderToStaticMarkup(createElement(DealBadge, { deal: dealPriceUp, mode: 'simple' }));
+  assert.equal(htmlSimple, '');
+});
+
+test('isGreenDeal filters strictly true bargains and historic lows', () => {
+  assert.equal(isGreenDeal(baseDeal), false);
+
+  const yesterday = new Date(Date.now() - 86400000 * 2).toISOString();
+  const today = new Date().toISOString();
+  const greenDeal: DealItem = {
+    ...baseDeal,
+    checkedAt: today,
+    currentPrice: 350,
+    history: [
+      { date: yesterday, price: 450 },
+      { date: today, price: 350 },
+    ],
+  };
+  assert.equal(isGreenDeal(greenDeal), true);
+
+  const greenWithCompetitor: DealItem = {
+    ...greenDeal,
+    competitors: [{ store: 'Prado', price: 300, inStock: true }],
+  };
+  assert.equal(isGreenDeal(greenWithCompetitor), false);
 });
 
 test('DealCard in simple mode is lightweight and omits sparkline and capture status', () => {

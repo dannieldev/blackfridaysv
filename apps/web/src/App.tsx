@@ -32,6 +32,7 @@ import {
 import {
   comparableOffers,
   discountPercent,
+  isGreenDeal,
   loadCatalog,
   money,
   storeLabel,
@@ -154,15 +155,21 @@ function PriceEvidence({ deal }: { deal: DealItem }) {
   );
 }
 
-export function DealBadge({ deal }: { deal: DealItem }) {
+export function DealBadge({
+  deal,
+  mode = "simple",
+}: {
+  deal: DealItem;
+  mode?: "simple" | "detailed";
+}) {
   const discount = discountPercent(deal);
   const evidence = priceEvidence(deal);
   const offers = comparableOffers(deal);
   const others = offers.filter((o) => !o.isCurrent);
   const cheaper = others.length > 0 && others[0].price < deal.currentPrice;
 
-  // 1. Naranja: hay otra tienda más barata
-  if (cheaper) {
+  // 1. En Modo Detallado: advertencia de otra tienda más barata
+  if (mode === "detailed" && cheaper) {
     return (
       <span className="deal-verdict-badge verdict-orange verdict-cheaper-elsewhere">
         <Store size={12} strokeWidth={2.5} aria-hidden="true" />
@@ -171,8 +178,8 @@ export function DealBadge({ deal }: { deal: DealItem }) {
     );
   }
 
-  // 2. Rojo: precio aumentado
-  if (evidence.trend === "higher") {
+  // 2. En Modo Detallado: alerta de precio aumentado
+  if (mode === "detailed" && evidence.trend === "higher") {
     return (
       <span className="deal-verdict-badge verdict-red verdict-price-up">
         <ArrowUpRight size={12} strokeWidth={2.5} aria-hidden="true" />
@@ -181,8 +188,11 @@ export function DealBadge({ deal }: { deal: DealItem }) {
     );
   }
 
-  // 3. Verde: con descuento (rebaja comprobada o mínimo histórico)
+  // 3. En ambos modos: Verde (rebaja comprobada o mínimo histórico)
   if (evidence.isObservedLow || evidence.trend === "good_discount") {
+    if (mode === "simple" && (cheaper || evidence.trend === "higher")) {
+      return null;
+    }
     return (
       <span className="deal-verdict-badge verdict-green verdict-historic-low">
         <Check size={12} strokeWidth={2.5} aria-hidden="true" />
@@ -191,8 +201,11 @@ export function DealBadge({ deal }: { deal: DealItem }) {
     );
   }
 
-  // 4. Amarillo: descuento anunciado por la tienda
+  // 4. En ambos modos: Amarillo (descuento anunciado por la tienda)
   if (discount !== null && discount > 0) {
+    if (mode === "simple" && (cheaper || evidence.trend === "higher")) {
+      return null;
+    }
     return (
       <span className="deal-verdict-badge verdict-yellow verdict-advertised">
         <Tag size={12} strokeWidth={2.5} aria-hidden="true" />
@@ -236,7 +249,7 @@ export function DealCard({
         >
           <Heart fill={saved ? "currentColor" : "none"} aria-hidden="true" />
         </button>
-        <DealBadge deal={deal} />
+        <DealBadge deal={deal} mode={mode} />
       </div>
       <div className="product-content">
         <div className="product-meta">
@@ -285,9 +298,8 @@ export default function App() {
   const [stores, setStores] = useState<string[]>([]);
   const [budget, setBudget] = useState("all");
   const [availableOnly, setAvailableOnly] = useState(false);
-  const [filter, setFilter] = useState<
-    "all" | "discounted" | "compare" | "saved" | "radar"
-  >("all");
+  type FilterType = "all" | "discounted" | "percent_discount" | "compare" | "saved" | "radar";
+  const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState("compare");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
@@ -521,13 +533,15 @@ export default function App() {
         setCategory((previous) => (previous === id ? "all" : id));
       }
     });
-  const toggleFilter = (id: "all" | "discounted" | "compare" | "saved" | "radar") =>
+  const toggleFilter = (id: FilterType) =>
     change(() => {
       const nextFilter = filter === id ? "all" : id;
       setFilter(nextFilter);
       if (nextFilter === "saved") {
         setSort("recent");
-      } else if (sort === "recent") {
+      } else if (nextFilter === "percent_discount") {
+        setSort("discount");
+      } else if (sort === "recent" || sort === "discount") {
         setSort("compare");
       }
     });
@@ -623,7 +637,8 @@ export default function App() {
             deal.currentPrice <= 600) ||
           (budget === "over600" && deal.currentPrice > 600)) &&
         (filter === "all" ||
-          (filter === "discounted" && (discountPercent(deal) ?? 0) > 0) ||
+          (filter === "discounted" && isGreenDeal(deal)) ||
+          (filter === "percent_discount" && (discountPercent(deal) ?? 0) > 0) ||
           (filter === "compare" && comparableOffers(deal).length > 1) ||
           (filter === "saved" && savedIds.includes(deal.id)) ||
           (filter === "radar" && matchesRadar(deal, radarPrefs, evaluationTime)))
@@ -1144,20 +1159,22 @@ export default function App() {
             <div className="results-area">
               <div className="results-tabs" aria-label="Tipo de resultados">
                 {(
-                  viewMode === "simple"
+                  (viewMode === "simple"
                     ? [
                         { id: "all", label: "Todos" },
                         { id: "discounted", label: "Con descuento" },
+                        { id: "percent_discount", label: "% de descuento" },
                         { id: "saved", label: "Guardados" },
                         ...(radarPrefs.enabled ? [{ id: "radar", label: "🎯 Mi Presupuesto" }] : []),
                       ]
                     : [
                         { id: "all", label: "Todos" },
                         { id: "discounted", label: "Con descuento" },
+                        { id: "percent_discount", label: "% de descuento" },
                         { id: "compare", label: "En varias tiendas" },
                         { id: "saved", label: "Guardados" },
                         { id: "radar", label: "🎯 Mi Presupuesto" },
-                      ]
+                      ]) as Array<{ id: FilterType; label: string }>
                 ).map((item) => (
                   <button
                     key={item.id}
@@ -1166,7 +1183,7 @@ export default function App() {
                         setRadarOpen(true);
                         return;
                       }
-                      toggleFilter(item.id as "all" | "discounted" | "compare" | "saved" | "radar");
+                      toggleFilter(item.id);
                     }}
                     aria-pressed={filter === item.id}
                     className={filter === item.id ? "selected" : ""}
@@ -1336,7 +1353,12 @@ export default function App() {
                 <div className="view-switch">
                   <button
                     className="icon-button"
-                    onClick={() => setView("grid")}
+                    onClick={() =>
+                      change(() => {
+                        setView("grid");
+                        setPageSize((prev) => (prev === 24 ? 12 : prev));
+                      })
+                    }
                     aria-label="Vista de tarjetas"
                     aria-pressed={view === "grid"}
                   >
@@ -1344,7 +1366,12 @@ export default function App() {
                   </button>
                   <button
                     className="icon-button"
-                    onClick={() => setView("list")}
+                    onClick={() =>
+                      change(() => {
+                        setView("list");
+                        setPageSize((prev) => (prev === 12 ? 24 : prev));
+                      })
+                    }
                     aria-label="Vista de lista"
                     aria-pressed={view === "list"}
                   >
@@ -1391,8 +1418,14 @@ export default function App() {
                     ))}
                   {filter === "discounted" && (
                     <button onClick={() => change(() => setFilter("all"))}>
-                      Solo con descuento
+                      Con descuento
                       <X aria-label="Quitar filtro de descuento" />
+                    </button>
+                  )}
+                  {filter === "percent_discount" && (
+                    <button onClick={() => change(() => setFilter("all"))}>
+                      % de descuento
+                      <X aria-label="Quitar filtro de porcentaje" />
                     </button>
                   )}
                   {filter === "compare" && (

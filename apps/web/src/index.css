@@ -1049,40 +1049,130 @@ input::placeholder {
   height: 30px;
 }
 .list-view {
-  grid-template-columns: 1fr;
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .list-view .deal-card {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 24px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
+  grid-template-columns: 74px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.list-view .deal-card:hover {
+  border-color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 .list-view .product-visual {
+  width: 74px;
+  height: 74px;
   aspect-ratio: 1;
+  border-radius: 8px;
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
 }
 .list-view .product-image-button {
-  padding: 22px;
+  padding: 6px;
+  width: 100%;
+  height: 100%;
+}
+.list-view .save-button {
+  top: 3px;
+  right: 3px;
+  width: 24px;
+  height: 24px;
+}
+.list-view .save-button svg {
+  width: 13px;
+  height: 13px;
 }
 .list-view .product-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
   padding-top: 0;
+}
+.list-view .product-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
 }
 .list-view .product-content h3 {
   min-height: 0;
-  margin-bottom: 8px;
+  margin: 0;
 }
 .list-view .product-content h3 button {
-  min-height: 36px;
+  min-height: auto;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.list-view .card-action {
-  margin-top: 8px;
-  border: 0;
-  justify-content: flex-start;
-  gap: 12px;
+.list-view .card-price {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+.list-view .card-price strong {
+  font-size: 16px;
+}
+.list-view .card-price span {
+  font-size: 12px;
 }
 .list-view .card-sparkline {
-  max-width: 280px;
+  display: none;
+}
+.list-view .price-evidence {
+  font-size: 11px;
+  margin: 0;
+}
+.list-view .card-action {
+  margin: 0;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 12px;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.list-view .card-action:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.list-badge-inline {
+  display: none;
+}
+.list-view .list-badge-inline {
+  display: inline-flex;
+  align-items: center;
+}
+.list-view .list-badge-inline .deal-verdict-badge {
+  position: static;
+  max-width: none;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  gap: 4px;
+  box-shadow: none;
+}
+.list-view .product-visual .deal-verdict-badge {
+  display: none;
 }
 .pagination {
   display: flex;
@@ -2607,11 +2697,22 @@ input::placeholder {
     font-size: 16px;
   }
   .list-view {
-    grid-template-columns: 1fr;
+    gap: 6px;
   }
   .list-view .deal-card {
-    grid-template-columns: 110px minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+  .list-view .product-visual {
+    width: 60px;
+    height: 60px;
+  }
+  .list-view .card-action {
+    display: none;
+  }
+  .list-view .card-price strong {
+    font-size: 15px;
   }
   .catalog-warning {
     flex-wrap: wrap;
