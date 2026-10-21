@@ -824,7 +824,7 @@ export default function App() {
             >
               Ofertas
             </a>
-            <a href="#como-comparamos">Cómo comparamos</a>
+            <button type="button" className="nav-link-btn" onClick={() => openLegal("metodologia")}>Cómo comparamos</button>
           </nav>
           <div className="nav-actions">
             <div className="header-mode-toggle" role="radiogroup" aria-label="Modo de visualización">
@@ -852,15 +852,17 @@ export default function App() {
               </button>
             </div>
 
-            <button
-              className={`nav-radar-btn ${radarPrefs.enabled ? "is-active" : ""}`}
-              onClick={() => setRadarOpen(true)}
-              aria-label="Configurar mi Radar Personal"
-            >
-              <Radar aria-hidden="true" />
-              <span>Mi Radar</span>
-              {radarPrefs.enabled && <span className="nav-radar-dot" aria-hidden="true" />}
-            </button>
+            {(viewMode === "detailed" || radarPrefs.enabled) && (
+              <button
+                className={`nav-radar-btn ${radarPrefs.enabled ? "is-active" : ""}`}
+                onClick={() => setRadarOpen(true)}
+                aria-label="Definir Mi Presupuesto"
+              >
+                <Radar aria-hidden="true" />
+                <span>Mi Presupuesto</span>
+                {radarPrefs.enabled && <span className="nav-radar-dot" aria-hidden="true" />}
+              </button>
+            )}
             <button
               className={`nav-saved ${filter === "saved" ? "selected" : ""}`}
               onClick={toggleSaved}
@@ -960,8 +962,8 @@ export default function App() {
                 <Radar aria-hidden="true" />
                 <span>
                   {radarPrefs.enabled
-                    ? `Mi Radar activo (${radarCount} ofertas)`
-                    : "Activar Radar Personal"}
+                    ? `Mi Presupuesto activo (${radarCount} ofertas)`
+                    : "Definir mi presupuesto"}
                 </span>
               </button>
               <a
@@ -1146,13 +1148,20 @@ export default function App() {
             <div className="results-area">
               <div className="results-tabs" aria-label="Tipo de resultados">
                 {(
-                  [
-                    { id: "all", label: "Todos" },
-                    { id: "discounted", label: "Con descuento" },
-                    { id: "compare", label: "En varias tiendas" },
-                    { id: "radar", label: "🎯 Mi Radar" },
-                    { id: "saved", label: "Guardados" },
-                  ] as const
+                  viewMode === "simple"
+                    ? [
+                        { id: "all", label: "Todos" },
+                        { id: "discounted", label: "Con descuento" },
+                        { id: "saved", label: "Guardados" },
+                        ...(radarPrefs.enabled ? [{ id: "radar", label: "🎯 Mi Presupuesto" }] : []),
+                      ]
+                    : [
+                        { id: "all", label: "Todos" },
+                        { id: "discounted", label: "Con descuento" },
+                        { id: "compare", label: "En varias tiendas" },
+                        { id: "saved", label: "Guardados" },
+                        { id: "radar", label: "🎯 Mi Presupuesto" },
+                      ]
                 ).map((item) => (
                   <button
                     key={item.id}
@@ -1161,7 +1170,7 @@ export default function App() {
                         setRadarOpen(true);
                         return;
                       }
-                      toggleFilter(item.id);
+                      toggleFilter(item.id as "all" | "discounted" | "compare" | "saved" | "radar");
                     }}
                     aria-pressed={filter === item.id}
                     className={filter === item.id ? "selected" : ""}
@@ -1179,7 +1188,7 @@ export default function App() {
                   <div className="radar-status-info">
                     <div className="radar-status-badge">
                       <Radar aria-hidden="true" />
-                      <span>Radar Personal Activo</span>
+                      <span>Mi Presupuesto Activo</span>
                     </div>
                     <p>
                       Monitoreando <strong>{deals.length} productos</strong> en{" "}
@@ -1596,7 +1605,7 @@ export default function App() {
                             className="btn btn-secondary"
                             onClick={() => setRadarOpen(true)}
                           >
-                            Ajustar criterios del Radar
+                            Ajustar mi presupuesto
                           </button>
                           <button
                             className="btn btn-secondary"
@@ -1862,7 +1871,7 @@ export default function App() {
         </div>
         <div className="footer-links">
           <button onClick={() => openLegal("terminos")}>Aviso legal</button>
-          <button onClick={() => openLegal("metodologia")}>Metodología</button>
+          <button onClick={() => openLegal("metodologia")}>Cómo comparamos</button>
           <button onClick={() => openLegal("privacidad")}>Privacidad</button>
           <span className="footer-by">
             Por:{" "}

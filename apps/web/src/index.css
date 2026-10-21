@@ -3559,3 +3559,22 @@ input::placeholder {
     margin-right: auto;
   }
 }
+
+
+.site-header nav .nav-link-btn {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--on-dark-muted);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.site-header nav .nav-link-btn:hover {
+  color: var(--accent);
+}

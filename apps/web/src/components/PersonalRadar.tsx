@@ -114,9 +114,9 @@ export function PersonalRadarModal({
             <Radar aria-hidden="true" />
           </div>
           <div>
-            <h2 id="personal-radar-title">Configura tu Radar Personal</h2>
+            <h2 id="personal-radar-title">Configura tu Presupuesto y Categorías</h2>
             <p>
-              Dinos qué buscas y el Radar auditará el catálogo por ti. Cero registro, guardado local en tu navegador.
+              Elige tu presupuesto máximo y las categorías que te interesan. Mostraremos solo las ofertas que se ajusten a tu dinero.
             </p>
           </div>
           <button type="button" className="icon-button modal-close" onClick={onClose} aria-label="Cerrar configuración del Radar">
@@ -267,13 +267,13 @@ export function PersonalRadarModal({
 
             {preferences.enabled && (
               <button type="button" className="btn btn-secondary" onClick={handleDisable}>
-                Pausar Radar
+                Desactivar filtro
               </button>
             )}
 
             <button type="button" className="btn btn-primary" onClick={handleActivate}>
               <Radar aria-hidden="true" />
-              {draft.enabled || preferences.enabled ? 'Actualizar mi Radar' : 'Activar mi Radar'}
+              {draft.enabled || preferences.enabled ? 'Guardar mi Presupuesto' : 'Aplicar mi Presupuesto'}
             </button>
           </div>
         </footer>
