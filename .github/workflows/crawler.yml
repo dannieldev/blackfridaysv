@@ -3,7 +3,7 @@ name: Automated Price Scraper & Snapshot Sync
 on:
   schedule:
     # 2 veces al día durante temporada de compras (9:00 AM y 9:00 PM CST = 15:00 y 03:00 UTC)
-    - cron: '0 15,3 * * *'
+    - cron: '0 */4 * * *'
   workflow_dispatch:
     inputs:
       store:
