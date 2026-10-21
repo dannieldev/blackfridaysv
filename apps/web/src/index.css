@@ -3452,6 +3452,342 @@ input::placeholder {
   }
 }
 
+/* ==========================================================================
+   Cookie Banner & Lead Capture Popup (Cookies y Publicidad)
+   ========================================================================== */
+.cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 850;
+  background: rgba(15, 12, 24, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.4);
+  animation: cookieBannerSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cookieBannerSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cookie-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: 14px;
+}
+
+.cookie-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--on-dark);
+}
+
+.cookie-icon {
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+.cookie-link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  display: inline;
+}
+
+.cookie-link-button:hover {
+  color: #fff;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cookie-btn-sm {
+  min-height: 38px;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.cookie-close-btn {
+  width: 36px;
+  height: 36px;
+  color: var(--muted);
+}
+
+.cookie-close-btn:hover {
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .cookie-banner-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-block: 16px;
+  }
+  .cookie-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* Modal de Captación de Leads / Pop-up de Black Friday */
+.lead-capture-modal {
+  max-width: 580px;
+  width: 100%;
+  border: 1px solid rgba(251, 221, 0, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(251, 221, 0, 0.08);
+}
+
+.lead-capture-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 12px;
+}
+
+.lead-capture-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(251, 221, 0, 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(251, 221, 0, 0.3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.lead-badge-icon {
+  color: var(--gold);
+}
+
+.lead-capture-body {
+  padding: 8px 24px 28px;
+}
+
+.lead-capture-intro {
+  margin-bottom: 20px;
+}
+
+.lead-capture-intro h2 {
+  font-size: clamp(20px, 4vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.lead-capture-intro p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.lead-capture-form {
+  display: grid;
+  gap: 18px;
+}
+
+.lead-field-group {
+  display: grid;
+  gap: 6px;
+}
+
+.lead-field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.lead-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lead-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(251, 221, 0, 0.2);
+  outline: none;
+}
+
+.lead-categories-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.lead-categories-legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0 6px;
+}
+
+.lead-categories-legend small {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.lead-categories-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.lead-category-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.lead-category-chip:hover {
+  border-color: var(--muted);
+  color: var(--ink);
+}
+
+.lead-category-chip.active {
+  background: rgba(251, 221, 0, 0.15);
+  border-color: var(--gold);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.lead-consent-check {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.legal-inline-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline;
+}
+
+.legal-inline-link:hover {
+  color: #fff;
+}
+
+.lead-actions {
+  margin-top: 4px;
+}
+
+.lead-submit-btn {
+  width: 100%;
+  min-height: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.lead-footer-notes {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.lead-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.lead-capture-success {
+  text-align: center;
+  padding: 24px 8px;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.lead-success-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(22, 163, 74, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lead-success-icon {
+  color: var(--positive);
+}
+
+.lead-capture-success h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.lead-capture-success p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 44ch;
+}
+
+.lead-success-note {
+  font-size: 13px !important;
+  color: var(--muted) !important;
+}
+
 @media (max-width: 520px) {
   .nav-radar-btn > span:not(.nav-radar-dot) {
     display: none;

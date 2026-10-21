@@ -57,6 +57,8 @@ import {
 import { RedirectTransitionModal } from "./components/RedirectTransitionModal";
 import { CatalogHealth, CaptureStatus } from "./components/CatalogHealth";
 import { SubscriptionModal } from "./components/SubscriptionModal";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
+import { BlackFridayLeadModal } from "./components/BlackFridayLeadModal";
 import { OfferSignals, SignalBadge } from "./components/OfferSignals";
 import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
 
@@ -321,6 +323,7 @@ export default function App() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<DealItem | null>(null);
   const [legal, setLegal] = useState<LegalModalType>(null);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [missingDeal, setMissingDeal] = useState(false);
   const [isOffline, setIsOffline] = useState(
@@ -385,7 +388,7 @@ export default function App() {
       } catch {
         /* Invalid links resolve to the unavailable-product state. */
       }
-      if (["terminos", "metodologia", "privacidad"].includes(hash)) {
+      if (["terminos", "metodologia", "privacidad", "cookies"].includes(hash)) {
         setLegal(hash as LegalModalType);
         setSelectedDeal(null);
         setMissingDeal(false);
@@ -448,6 +451,22 @@ export default function App() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      const dismissed = localStorage.getItem("blackfridaysv_lead_popup_dismissed");
+      if (!dismissed) {
+        const timer = setTimeout(() => {
+          if (!selectedDeal && !legal && !subscriptionOpen && !radarOpen && !redirectDeal) {
+            setLeadModalOpen(true);
+          }
+        }, 8000);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [selectedDeal, legal, subscriptionOpen, radarOpen, redirectDeal]);
 
   const notify = (message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -1936,6 +1955,8 @@ export default function App() {
           <button onClick={() => openLegal("terminos")}>Aviso legal</button>
           <button onClick={() => openLegal("metodologia")}>Cómo comparamos</button>
           <button onClick={() => openLegal("privacidad")}>Privacidad</button>
+          <button onClick={() => openLegal("cookies")}>Cookies y Publicidad</button>
+          <button onClick={() => setLeadModalOpen(true)}>Alertas de Ofertas</button>
           <span className="footer-by">
             Por:{" "}
             <a
@@ -2260,6 +2281,17 @@ export default function App() {
         type={legal}
         onClose={closeOverlay}
         onSelectTab={openLegal}
+      />
+      <BlackFridayLeadModal
+        isOpen={leadModalOpen}
+        onClose={() => setLeadModalOpen(false)}
+        onOpenCookies={() => {
+          setLeadModalOpen(false);
+          openLegal("cookies");
+        }}
+      />
+      <CookieConsentBanner
+        onOpenCookies={() => openLegal("cookies")}
       />
       {subscriptionOpen && <SubscriptionModal product={subscriptionProduct} onClose={() => setSubscriptionOpen(false)} />}
       <Toast

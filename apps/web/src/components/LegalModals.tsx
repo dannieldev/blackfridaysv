@@ -2,7 +2,7 @@ import { useId, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { Dialog } from './Dialog';
 
-export type LegalModalType = 'terminos' | 'metodologia' | 'privacidad' | null;
+export type LegalModalType = 'terminos' | 'metodologia' | 'privacidad' | 'cookies' | null;
 
 interface LegalModalsProps {
   type: LegalModalType;
@@ -12,8 +12,9 @@ interface LegalModalsProps {
 
 const tabs = [
   { id: 'metodologia', label: 'Cómo comparamos' },
-  { id: 'terminos', label: 'Información legal' },
+  { id: 'terminos', label: 'Aviso legal' },
   { id: 'privacidad', label: 'Privacidad' },
+  { id: 'cookies', label: 'Cookies y Publicidad' },
 ] as const;
 
 export function LegalModals({ type, onClose, onSelectTab }: LegalModalsProps) {
@@ -132,6 +133,61 @@ export function LegalModals({ type, onClose, onSelectTab }: LegalModalsProps) {
             <section>
               <h3>Cómo borrar tus guardados</h3>
               <p>Puedes retirar cada producto desde Guardados o borrar los datos de Black Friday SV en la configuración de tu navegador.</p>
+            </section>
+          </>
+        )}
+
+        {type === 'cookies' && (
+          <>
+            <section>
+              <h3>Política de Cookies y Almacenamiento Local</h3>
+              <p>En Black Friday SV no utilizamos cookies de rastreo comercial invasivo de terceros ni compartimos tu historial de navegación con intermediarios publicitarios. Para ofrecer una experiencia ágil, confiable y segura, empleamos tecnologías de almacenamiento local en tu navegador (<strong>localStorage</strong> y <strong>sessionStorage</strong>) para las siguientes finalidades técnicas y funcionales:</p>
+              <ul>
+                <li><strong>blackfridaysv_saved (Productos guardados):</strong> Conserva en tu navegador la lista de productos que marcas como favoritos para que los consultes cuando vuelvas, sin obligarte a crear una cuenta ni pedirte una contraseña.</li>
+                <li><strong>blackfridaysv_radar_preferences (Radar Personal):</strong> Recuerda tus preferencias personalizadas del Radar (categorías de compra, tope de presupuesto en USD, nivel de rigor cívico de ofertas y tiendas preferidas) para que no tengas que reconfigurarlo en cada visita.</li>
+                <li><strong>blackfridaysv_lead_popup_dismissed:</strong> Registra si ya viste, cerraste o completaste el formulario de avisos y captación de ofertas de Black Friday, evitando ventanas emergentes intrusivas o repetitivas durante tu navegación.</li>
+                <li><strong>blackfridaysv_cookie_consent:</strong> Almacena tu confirmación de haber conocido y aceptado esta política de almacenamiento y cookies.</li>
+              </ul>
+              <p>Puedes eliminar o bloquear estos registros en cualquier momento desde la configuración de privacidad de tu navegador (borrando los datos de sitio o cookies para <code>blackfridaysv.dannieldev.com</code>) o vaciando tus productos guardados directamente desde la interfaz.</p>
+            </section>
+
+            <section>
+              <h3>Captación de Correos y Publicidad de Ofertas de Black Friday</h3>
+              <p>Recopilamos tu dirección de correo electrónico únicamente cuando la introduces de forma voluntaria en nuestros pop-ups, avisos del Radar o formularios de alertas de precios con la finalidad expresa de:</p>
+              <ul>
+                <li><strong>Alertas de bajada de precio:</strong> Notificarte de inmediato cuando un producto específico que sigues alcance o baje de tu precio objetivo.</li>
+                <li><strong>Resumen curado de oportunidades:</strong> Enviarte boletines con bajadas de precio reales y verificadas en las categorías y presupuestos de tu interés (como máximo 1 correo al día, y únicamente si detectamos ofertas auténticas).</li>
+                <li><strong>Comunicaciones comerciales y promociones de Black Friday:</strong> Remitirte avisos especiales, recomendaciones de compra inteligente y resúmenes de ofertas destacadas durante la temporada de Black Friday y eventos de descuentos en El Salvador.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3>Consentimiento Informado y Doble Confirmación (Double Opt-In)</h3>
+              <p>Para protegerte del correo no deseado y garantizar que nadie registre tu correo sin tu autorización, Black Friday SV implementa un proceso de verificación estricto por doble confirmación (<em>Double Opt-In</em>). Al registrar tu correo en el pop-up o formulario:</p>
+              <p>1. Recibirás un correo inicial generado a través de nuestro proveedor de mensajería transaccional (<strong>Resend</strong>) con un enlace de confirmación seguro y temporal (válido por 24 horas).</p>
+              <p>2. Tu suscripción no quedará activa ni recibirás alertas comerciales o resúmenes hasta que abras ese correo y presiones el botón de confirmación.</p>
+              <p>3. Registramos la versión del consentimiento, la fecha y hora de confirmación, y las preferencias elegidas como evidencia de tu autorización expresa.</p>
+            </section>
+
+            <section>
+              <h3>Tratamiento Seguro y Cero Cesión a Terceros</h3>
+              <p>Tus datos se almacenan en infraestructura de base de datos segura y privada (Supabase) bajo políticas de seguridad a nivel de fila (Row Level Security). Los envíos se gestionan de manera autenticada desde nuestro remitente oficial verificado (<code>BlackFridaySV &lt;avisos@dannieldev.com&gt;</code>).</p>
+              <p><strong>Cero venta o transferencia:</strong> En Black Friday SV nunca venderemos, alquilaremos ni cederemos tu dirección de correo electrónico ni tus preferencias a tiendas, plataformas publicitarias externas, comercios afiliados ni intermediarios comerciales. Tus datos solo se usan para enviarte las ofertas que solicitaste.</p>
+            </section>
+
+            <section>
+              <h3>Baja Inmediata en 1 Clic y Derechos de Supresión</h3>
+              <p>Puedes revocar tu consentimiento o darte de baja en cualquier momento de manera inmediata y definitiva:</p>
+              <ul>
+                <li><strong>Enlace al pie de cada correo:</strong> Todos los mensajes que enviamos incluyen un enlace directo y visible de baja inmediata que cancela todos tus avisos y alertas al instante, sin pedir contraseñas ni trámites adicionales.</li>
+                <li><strong>Cabecera List-Unsubscribe (RFC 8058):</strong> Compatible con la baja en 1 clic nativa de clientes como Gmail, Apple Mail y Outlook.</li>
+                <li><strong>Solicitud de supresión total:</strong> Si deseas que eliminemos completamente cualquier registro histórico de tu correo de nuestra base de datos, puedes escribir directamente al responsable del proyecto a <a href="mailto:Danielcrespin.dev@gmail.com">Danielcrespin.dev@gmail.com</a> indicando tu solicitud.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3>Marco Legal y Transparencia Publicitaria</h3>
+              <p>Nuestras comunicaciones comerciales respetan los artículos 31 y 32 de la Ley de Protección al Consumidor de la República de El Salvador. Toda oferta o precio divulgado en nuestros correos corresponde a capturas reales observadas en los comercios locales, sin publicidad engañosa ni afirmaciones de ahorro falsas.</p>
             </section>
           </>
         )}

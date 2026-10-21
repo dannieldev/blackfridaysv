@@ -81,7 +81,7 @@ export function SubscriptionModal({ product, onClose }: { product: DealItem | nu
             </>}
             <div className="subscription-honeypot" aria-hidden="true"><label>Sitio web<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={e => setWebsite(e.target.value)} /></label></div>
             <label className="subscription-check"><input type="checkbox" required checked={consent} onChange={e => setConsent(e.target.checked)} /><span>Quiero recibir los avisos seleccionados y acepto que BlackFridaySV guarde mi correo e intereses para enviarlos.</span></label>
-            <p className="subscription-small">Sin cuenta ni contraseña. Puedes dar de baja todos los avisos desde cada correo. <a href="/#privacidad" target="_blank" rel="noopener noreferrer">Ver privacidad (otra pestaña)</a>.</p>
+            <p className="subscription-small">Sin cuenta ni contraseña. Puedes dar de baja todos los avisos desde cada correo. Consulta nuestra <a href="/#privacidad" target="_blank" rel="noopener noreferrer">política de privacidad</a> y <a href="/#cookies" target="_blank" rel="noopener noreferrer">cookies y publicidad (otra pestaña)</a>.</p>
             {error && <p role="alert" className="subscription-error">{error}</p>}
             <button className="btn btn-primary" type="submit" disabled={!available || state === 'sending'}>{state === 'sending' ? 'Enviando confirmación…' : 'Enviar correo de confirmación'}</button>
             {product && <p className="subscription-small">Puedes seguir hasta 20 productos. Comparamos el precio publicado en esta tienda, sin envío. Recibirás como máximo un resumen al día si cumple tu objetivo, y otro sólo si vuelve a bajar.</p>}
