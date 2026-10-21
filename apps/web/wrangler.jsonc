@@ -15,7 +15,7 @@
   },
   "vars": {
     "SITE_URL": "https://blackfridaysv.dannieldev.com",
-    "SUBSCRIPTIONS_ENABLED": "false"
+    "SUBSCRIPTIONS_ENABLED": "true"
   },
   "routes": [
     {

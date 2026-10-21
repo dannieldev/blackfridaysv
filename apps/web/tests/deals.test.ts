@@ -177,3 +177,12 @@ test('real snapshot retains the catalog, moda_calzado items, and safe cross-stor
   assert.equal(modaDeals.length, snapshot.filter((item: { category: string }) => item.category === 'moda_calzado').length);
   assert.ok(modaDeals.every(deal => deal.currentPrice > 0));
 });
+
+test('legacy cached medicine is hidden while electronic tablets remain available', async () => {
+  serve([
+    row({ id: 'walmart-medicine', title: 'Loperakem 100 Tabletas - Precio indicado por tableta', category: 'computacion' }),
+    row({ id: 'walmart-medicine-2', title: 'Tabletas masticables Tums sabores frasco 48 tabletas', category: 'computacion' }),
+    row({ id: 'walmart-electronics', title: 'Tableta Samsung Galaxy Tab A9', category: 'computacion' }),
+  ]);
+  assert.deepEqual((await loadCatalog()).deals.map(deal => deal.id), ['walmart-electronics']);
+});

@@ -16,6 +16,7 @@
     "dev:api": "npm run dev:api --workspace=apps/web",
     "scrape": "npm run scrape --workspace=packages/scrapers",
     "scrape:dry": "npm run scrape:dry --workspace=packages/scrapers",
+    "scrape:snapshot": "npm run scrape:snapshot --workspace=packages/scrapers",
     "scrape:siman": "npm run scrape:siman --workspace=packages/scrapers",
     "scrape:walmart": "npm run scrape:walmart --workspace=packages/scrapers",
     "deploy": "npm run deploy --workspace=apps/web",

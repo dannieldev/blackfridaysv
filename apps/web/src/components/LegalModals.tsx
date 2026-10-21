@@ -78,6 +78,8 @@ export function LegalModals({ type, onClose, onSelectTab }: LegalModalsProps) {
             </section>
             <section>
               <h3>Las señales orientan tu decisión</h3>
+              <p>Verde: el precio bajó al menos 10% frente a uno registrado en dos días anteriores de los últimos 30 y es el mínimo del periodo observado. Amarillo: hay historial suficiente, pero no una diferencia destacada. Rojo: cuesta al menos 10% más que un precio anterior repetido, o hay una alternativa reciente del mismo modelo al menos 10% más barata.</p>
+              <p>Para asignar color necesitamos una captura de las últimas 24 horas. Usamos gris si faltan datos suficientes o el producto está agotado. En moda y calzado seguimos la talla y el vendedor indicados; no comparamos prendas de tallas diferentes como si fueran el mismo producto.</p>
               <p>Las etiquetas resumen la comparación con los datos disponibles. Una diferencia entre precios es una señal para revisar, no una resolución sobre la conducta de una tienda. El envío, las condiciones de pago y la disponibilidad también pueden cambiar el costo final.</p>
             </section>
           </>

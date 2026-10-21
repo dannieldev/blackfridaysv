@@ -114,6 +114,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     }
     return json({ error: 'Ruta o método no disponible.' }, 404);
   } catch (error) {
+    console.error('Worker Error:', error);
     if (url.pathname === '/api/subscriptions/confirm' && error instanceof Error && error.message === 'alert_limit') {
       return page('Ya tienes veinte alertas activas', 'Puedes actualizar el precio objetivo de un producto que ya sigues. Para empezar de nuevo, da de baja todos tus avisos desde un correo y vuelve a elegir los productos.', undefined, 409);
     }

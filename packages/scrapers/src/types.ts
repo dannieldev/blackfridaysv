@@ -4,6 +4,7 @@ export type ProductCategory =
   | 'computacion' 
   | 'linea_blanca' 
   | 'gaming'
+  | 'fotografia'
   | 'moda_calzado';
 
 export interface ScrapedProduct {
@@ -16,7 +17,7 @@ export interface ScrapedProduct {
   offerPrice: number;
   productUrl: string;
   imageUrl: string | null;
-  inStock: boolean;
+  inStock: boolean | null;
   modelCode: string | null;
 }
 

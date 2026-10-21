@@ -5,6 +5,7 @@ export const simanScraper = new VtexStoreAdapter({
   storeName: 'Almacenes Siman El Salvador',
   baseUrl: 'https://sv.siman.com',
   categoriesToSearch: [
+    { category: 'moda_calzado', categoryPaths: ['3/603', '3/604', '3/63', '3/605', '3/606', '3/62'] },
     {
       category: 'tv_audio',
       terms: ['smart tv', 'pantalla lg', 'pantalla samsung', 'soundbar'],

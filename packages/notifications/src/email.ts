@@ -19,7 +19,7 @@ export function confirmationEmail(input: SubscriptionInput, url: string, product
     html: emailLayout('Confirma tus avisos', `<ul>${details.map(d => `<li>${escapeHtml(d)}</li>`).join('')}</ul><p><a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 20px;background:#d4f578;color:#1e261f;font-weight:bold;text-decoration:none">Confirmar mi correo</a></p><p>${notice}</p>`),
   };
 }
-export async function sendEmail(env: ServiceEnvironment, to: string, mail: Mail, key: string, transport: typeof fetch = fetch): Promise<string> {
+export async function sendEmail(env: ServiceEnvironment, to: string, mail: Mail, key: string, transport: typeof fetch = (url, init) => fetch(url, init)): Promise<string> {
   const response = await transport('https://api.resend.com/emails', {
     method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': key },

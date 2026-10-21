@@ -25,17 +25,18 @@ const KNOWN_BRANDS = [
   'Nintendo', 'Xbox', 'PlayStation', 'Epson', 'Honor', 'Huawei', 'Motorola', 'Nokia',
   'JBL', 'Bose', 'Acer', 'Asus', 'MSI', 'Electrolux', 'Frigidaire', 'Telstar', 'Kalley',
   'Noblex', 'Sanyo', 'Panasonic', 'Philips', 'Gemini', 'Haier', 'Daewoo', 'Continental',
+  'RadioShack', 'Canon', 'Nikon', 'Fujifilm', 'Insta360', 'GoPro', 'Brother', 'Aiwa', 'CDP',
 ];
 
 /** Decodifica entidades HTML comunes de Magento (&#x20;, &, &nbsp;...). */
-function decodeHtmlEntities(text: string): string {
+export function decodeHtmlEntities(text: string): string {
   return text
     .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
     .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(parseInt(dec, 10)))
-    .replace(/"/g, '"')
-    .replace(/'/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'")
     .replace(/&nbsp;/g, ' ')
-    .replace(/&/g, '&');
+    .replace(/&amp;/g, '&');
 }
 
 function parsePrice(raw: string | undefined): number {
@@ -44,7 +45,7 @@ function parsePrice(raw: string | undefined): number {
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
 }
 
-function detectBrand(title: string): string {
+export function detectBrand(title: string): string {
   const t = title.toLowerCase();
   for (const brand of KNOWN_BRANDS) {
     if (t.includes(brand.toLowerCase())) return normalizeBrand(brand);
@@ -162,7 +163,7 @@ export class MagentoStoreAdapter {
    * <li class="...product-item..."> con data-product-sku y price-box con
    * data-price-type="finalPrice" / "oldPrice".
    */
-  private parseListing(html: string, category: ProductCategory, maxItems: number): ScrapedProduct[] {
+  parseListing(html: string, category: ProductCategory, maxItems: number): ScrapedProduct[] {
     const products: ScrapedProduct[] = [];
     const blocks = html.match(/<li[^>]*class="[^"]*product-item[^"]*"[^>]*>[\s\S]*?<\/li>/g) ?? [];
 
@@ -196,7 +197,9 @@ export class MagentoStoreAdapter {
       const brand = detectBrand(title);
       const cleanedTitle = cleanTitle(title);
       const modelCode = extractModelCode(cleanedTitle, brand);
-      const imageUrl = block.match(/class="product-image-photo"[^>]*src="([^"]+)"/)?.[1] ?? null;
+      const imageTag = block.match(/<img\b[^>]*class="[^"]*product-image-photo[^"]*"[^>]*>/)?.[0] ?? '';
+      const imageSource = imageTag.match(/data-src="([^"]+)"/)?.[1] ?? imageTag.match(/\ssrc="([^"]+)"/)?.[1];
+      const imageUrl = imageSource && /^https?:/.test(imageSource) ? decodeHtmlEntities(imageSource) : null;
       const inStock = !/agotado|out of stock|out-of-stock/i.test(block);
 
       products.push({

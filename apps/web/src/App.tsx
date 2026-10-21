@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   BarChart2,
   Check,
+  Camera,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -56,6 +57,8 @@ import {
 import { RedirectTransitionModal } from "./components/RedirectTransitionModal";
 import { CatalogHealth, CaptureStatus } from "./components/CatalogHealth";
 import { SubscriptionModal } from "./components/SubscriptionModal";
+import { OfferSignals, SignalBadge } from "./components/OfferSignals";
+import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
 
 export type { DealItem } from "./lib/deals";
 
@@ -67,8 +70,9 @@ const CATEGORIES = [
   { id: "linea_blanca", label: "Electrodomésticos", icon: Refrigerator },
   { id: "gaming", label: "Videojuegos", icon: Gamepad2 },
   { id: "moda_calzado", label: "Moda y calzado", icon: Shirt },
+  { id: "fotografia", label: "Fotografía", icon: Camera },
 ];
-const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport"];
+const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport", "RadioShack", "RAF", "Prisma Moda"];
 const BUDGETS = [
   { id: "all", label: "Cualquier precio" },
   { id: "under100", label: "Menos de $100" },
@@ -223,12 +227,14 @@ export function DealCard({
   onSave,
   onOpen,
   mode = "simple",
+  signal,
 }: {
   deal: DealItem;
   saved: boolean;
   onSave: () => void;
   onOpen: () => void;
   mode?: "simple" | "detailed";
+  signal?: OfferSignal;
 }) {
 
   return (
@@ -252,6 +258,7 @@ export function DealCard({
         <DealBadge deal={deal} mode={mode} />
       </div>
       <div className="product-content">
+        <SignalBadge signal={signal} />
         <div className="product-meta">
           <span>{storeLabel(deal.store)}</span>
           <span>{deal.inStock === false ? "Agotado" : deal.brand}</span>
@@ -300,6 +307,7 @@ export default function App() {
   const [availableOnly, setAvailableOnly] = useState(false);
   type FilterType = "all" | "discounted" | "percent_discount" | "compare" | "saved" | "radar";
   const [filter, setFilter] = useState<FilterType>("all");
+  const [signalFilter, setSignalFilter] = useState<SignalLevel | 'all'>('all');
   const [sort, setSort] = useState("compare");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
@@ -521,6 +529,7 @@ export default function App() {
     change(() => {
       if (id === "all") {
         setCategory("all");
+        setSignalFilter('all');
         if (filter !== "all") {
           setFilter("all");
           if (sort === "recent") setSort("compare");
@@ -566,7 +575,8 @@ export default function App() {
     setBudget("all");
     setAvailableOnly(false);
     setFilter("all");
-    setSort("compare");
+    setSignalFilter('all');
+    setSort("opportunities");
     setPage(1);
   };
   const updateRadar = (updater: (prev: RadarPreferences) => RadarPreferences) => {
@@ -617,7 +627,8 @@ export default function App() {
     () => deals.filter((deal) => matchesRadar(deal, { ...radarPrefs, enabled: true }, evaluationTime)).length,
     [deals, radarPrefs, evaluationTime],
   );
-  const filtered = useMemo(() => {
+  const signals = useMemo(() => new Map(deals.map(deal => [deal.id, offerSignal(deal, evaluationTime)])), [deals, evaluationTime]);
+  const matchingDeals = useMemo(() => {
     const terms = normalize(search.trim()).split(/\s+/).filter(Boolean);
     const result = categoryDeals.filter((deal) => {
       const text = normalize(
@@ -644,7 +655,17 @@ export default function App() {
           (filter === "radar" && matchesRadar(deal, radarPrefs, evaluationTime)))
       );
     });
+    return result;
+  }, [categoryDeals, search, stores, budget, availableOnly, filter, savedIds, radarPrefs, evaluationTime]);
+  const signalCounts = useMemo(() => {
+    const counts = { worth: 0, regular: 0, wait: 0, unknown: 0 };
+    for (const deal of matchingDeals) counts[signals.get(deal.id)!.level]++;
+    return counts;
+  }, [matchingDeals, signals]);
+  const filtered = useMemo(() => {
+    const result = matchingDeals.filter(deal => signalFilter === 'all' || signals.get(deal.id)!.level === signalFilter);
     return result.sort((a, b) => {
+      if (sort === 'opportunities') return compareSignals(signals.get(a.id)!, signals.get(b.id)!) || a.currentPrice - b.currentPrice;
       if (sort === "recent") {
         return savedIds.indexOf(b.id) - savedIds.indexOf(a.id);
       }
@@ -663,14 +684,7 @@ export default function App() {
       );
     });
   }, [
-    categoryDeals,
-    search,
-    stores,
-    budget,
-    availableOnly,
-    filter,
-    radarPrefs,
-    evaluationTime,
+    matchingDeals, signals, signalFilter,
     savedIds,
     sort,
   ]);
@@ -700,7 +714,7 @@ export default function App() {
   const activeCount =
     stores.length + Number(budget !== "all") + Number(availableOnly);
   const hasOtherFilters =
-    activeCount > 0 || category !== "all" || filter !== "all";
+    activeCount > 0 || category !== "all" || filter !== "all" || signalFilter !== 'all';
   const hasFilters =
     hasOtherFilters ||
     Boolean(search.trim());
@@ -1134,7 +1148,7 @@ export default function App() {
             </div>
           )}
           <div className="category-nav" aria-label="Categorías">
-            {CATEGORIES.map(({ id, label, icon: Icon }) => {
+            {CATEGORIES.filter(item => item.id !== 'fotografia' || deals.some(deal => deal.category === item.id)).map(({ id, label, icon: Icon }) => {
               const isSelected =
                 filter === "saved"
                   ? category === id && id !== "all"
@@ -1152,6 +1166,8 @@ export default function App() {
               );
             })}
           </div>
+          <OfferSignals selected={signalFilter} counts={signalCounts} loading={isLoading}
+            onSelect={level => change(() => setSignalFilter(level))} />
           <div className="catalog-layout">
             <aside className="filter-sidebar" aria-label="Filtrar catálogo">
               {filterControls()}
@@ -1330,6 +1346,7 @@ export default function App() {
                       change(() => setSort(event.target.value))
                     }
                   >
+                    <option value="opportunities">Semáforo: oportunidades primero</option>
                     {filter === "saved" ? (
                       <>
                         <option value="recent">Más recientes primero</option>
@@ -1381,6 +1398,9 @@ export default function App() {
               </div>
               {hasFilters && (
                 <div className="active-filters" aria-label="Filtros aplicados">
+                  {signalFilter !== 'all' && <button onClick={() => change(() => setSignalFilter('all'))}>
+                    {SIGNALS.find(signal => signal.id === signalFilter)?.label}<X aria-label="Quitar filtro del semáforo" />
+                  </button>}
                   {filter === "radar" && (
                     <button onClick={() => change(() => setFilter("all"))}>
                       🎯 Mi Radar activo ({filtered.length})
@@ -1505,6 +1525,7 @@ export default function App() {
                     <DealCard
                       key={deal.id}
                       deal={deal}
+                      signal={signals.get(deal.id)!}
                       saved={savedIds.includes(deal.id)}
                       onSave={() => save(deal)}
                       onOpen={() => openDeal(deal)}
@@ -1523,7 +1544,15 @@ export default function App() {
                   ) : (
                     <Search aria-hidden="true" />
                   )}
-                  {filter === "saved" ? (
+                  {signalFilter !== 'all' && matchingDeals.length > 0 ? (
+                    <>
+                      <h3>No hay ofertas con esta señal y estos filtros</h3>
+                      <p>Los productos nuevos pueden aparecer como “Por verificar” hasta reunir suficientes capturas. No usamos el descuento anunciado para asignarles una señal verde.</p>
+                      <button className="btn btn-primary" onClick={() => change(() => setSignalFilter('all'))}>
+                        Ver las {matchingDeals.length} ofertas sin semáforo
+                      </button>
+                    </>
+                  ) : filter === "saved" ? (
                     savedCount > 0 ? (
                       search.trim() ? (
                         <>
@@ -1569,6 +1598,7 @@ export default function App() {
                                   setStores([]);
                                   setBudget("all");
                                   setAvailableOnly(false);
+                                  setSignalFilter('all');
                                 })
                               }
                             >
@@ -1625,6 +1655,7 @@ export default function App() {
                                 setStores([]);
                                 setBudget("all");
                                 setAvailableOnly(false);
+                                setSignalFilter('all');
                               })
                             }
                           >
@@ -1670,7 +1701,7 @@ export default function App() {
                     <>
                       <h3>Sección de Moda y Calzado en actualización</h3>
                       <p>
-                        Estamos incorporando precios publicados de ropa y calzado de Almacenes Siman y Walmart El Salvador.
+                        No hay precios de moda y calzado disponibles en esta copia del catálogo. Las fuentes configuradas son Siman, Walmart y Prisma Moda.
                       </p>
                       <button className="btn btn-primary" onClick={reset}>
                         Explorar otras categorías
@@ -1680,7 +1711,7 @@ export default function App() {
                     <>
                       <h3>No encontramos ofertas de Moda y Calzado con estos filtros</h3>
                       <p>
-                        El catálogo incluye calzado y moda de Almacenes Siman y Walmart El Salvador. Prueba ampliar el presupuesto o quitar tiendas para ver más opciones.
+                        Consulta moda y calzado de Siman, Walmart y Prisma Moda. Prueba ampliar el presupuesto o quitar tiendas para ver más opciones.
                       </p>
                       <div className="empty-state-actions">
                         <button
@@ -1690,6 +1721,8 @@ export default function App() {
                               setBudget("all");
                               setStores([]);
                               setSearch("");
+                              setAvailableOnly(false);
+                              setSignalFilter('all');
                             })
                           }
                         >
@@ -1718,6 +1751,7 @@ export default function App() {
                                 setStores([]);
                                 setBudget("all");
                                 setAvailableOnly(false);
+                                setSignalFilter('all');
                               })
                             }
                           >
@@ -2036,6 +2070,7 @@ export default function App() {
                     : "Sin otro precio de referencia anunciado."}
                 </p>
                 <PriceEvidence deal={selectedDeal} />
+                <SignalBadge signal={signals.get(selectedDeal.id) ?? offerSignal(selectedDeal, evaluationTime)} explain />
               </div>
             </div>
             <div className="detail-section">

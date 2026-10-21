@@ -59,7 +59,7 @@ export function extractModelCode(title: string, brand: string): string | null {
   const genericMatch = cleanTitle.match(/\b([A-Z0-9]{2,5}-[A-Z0-9]{3,6})\b/i) ||
                        cleanTitle.match(/\b([0-9]{2}[A-Z]{2,4}[0-9]{3,4}[A-Z0-9]*)\b/i);
 
-  if (genericMatch && genericMatch[1]) {
+  if (genericMatch && genericMatch[1] && !/^I[3579]-/i.test(genericMatch[1])) {
     return genericMatch[1].trim();
   }
 
