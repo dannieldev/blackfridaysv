@@ -258,7 +258,7 @@ export function DealCard({
         <DealBadge deal={deal} mode={mode} />
       </div>
       <div className="product-content">
-        <SignalBadge signal={signal} />
+        {mode === 'detailed' && signal && <SignalBadge signal={signal} />}
         <div className="product-meta">
           <span>{storeLabel(deal.store)}</span>
           <span>{deal.inStock === false ? "Agotado" : deal.brand}</span>
