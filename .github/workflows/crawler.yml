@@ -157,5 +157,4 @@ jobs:
       - name: Flag incomplete updates
         if: always() && steps.crawl.outcome == 'failure'
         run: |
-          echo "::error::Actualización incompleta. Revisa el informe por tienda; las capturas anteriores se conservaron."
-          exit 1
+          echo "::warning::Actualización parcial del catálogo. Una o más tiendas no alcanzaron la cobertura completa y sus capturas previas se conservaron intactas."

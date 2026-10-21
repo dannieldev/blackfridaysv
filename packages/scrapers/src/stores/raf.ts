@@ -3,11 +3,16 @@ import { cleanTitle, extractModelCode } from '../core/normalizer.js';
 import { decodeHtmlEntities, detectBrand } from './magento-adapter.js';
 
 const origin = 'https://www.rafenlinea.com';
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 const categories: { category: ProductCategory; path: string }[] = [
   { category: 'computacion', path: '/39-laptops' }, { category: 'computacion', path: '/41-monitores' },
   { category: 'computacion', path: '/264-multifuncionales' }, { category: 'smartphones', path: '/52-telefonos' },
   { category: 'tv_audio', path: '/36-bocinas' }, { category: 'tv_audio', path: '/31-audifonos-y-manos-libres' },
-  { category: 'gaming', path: '/200-consolas' }, { category: 'fotografia', path: '/11-camaras' },
+  { category: 'gaming', path: '/200-consolas' },
+  { category: 'fotografia', path: '/18-camaras-mirrorless' },
+  { category: 'fotografia', path: '/15-camaras-dslr' },
+  { category: 'fotografia', path: '/336-camaras-de-accion' },
+  { category: 'fotografia', path: '/19-camaras-instantaneas' },
 ];
 const price = (value: string | undefined) => Number((value ?? '').replace(/<[^>]*>/g, '').replace(/[^\d.]/g, ''));
 
@@ -54,7 +59,10 @@ export const rafScraper: StoreScraper = {
       try {
         while (next && count < limit && !visited.has(next)) {
           visited.add(next);
-          const response: Response = await fetch(next, { signal: AbortSignal.timeout(20000) });
+          const response: Response = await fetch(next, {
+            signal: AbortSignal.timeout(20000),
+            headers: { 'User-Agent': UA, 'Accept': '*/*' },
+          });
           if (!response.ok) throw new Error(`RAF HTTP ${response.status}`);
           const html: string = await response.text();
           const rows = parseRafListing(html, entry.category);

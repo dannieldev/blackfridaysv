@@ -103,7 +103,7 @@ test('RAF reports a blocked category without inventing products or crashing the 
   mock.method(globalThis, 'fetch', async () => new Response('', { status: 403 }));
   let issues = 0;
   const products = await rafScraper.scrape({ categories: ['fotografia'], onIssue: () => { issues++; } });
-  assert.deepEqual(products, []); assert.equal(issues, 1);
+  assert.deepEqual(products, []); assert.equal(issues, 4);
 });
 
 test('a shared Intel processor code cannot masquerade as the laptop manufacturer model', () => {
