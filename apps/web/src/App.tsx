@@ -60,6 +60,7 @@ import { CatalogHealth, CaptureStatus } from "./components/CatalogHealth";
 import { SubscriptionModal } from "./components/SubscriptionModal";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { BlackFridayLeadModal } from "./components/BlackFridayLeadModal";
+import { PrelaunchPage } from "./components/PrelaunchPage";
 import { OfferSignals, SignalBadge } from "./components/OfferSignals";
 import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
 import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference } from "./lib/analytics";
@@ -332,6 +333,31 @@ export default function App() {
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
   const [confirmClearSaved, setConfirmClearSaved] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, "?"));
+      const adminParam = params.get("admin") || hashParams.get("admin");
+      if (adminParam && adminParam.trim().toLowerCase() === "dannieldev") {
+        localStorage.setItem("bfsv_admin_access", "true");
+        try {
+          const cleanSearch = new URLSearchParams(window.location.search);
+          cleanSearch.delete("admin");
+          const searchStr = cleanSearch.toString() ? `?${cleanSearch.toString()}` : "";
+          const hashClean = window.location.hash.replace(/[?&]admin=[^&]+/, "");
+          window.history.replaceState({}, document.title, window.location.pathname + searchStr + hashClean);
+        } catch {
+          // noop
+        }
+        return true;
+      }
+      return localStorage.getItem("bfsv_admin_access") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [previewAsVisitor, setPreviewAsVisitor] = useState(false);
   const [viewMode, setViewMode] = useState<"simple" | "detailed">(() => {
     if (typeof window === "undefined") return "simple";
     try {
@@ -865,8 +891,81 @@ export default function App() {
   };
   if (window.location.pathname !== "/") return <NotFoundPage />;
 
+  if (!isAdmin || previewAsVisitor) {
+    return (
+      <>
+        {isAdmin && previewAsVisitor && (
+          <div className="admin-visitor-bar" role="region" aria-label="Aviso de vista previa">
+            <div className="admin-status-inner page-width">
+              <div className="admin-status-info">
+                <span className="admin-status-badge">Vista Previa Pública</span>
+                <span className="admin-status-note">
+                  Así ven el sitio tus visitantes. El catálogo completo está oculto para ellos.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="admin-preview-btn"
+                onClick={() => setPreviewAsVisitor(false)}
+              >
+                Volver al Catálogo Admin
+              </button>
+            </div>
+          </div>
+        )}
+        <PrelaunchPage
+          isAdminUnlocked={isAdmin}
+          onEnterAdmin={() => {
+            setIsAdmin(true);
+            setPreviewAsVisitor(false);
+          }}
+          onOpenLegal={(type) => setLegal(type)}
+        />
+        <LegalModals
+          type={legal}
+          onClose={() => setLegal(null)}
+          onSelectTab={(tab) => setLegal(tab)}
+        />
+        <CookieConsentBanner onOpenCookies={() => setLegal("cookies")} />
+      </>
+    );
+  }
+
   return (
     <>
+      <div className="admin-status-bar" role="region" aria-label="Barra de administración">
+        <div className="admin-status-inner page-width">
+          <div className="admin-status-info">
+            <span className="admin-status-badge">Modo Administrador Activo</span>
+            <span className="admin-status-note">
+              Catálogo completo visible para ti (@dannieldev). El público solo ve la Wishlist de prelanzamiento.
+            </span>
+          </div>
+          <div className="admin-status-actions">
+            <button
+              type="button"
+              className="admin-preview-btn"
+              onClick={() => setPreviewAsVisitor(true)}
+            >
+              Ver como visitante (Wishlist)
+            </button>
+            <button
+              type="button"
+              className="admin-lock-btn"
+              onClick={() => {
+                try {
+                  localStorage.removeItem("bfsv_admin_access");
+                } catch {
+                  // noop
+                }
+                setIsAdmin(false);
+              }}
+            >
+              Bloquear catálogo
+            </button>
+          </div>
+        </div>
+      </div>
       {isOffline && (
         <div className="offline-banner" role="status">
           <span>
