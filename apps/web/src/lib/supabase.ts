@@ -89,7 +89,7 @@ function normalizeRows(data: unknown, source: SupabaseDeal['source']): SupabaseD
     const productUrl = url(snapshot ? item.productUrl : item.product_url);
     const currentPrice = price(snapshot ? item.currentPrice : item.current_offer_price);
     if (!id || !title || !store || !productUrl || currentPrice === null || seen.has(id)) continue;
-    if (isExcludedFromCatalog({ title, category: string(item.category), productUrl })) continue;
+    if (isExcludedFromCatalog({ title, category: string(item.category), productUrl, currentPrice })) continue;
 
     const score = (snapshot ? item.dealScore : item.deal_score) as SupabaseDeal['deal_score'];
     const stock = snapshot ? item.inStock : item.in_stock;
