@@ -10,13 +10,24 @@ export function emailLayout(title: string, body: string) {
 export function confirmationEmail(input: SubscriptionInput, url: string, productTitle?: string): Mail {
   const details = [
     ...(input.alert ? [`Alerta para ${productTitle ?? 'el producto seleccionado'} cuando su precio sea ${usd(input.alert.targetPrice)} o menos.`] : []),
-    ...(input.newsletter ? [`Resumen de bajadas en ${input.categories.length ? input.categories.map(c => CATEGORY_LABELS[c]).join(', ') : 'todas las categorías'}${input.maxBudget ? `, hasta ${usd(input.maxBudget)}` : ''}.`] : []),
+    ...(input.newsletter ? [`Acceso prioritario y comparativas de ofertas en ${input.categories.length ? input.categories.map(c => CATEGORY_LABELS[c]).join(', ') : 'todas las categorías de almacenes de El Salvador'}${input.maxBudget ? `, hasta ${usd(input.maxBudget)}` : ''}.`] : []),
   ];
-  const notice = 'Recibirás como máximo un resumen al día, sólo si hay coincidencias. El enlace vence en 24 horas. Si no lo solicitaste, ignora este correo: no activaremos avisos.';
+  const notice = 'Al confirmar aseguras tu lugar en la Wishlist de BlackFridaySV para recibir comparativas reales cuando se lancen las ofertas. El enlace vence en 24 horas. Puedes darte de baja en 1 clic en cualquier momento.';
   return {
-    subject: 'Confirma tus avisos de BlackFridaySV',
-    text: `Confirma tus avisos\n\n${details.join('\n')}\n\n${url}\n\n${notice}`,
-    html: emailLayout('Confirma tus avisos', `<ul>${details.map(d => `<li>${escapeHtml(d)}</li>`).join('')}</ul><p><a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 20px;background:#d4f578;color:#1e261f;font-weight:bold;text-decoration:none">Confirmar mi correo</a></p><p>${notice}</p>`),
+    subject: '✨ Confirma tu lugar en la Wishlist de BlackFridaySV',
+    text: `Bienvenido a BlackFridaySV\n\nConfirma tu suscripción a la Wishlist oficial:\n\n${details.join('\n')}\n\nActiva tu confirmación aquí:\n${url}\n\n${notice}`,
+    html: emailLayout(
+      '¡Bienvenido a BlackFridaySV!',
+      `<p>Estás a un solo paso de unirte a la <strong>Wishlist Oficial de BlackFridaySV</strong>. Muy pronto recibirás las mejores comparativas de precios de todos los almacenes de El Salvador y las verdaderas ofertas de Black Friday.</p>
+       <div style="background:#f0f2ea;padding:16px;border-radius:8px;margin:20px 0">
+         <strong style="display:block;margin-bottom:8px">Tus preferencias registradas:</strong>
+         <ul style="margin:0;padding-left:20px">${details.map(d => `<li>${escapeHtml(d)}</li>`).join('')}</ul>
+       </div>
+       <p style="margin:24px 0">
+         <a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 24px;background:#d4f578;color:#1e261f;font-weight:700;text-decoration:none;border-radius:8px">Confirmar mi lugar en la Wishlist</a>
+       </p>
+       <p style="font-size:12px;color:#61685c">${notice}</p>`
+    ),
   };
 }
 export async function sendEmail(env: ServiceEnvironment, to: string, mail: Mail, key: string, transport: typeof fetch = (url, init) => fetch(url, init)): Promise<string> {

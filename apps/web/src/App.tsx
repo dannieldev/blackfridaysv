@@ -22,6 +22,7 @@ import {
   Search,
   SlidersHorizontal,
   Smartphone,
+  Sparkles,
   Store,
   Tag,
   Tv,
@@ -61,6 +62,7 @@ import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { BlackFridayLeadModal } from "./components/BlackFridayLeadModal";
 import { OfferSignals, SignalBadge } from "./components/OfferSignals";
 import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
+import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference } from "./lib/analytics";
 
 export type { DealItem } from "./lib/deals";
 
@@ -359,6 +361,30 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    // Si la URL viene con ?wishlist=true, ?wishlist=1 o #wishlist, abrir inmediatamente
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("wishlist") === "true" || params.get("wishlist") === "1" || window.location.hash === "#wishlist") {
+        setLeadModalOpen(true);
+        return;
+      }
+      const dismissed = localStorage.getItem("blackfridaysv_lead_popup_dismissed");
+      if (!dismissed) {
+        const timer = setTimeout(() => {
+          setLeadModalOpen(true);
+        }, 2200);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // noop
+    }
+  }, []);
+
+  useEffect(() => {
     let active = true;
     setLoading(true);
     setLoadError(false);
@@ -514,6 +540,7 @@ export default function App() {
     window.location.hash = `deal-${encodeURIComponent(deal.id)}`;
   };
   const openStoreUrl = (deal: DealItem, url: string) => {
+    trackDealClick(deal.store, deal.title, deal.currentPrice, url);
     try {
       if (sessionStorage.getItem("bfsv_skip_redirect_screen") === "true") {
         const win = window.open(url, "_blank", "noopener,noreferrer");
@@ -602,6 +629,7 @@ export default function App() {
     setRadarPrefs((prev) => {
       const next = updater(prev);
       saveRadarPreferences(next);
+      trackRadarPreference(next.enabled, next.maxBudget, next.categories);
       return next;
     });
   };
@@ -869,6 +897,10 @@ export default function App() {
               Ofertas
             </a>
             <button type="button" className="nav-link-btn" onClick={() => openLegal("metodologia")}>Cómo comparamos</button>
+            <button type="button" className="nav-link-btn nav-wishlist-link" onClick={() => setLeadModalOpen(true)}>
+              <Sparkles size={13} aria-hidden="true" />
+              <span>Wishlist</span>
+            </button>
           </nav>
           <div className="nav-actions">
             <div className="header-mode-toggle" role="radiogroup" aria-label="Modo de visualización">
@@ -940,6 +972,7 @@ export default function App() {
               role="search"
               onSubmit={(event) => {
                 event.preventDefault();
+                trackSearch(search, filtered.length);
                 scrollToResults();
               }}
             >
@@ -1011,6 +1044,14 @@ export default function App() {
                     ? `Mi Presupuesto activo (${radarCount} ofertas)`
                     : "Definir mi presupuesto"}
                 </span>
+              </button>
+              <button
+                type="button"
+                className="hero-radar-pill-btn hero-wishlist-pill"
+                onClick={() => setLeadModalOpen(true)}
+              >
+                <Sparkles size={14} aria-hidden="true" />
+                <span>Unirme a la Wishlist</span>
               </button>
               <a
                 className="hero-browse"
@@ -1178,7 +1219,10 @@ export default function App() {
                 <button
                   key={id}
                   aria-pressed={isSelected}
-                  onClick={() => toggleCategory(id)}
+                  onClick={() => {
+                    trackCategoryFilter(id);
+                    toggleCategory(id);
+                  }}
                   className={isSelected ? "selected" : ""}
                 >
                   <Icon aria-hidden="true" />

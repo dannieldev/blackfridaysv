@@ -292,8 +292,6 @@ input::placeholder {
   gap: 24px;
   height: 88px;
   border-bottom: 1px solid #3d473c;
-  width: 100%;
-  max-width: 100%;
 }
 .wordmark {
   display: inline-flex;
@@ -2944,11 +2942,11 @@ input::placeholder {
   align-items: center;
   gap: 7px;
   min-height: 40px;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--on-dark);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -2957,9 +2955,8 @@ input::placeholder {
   white-space: nowrap;
 }
 .nav-radar-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+  background: var(--surface);
+  border-color: var(--graphite);
 }
 .nav-radar-btn:active {
   transform: scale(0.97);
@@ -3021,6 +3018,30 @@ input::placeholder {
   color: var(--graphite);
   border-color: #bad95e;
   font-weight: 600;
+}
+.hero-wishlist-pill {
+  background: rgba(251, 221, 0, 0.12) !important;
+  border-color: rgba(251, 221, 0, 0.35) !important;
+  color: var(--accent) !important;
+  font-weight: 600 !important;
+}
+.hero-wishlist-pill:hover {
+  background: rgba(251, 221, 0, 0.24) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+}
+.hero-wishlist-pill svg {
+  color: #fbdd00;
+}
+.nav-wishlist-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+.nav-wishlist-link:hover {
+  color: #ffffff !important;
 }
 .hero-radar-pill-btn svg {
   width: 15px;

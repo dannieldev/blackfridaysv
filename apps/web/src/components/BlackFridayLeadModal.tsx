@@ -1,7 +1,8 @@
 import { useState, useId, useEffect, type FormEvent } from 'react';
-import { X, BellRing, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Dialog } from './Dialog';
 import { CATEGORY_LABELS } from '../../../../packages/notifications/src/contracts';
+import { trackWishlistJoin } from '../lib/analytics';
 
 interface BlackFridayLeadModalProps {
   isOpen: boolean;
@@ -59,6 +60,7 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'No pudimos registrar tu suscripción.');
       setState('sent');
+      trackWishlistJoin(categories);
       try {
         localStorage.setItem('blackfridaysv_lead_popup_dismissed', Date.now().toString());
       } catch {
@@ -91,8 +93,8 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
     <Dialog onClose={handleDismiss} labelledBy={`${id}-title`} className="lead-capture-modal">
       <header className="lead-capture-header">
         <div className="lead-capture-badge">
-          <BellRing size={14} className="lead-badge-icon" aria-hidden="true" />
-          <span>Alertas Exclusivas Black Friday 2026</span>
+          <Sparkles size={14} className="lead-badge-icon" aria-hidden="true" />
+          <span>Acceso Anticipado · Wishlist Black Friday 2026</span>
         </div>
         <button
           type="button"
@@ -110,25 +112,25 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
             <div className="lead-success-icon-wrapper">
               <CheckCircle2 size={44} className="lead-success-icon" aria-hidden="true" />
             </div>
-            <h3>¡Revisa tu bandeja de entrada!</h3>
+            <h3>¡Ya estás en la Wishlist oficial!</h3>
             <p>
-              Te enviamos un enlace de confirmación seguro a <strong>{email}</strong> (Double Opt-in vía Resend).
+              Te enviamos un enlace de confirmación seguro a <strong>{email}</strong> (Double Opt-In vía Resend).
             </p>
             <p className="lead-success-note">
-              Haz clic en el botón del correo para activar tus alertas. Si no lo ves en unos minutos, revisa tu carpeta de correo no deseado (spam).
+              Haz clic en el botón del correo para confirmar tu lugar y recibir las primeras alertas de ofertas auténticas cuando lancemos.
             </p>
             <button type="button" className="btn btn-primary" onClick={handleDismiss}>
-              Continuar navegando ofertas
+              Continuar navegando el catálogo
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="lead-capture-form">
             <div className="lead-capture-intro">
               <h2 id={`${id}-title`}>
-                Sé el primero en enterarte de las gangas reales
+                Bienvenido a BlackFridaySV
               </h2>
               <p>
-                Rastreamos precios diariamente en almacenes de El Salvador. Recibe en tu correo alertas inmediatas cuando detectemos bajadas de precio auténticas, sin inflaciones ni trucos.
+                Muy pronto recibirás las mejores comparativas de precios de todos los almacenes de El Salvador y todas las ofertas de Black Friday para una compra verdadera y sin inflaciones.
               </p>
             </div>
 
@@ -149,7 +151,7 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
                   maxLength={254}
                   required
                   autoFocus
-                  placeholder="ejemplo@correo.com"
+                  placeholder="tu@correo.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="lead-input"
@@ -159,7 +161,7 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
 
             <fieldset className="lead-categories-fieldset">
               <legend className="lead-categories-legend">
-                ¿Qué categorías te interesan más? <small>(Opcional, sin selección incluimos todas)</small>
+                ¿Qué buscas en este Black Friday? <small>(Opcional, sin selección te enviaremos lo más destacado)</small>
               </legend>
               <div className="lead-categories-grid">
                 {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
@@ -205,7 +207,7 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
                 onChange={e => setConsent(e.target.checked)}
               />
               <span>
-                Acepto recibir alertas de bajadas de precio y ofertas comerciales de Black Friday según la{' '}
+                Acepto unirme a la Wishlist y recibir alertas comerciales de Black Friday según la{' '}
                 <button
                   type="button"
                   className="legal-inline-link"
@@ -227,7 +229,7 @@ export function BlackFridayLeadModal({ isOpen, onClose, onOpenCookies }: BlackFr
                 className="btn btn-primary lead-submit-btn"
                 disabled={available === false || state === 'sending' || !email.trim() || !consent}
               >
-                {state === 'sending' ? 'Enviando confirmación…' : 'Activar mis alertas de Black Friday'}
+                {state === 'sending' ? 'Registrando en la Wishlist…' : 'Unirme a la Wishlist oficial'}
               </button>
             </div>
 

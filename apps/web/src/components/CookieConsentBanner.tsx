@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cookie, X } from 'lucide-react';
+import { updateAnalyticsConsent } from '../lib/analytics';
 
 interface CookieConsentBannerProps {
   onOpenCookies: () => void;
@@ -29,6 +30,7 @@ export function CookieConsentBanner({ onOpenCookies }: CookieConsentBannerProps)
     } catch {
       // noop
     }
+    updateAnalyticsConsent('granted');
     setVisible(false);
   }
 
