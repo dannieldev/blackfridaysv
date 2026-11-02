@@ -99,7 +99,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Faltan CLOUDFLARE_ACCOUNT_ID, VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. No se despliega un sitio incompleto."
+            exit 1
+          fi
           echo "🚀 Desplegando versión actualizada a Cloudflare Workers..."
           npm run deploy --workspace=apps/web
 
@@ -130,10 +136,11 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
 
-      - name: Informative Notice
+      - name: Fail when deployment is not configured
         if: env.HAS_CLOUDFLARE_TOKEN != 'true'
         run: |
-          echo "No hay CLOUDFLARE_API_TOKEN. Este workflow no puede desplegar el catálogo."
+          echo "::error::No hay CLOUDFLARE_API_TOKEN. El catálogo se actualizó en el repositorio, pero no en el sitio."
+          exit 1
 
       - name: Preserve crawler report
         if: always()
