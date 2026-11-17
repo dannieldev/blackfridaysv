@@ -33,7 +33,6 @@ import {
 import {
   comparableOffers,
   discountPercent,
-  isGreenDeal,
   loadCatalog,
   money,
   storeLabel,
@@ -307,10 +306,10 @@ export default function App() {
   const [stores, setStores] = useState<string[]>([]);
   const [budget, setBudget] = useState("all");
   const [availableOnly, setAvailableOnly] = useState(false);
-  type FilterType = "all" | "discounted" | "percent_discount" | "compare" | "saved" | "radar";
+  type FilterType = "all" | "compare" | "saved" | "radar";
   const [filter, setFilter] = useState<FilterType>("all");
   const [signalFilter, setSignalFilter] = useState<SignalLevel | 'all'>('all');
-  const [sort, setSort] = useState("compare");
+  const [sort, setSort] = useState("opportunities");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -341,6 +340,9 @@ export default function App() {
   });
   const handleViewModeChange = (nextMode: "simple" | "detailed") => {
     setViewMode(nextMode);
+    if (nextMode === "simple" && (signalFilter === "wait" || signalFilter === "unknown")) {
+      setSignalFilter("all");
+    }
     try {
       localStorage.setItem("bfsv_view_mode", nextMode);
     } catch {
@@ -555,10 +557,8 @@ export default function App() {
       setFilter(nextFilter);
       if (nextFilter === "saved") {
         setSort("recent");
-      } else if (nextFilter === "percent_discount") {
-        setSort("discount");
-      } else if (sort === "recent" || sort === "discount") {
-        setSort("compare");
+      } else if (sort === "recent") {
+        setSort(viewMode === "simple" ? "opportunities" : "compare");
       }
     });
   const toggleSaved = () => {
@@ -656,8 +656,6 @@ export default function App() {
             deal.currentPrice <= 600) ||
           (budget === "over600" && deal.currentPrice > 600)) &&
         (filter === "all" ||
-          (filter === "discounted" && isGreenDeal(deal)) ||
-          (filter === "percent_discount" && (discountPercent(deal) ?? 0) > 0) ||
           (filter === "compare" && comparableOffers(deal).length > 1) ||
           (filter === "saved" && savedIds.includes(deal.id)) ||
           (filter === "radar" && matchesRadar(deal, radarPrefs, evaluationTime)))
@@ -1180,8 +1178,20 @@ export default function App() {
               );
             })}
           </div>
-          <OfferSignals selected={signalFilter} counts={signalCounts} loading={isLoading}
-            onSelect={level => change(() => setSignalFilter(level))} />
+          <OfferSignals
+            selected={signalFilter}
+            counts={signalCounts}
+            loading={isLoading}
+            viewMode={viewMode}
+            onSelect={(level) =>
+              change(() => {
+                setSignalFilter(level);
+                if (filter !== "all" && filter !== "saved" && filter !== "radar") {
+                  setFilter("all");
+                }
+              })
+            }
+          />
           <div className="catalog-layout">
             <aside className="filter-sidebar" aria-label="Filtrar catálogo">
               {filterControls()}
@@ -1192,15 +1202,11 @@ export default function App() {
                   (viewMode === "simple"
                     ? [
                         { id: "all", label: "Todos" },
-                        { id: "discounted", label: "Con descuento" },
-                        { id: "percent_discount", label: "% de descuento" },
                         { id: "saved", label: "Guardados" },
                         ...(radarPrefs.enabled ? [{ id: "radar", label: "🎯 Mi Presupuesto" }] : []),
                       ]
                     : [
                         { id: "all", label: "Todos" },
-                        { id: "discounted", label: "Con descuento" },
-                        { id: "percent_discount", label: "% de descuento" },
                         { id: "compare", label: "En varias tiendas" },
                         { id: "saved", label: "Guardados" },
                         { id: "radar", label: "🎯 Mi Presupuesto" },
@@ -1351,36 +1357,57 @@ export default function App() {
                     <span>Detallado</span>
                   </button>
                 </div>
-                <label className="sort-control">
-                  <span className="sort-label">Ordenar:</span>
-                  <select
-                    aria-label="Ordenar productos"
-                    value={sort}
-                    onChange={(event) =>
-                      change(() => setSort(event.target.value))
+                <div className="sort-wrapper">
+                  <button
+                    type="button"
+                    className={`sort-quick-chip ${sort === "discount" ? "is-active" : ""}`}
+                    onClick={() =>
+                      change(() =>
+                        setSort(
+                          sort === "discount"
+                            ? (viewMode === "simple" ? "opportunities" : "compare")
+                            : "discount"
+                        )
+                      )
                     }
+                    aria-pressed={sort === "discount"}
+                    title="Ordenar por mayor porcentaje de descuento"
                   >
-                    <option value="opportunities">Semáforo: oportunidades primero</option>
-                    {filter === "saved" ? (
-                      <>
-                        <option value="recent">Más recientes primero</option>
-                        <option value="price_asc">Precio: de menor a mayor</option>
-                        <option value="price_desc">Precio: de mayor a menor</option>
-                        <option value="discount">Mayor porcentaje de descuento (%)</option>
-                        <option value="savings">Mayor ahorro en dinero ($)</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="compare">Disponibles en varias tiendas</option>
-                        <option value="price_asc">Precio: de menor a mayor</option>
-                        <option value="price_desc">Precio: de mayor a menor</option>
-                        <option value="discount">Mayor porcentaje de descuento (%)</option>
-                        <option value="savings">Mayor ahorro en dinero ($)</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown aria-hidden="true" />
-                </label>
+                    <Zap size={13} aria-hidden="true" />
+                    <span>% Mayor descuento</span>
+                  </button>
+                  <label className="sort-control">
+                    <SlidersHorizontal size={13} className="sort-icon" aria-hidden="true" />
+                    <span className="sort-label">Ordenar:</span>
+                    <select
+                      aria-label="Ordenar productos"
+                      value={sort}
+                      onChange={(event) =>
+                        change(() => setSort(event.target.value))
+                      }
+                    >
+                      <option value="opportunities">Semáforo: oportunidades primero</option>
+                      {filter === "saved" ? (
+                        <>
+                          <option value="recent">Más recientes primero</option>
+                          <option value="price_asc">Precio: de menor a mayor</option>
+                          <option value="price_desc">Precio: de mayor a menor</option>
+                          <option value="discount">Mayor porcentaje de descuento (%)</option>
+                          <option value="savings">Mayor ahorro en dinero ($)</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="compare">Disponibles en varias tiendas</option>
+                          <option value="price_asc">Precio: de menor a mayor</option>
+                          <option value="price_desc">Precio: de mayor a menor</option>
+                          <option value="discount">Mayor porcentaje de descuento (%)</option>
+                          <option value="savings">Mayor ahorro en dinero ($)</option>
+                        </>
+                      )}
+                    </select>
+                    <ChevronDown size={13} aria-hidden="true" />
+                  </label>
+                </div>
                 <div className="view-switch">
                   <button
                     className="icon-button"
@@ -1450,18 +1477,6 @@ export default function App() {
                         <X aria-label={`Quitar tienda ${s} del Radar`} />
                       </button>
                     ))}
-                  {filter === "discounted" && (
-                    <button onClick={() => change(() => setFilter("all"))}>
-                      Con descuento
-                      <X aria-label="Quitar filtro de descuento" />
-                    </button>
-                  )}
-                  {filter === "percent_discount" && (
-                    <button onClick={() => change(() => setFilter("all"))}>
-                      % de descuento
-                      <X aria-label="Quitar filtro de porcentaje" />
-                    </button>
-                  )}
                   {filter === "compare" && (
                     <button onClick={() => change(() => setFilter("all"))}>
                       En varias tiendas

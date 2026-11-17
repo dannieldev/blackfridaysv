@@ -100,9 +100,19 @@ test('compact signal filters expose text, real zero counts and pressed state wit
   }));
   assert.equal((html.match(/aria-pressed=/g) ?? []).length, 4);
   assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1);
-  assert.match(html, /Vale la pena/); assert.match(html, /signal-count">0</);
+  assert.match(html, /Con descuento/); assert.match(html, /signal-count">0</);
   assert.doesNotMatch(html, /<details|<p>|Elige una señal|Bajada comprobada|¿Cómo evaluamos/);
-  assert.match(html, /Ver todas las señales/);
+  assert.match(html, /Ver todas las ofertas/);
   const badge = renderToStaticMarkup(createElement(SignalBadge, { signal: offerSignal(withHistory(90), now), explain: true }));
-  assert.match(badge, /Vale la pena/); assert.match(badge, /\$100\.00/);
+  assert.match(badge, /Con descuento/); assert.match(badge, /\$100\.00/);
+});
+
+test('OfferSignals in simple mode renders only 2 signals', () => {
+  const html = renderToStaticMarkup(createElement(OfferSignals, {
+    selected: 'worth', counts: { worth: 2, regular: 5, wait: 1, unknown: 10 },
+    loading: false, onSelect: () => {}, viewMode: 'simple',
+  }));
+  assert.equal((html.match(/aria-pressed=/g) ?? []).length, 2);
+  assert.match(html, /Con descuento/);
+  assert.match(html, /Precio normal/);
 });

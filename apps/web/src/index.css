@@ -249,6 +249,11 @@ input::placeholder {
   margin-block: 20px 28px;
 }
 .signal-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.signal-options-simple {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 640px;
+  margin-inline: auto;
+}
 .signal-worth { --signal-color: var(--positive); --signal-bg: var(--positive-bg); }
 .signal-regular { --signal-color: var(--caution); --signal-bg: var(--caution-bg); }
 .signal-wait { --signal-color: var(--danger); --signal-bg: var(--danger-bg); }
@@ -842,16 +847,67 @@ input::placeholder {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
-.sort-control {
+.sort-wrapper {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
-  position: relative;
 }
-.sort-label {
+.sort-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  min-height: 38px;
+}
+.sort-quick-chip:hover {
+  background: var(--surface-hover, #e8ece9);
+  border-color: var(--ink);
+}
+.sort-quick-chip.is-active {
+  background: var(--ink);
+  color: #ffffff;
+  border-color: var(--ink);
+}
+.sort-quick-chip.is-active svg {
+  color: #facc15;
+}
+.sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  min-height: 38px;
+}
+.sort-control:hover,
+.sort-control:focus-within {
+  border-color: var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.sort-control .sort-icon {
   color: var(--muted);
+  flex-shrink: 0;
+}
+.sort-control .sort-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
 }
 .sort-control select {
   appearance: none;
@@ -859,17 +915,20 @@ input::placeholder {
   background: transparent;
   color: var(--ink);
   font-size: 12px;
-  padding: 12px 24px 12px 2px;
-  max-width: 270px;
+  font-weight: 500;
+  padding: 6px 22px 6px 4px;
   cursor: pointer;
-  min-height: 44px;
+  max-width: 240px;
+  outline: none;
+  min-height: 34px;
 }
-.sort-control > svg {
+.sort-control > svg:last-child {
   position: absolute;
-  right: 0;
+  right: 10px;
   pointer-events: none;
   width: 14px;
   height: 14px;
+  color: var(--muted);
 }
 .view-switch {
   display: flex;
@@ -2572,15 +2631,26 @@ input::placeholder {
   .result-count {
     font-size: 10px;
   }
-  .sort-control {
+  .sort-wrapper {
     margin-left: auto;
+    gap: 6px;
+  }
+  .sort-quick-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    min-height: 34px;
+  }
+  .sort-control {
+    padding: 2px 8px 2px 10px;
+    min-height: 34px;
   }
   .sort-label {
     display: none;
   }
   .sort-control select {
-    font-size: 10px;
-    max-width: 220px;
+    font-size: 11px;
+    max-width: 175px;
+    padding: 4px 18px 4px 2px;
   }
   .view-switch {
     display: none;
@@ -2896,9 +2966,16 @@ input::placeholder {
   .results-toolbar .result-count {
     margin-left: auto;
   }
-  .sort-control {
+  .sort-wrapper {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
+  }
+  .sort-quick-chip {
+    flex: 0 0 auto;
+  }
+  .sort-control {
+    flex: 1;
+    min-width: 0;
   }
   .sort-control select {
     width: 100%;

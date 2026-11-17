@@ -5,9 +5,9 @@ import { priceEvidence } from './priceHistory';
 export type SignalLevel = 'worth' | 'regular' | 'wait' | 'unknown';
 export interface OfferSignal { level: SignalLevel; reason: string; savingPercent: number }
 export const SIGNALS = [
-  { id: 'worth', label: 'Vale la pena', description: 'Bajada comprobada de al menos 10%' },
+  { id: 'worth', label: 'Con descuento', description: 'Bajada comprobada de al menos 10%' },
   { id: 'regular', label: 'Para comparar', description: 'Sin una ventaja destacada' },
-  { id: 'wait', label: 'Mejor esperar', description: 'Vimos un precio bastante menor' },
+  { id: 'wait', label: 'Precio aumentado', description: 'Vimos un precio bastante menor' },
   { id: 'unknown', label: 'Por verificar', description: 'Faltan datos recientes o historial' },
 ] as const;
 const localDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/El_Salvador' });
