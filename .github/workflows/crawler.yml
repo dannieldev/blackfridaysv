@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       HAS_CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
       HAS_EMAIL_PROVIDER: ${{ secrets.RESEND_API_KEY != '' && secrets.EMAIL_TOKEN_SECRET != '' && vars.EMAIL_FROM != '' }}
 
@@ -58,7 +59,6 @@ jobs:
 
       - name: Run Scrapers & Generate Snapshot
         id: crawl
-        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -66,7 +66,20 @@ jobs:
           SCRAPER_MODE: ${{ github.event.inputs.mode || 'production' }}
           SCRAPE_MAX_ITEMS_PER_CATEGORY: 50
         run: |
+          set +e
           npm run scrape
+          SCRAPE_CODE=$?
+
+          if [ $SCRAPE_CODE -eq 0 ]; then
+            echo "CRAWL_STATUS=complete" >> $GITHUB_ENV
+            echo "✔ Todas las tiendas se actualizaron al 100%."
+          elif [ $SCRAPE_CODE -eq 2 ]; then
+            echo "CRAWL_STATUS=partial" >> $GITHUB_ENV
+            echo "::warning::Catálogo actualizado con cobertura parcial. Las ofertas de tiendas no disponibles se conservaron intactas."
+          else
+            echo "::error::Fallo crítico en el pipeline de extracción (código $SCRAPE_CODE)."
+            exit $SCRAPE_CODE
+          fi
 
       - name: Commit and Push Updated Snapshot
         id: commit_snapshot
@@ -170,13 +183,31 @@ jobs:
         if: always()
         run: |
           if [ -f .reports/crawler.json ]; then
-            echo '### Estado de actualización del catálogo' >> "$GITHUB_STEP_SUMMARY"
-            echo '```json' >> "$GITHUB_STEP_SUMMARY"
-            cat .reports/crawler.json >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            node --input-type=module <<'NODE'
+            import fs from 'node:fs';
+
+            const report = JSON.parse(fs.readFileSync('.reports/crawler.json', 'utf8'));
+            let md = '## 📊 Resumen Ejecutivo del Catálogo Black Friday\n\n';
+            const statusIcon = report.status === 'complete' ? '🟢 **Completo**' : report.status === 'partial' ? '🟡 **Parcial (Preservado)**' : '🔴 **Fallido**';
+            md += `- **Estado General:** ${statusIcon}\n`;
+            md += `- **Modo:** \`${report.mode}\` | **Productos en Catálogo:** \`${report.catalogProducts}\` | **Historial Supabase:** \`${report.historyStatus}\`\n\n`;
+            md += '| Tienda | Estado | Recibidos | Aceptados | Retenidos | Detalle |\n';
+            md += '|---|:---:|:---:|:---:|:---:|---|\n';
+            for (const s of (report.stores || [])) {
+              const icon = s.status === 'updated' ? '🟢 Actualizada' : s.status === 'partial' ? '🟡 Parcial' : '⚪ Retenida';
+              const reason = s.reason === 'fetch_failed' ? 'Conexión / CDN' : s.reason === 'low_coverage' ? 'Baja cobertura' : s.reason || 'Cobertura OK';
+              md += `| **${s.storeId.toUpperCase()}** | ${icon} | ${s.received} | ${s.accepted} | ${s.retained} | ${reason} |\n`;
+            }
+            if (report.database) {
+              md += `\n> **Sincronización Base de Datos:** ${report.database.productsSynced} productos sincronizados, ${report.database.errors} errores.\n`;
+            }
+            if (process.env.GITHUB_STEP_SUMMARY) {
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
+            }
+            NODE
           fi
 
       - name: Flag incomplete updates
-        if: always() && steps.crawl.outcome == 'failure'
+        if: always() && env.CRAWL_STATUS == 'partial'
         run: |
-          echo "::warning::Actualización parcial del catálogo. Una o más tiendas no alcanzaron la cobertura completa y sus capturas previas se conservaron intactas."
+          echo "::notice::Una o más tiendas tuvieron cobertura parcial o requirieron preservación preventiva; el catálogo publicado mantiene su integridad."

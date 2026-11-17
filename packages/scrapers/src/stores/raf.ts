@@ -1,9 +1,16 @@
+import { Agent } from 'undici';
 import type { ProductCategory, ScrapedProduct, ScrapeOptions, StoreScraper } from '../types.js';
 import { cleanTitle, extractModelCode } from '../core/normalizer.js';
 import { decodeHtmlEntities, detectBrand } from './magento-adapter.js';
 
 const origin = 'https://www.rafenlinea.com';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+const dispatcher = new Agent({
+  connect: {
+    rejectUnauthorized: false,
+  },
+});
 const categories: { category: ProductCategory; path: string }[] = [
   { category: 'computacion', path: '/39-laptops' }, { category: 'computacion', path: '/41-monitores' },
   { category: 'computacion', path: '/264-multifuncionales' }, { category: 'smartphones', path: '/52-telefonos' },
@@ -60,6 +67,8 @@ export const rafScraper: StoreScraper = {
         while (next && count < limit && !visited.has(next)) {
           visited.add(next);
           const response: Response = await fetch(next, {
+            // @ts-expect-error Node.js native fetch supports undici dispatcher
+            dispatcher,
             signal: AbortSignal.timeout(20000),
             headers: { 'User-Agent': UA, 'Accept': '*/*' },
           });

@@ -125,10 +125,10 @@ export class MagentoStoreAdapter {
         }
         throw new Error(`Magento HTTP Error ${res.status}: ${res.statusText}`);
       } catch (err) {
-        const overflow =
+        const isOverflowOrTls =
           err instanceof Error &&
-          /headers overflow/i.test(`${err.message} ${(err as NodeJS.ErrnoException).cause ?? ''}`);
-        if (overflow && this.config.largeHeaders) {
+          /headers overflow|unable to verify/i.test(`${err.message} ${(err as NodeJS.ErrnoException).cause ?? ''}`);
+        if (isOverflowOrTls) {
           const text = await this.fetchWithLargeHeaderParser(url);
           if (text !== null) return text;
         }
@@ -140,11 +140,11 @@ export class MagentoStoreAdapter {
     throw new Error(`Magento: no se pudo obtener ${url}`);
   }
 
-  /** Reintenta con undici y un parser de headers ampliado (128 KB). */
+  /** Reintenta con undici y un parser de headers ampliado (128 KB) con TLS permisivo. */
   private async fetchWithLargeHeaderParser(url: string): Promise<string | null> {
     try {
       const undici = await import('undici');
-      const agent = new undici.Agent({ maxHeaderSize: 131072 });
+      const agent = new undici.Agent({ maxHeaderSize: 131072, connect: { rejectUnauthorized: false } });
       const res = await undici.fetch(url, {
         signal: AbortSignal.timeout(20000),
         headers: { 'User-Agent': UA, 'Accept': '*/*' },
