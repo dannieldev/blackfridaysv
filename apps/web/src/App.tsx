@@ -1365,57 +1365,37 @@ export default function App() {
                     <span>Detallado</span>
                   </button>
                 </div>
-                <div className="sort-wrapper">
-                  <button
-                    type="button"
-                    className={`sort-quick-chip ${sort === "discount" ? "is-active" : ""}`}
-                    onClick={() =>
-                      change(() =>
-                        setSort(
-                          sort === "discount"
-                            ? (viewMode === "simple" ? "opportunities" : "compare")
-                            : "discount"
-                        )
-                      )
+                <label className="sort-control">
+                  <SlidersHorizontal size={13} className="sort-icon" aria-hidden="true" />
+                  <span className="sort-label">Ordenar:</span>
+                  <select
+                    aria-label="Ordenar productos"
+                    value={sort}
+                    onChange={(event) =>
+                      change(() => setSort(event.target.value))
                     }
-                    aria-pressed={sort === "discount"}
-                    title="Ordenar por mayor porcentaje de descuento"
                   >
-                    <Zap size={13} aria-hidden="true" />
-                    <span>% Mayor descuento</span>
-                  </button>
-                  <label className="sort-control">
-                    <SlidersHorizontal size={13} className="sort-icon" aria-hidden="true" />
-                    <span className="sort-label">Ordenar:</span>
-                    <select
-                      aria-label="Ordenar productos"
-                      value={sort}
-                      onChange={(event) =>
-                        change(() => setSort(event.target.value))
-                      }
-                    >
-                      <option value="opportunities">Semáforo: oportunidades primero</option>
-                      {filter === "saved" ? (
-                        <>
-                          <option value="recent">Más recientes primero</option>
-                          <option value="price_asc">Precio: de menor a mayor</option>
-                          <option value="price_desc">Precio: de mayor a menor</option>
-                          <option value="discount">Mayor porcentaje de descuento (%)</option>
-                          <option value="savings">Mayor ahorro en dinero ($)</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="compare">Disponibles en varias tiendas</option>
-                          <option value="price_asc">Precio: de menor a mayor</option>
-                          <option value="price_desc">Precio: de mayor a menor</option>
-                          <option value="discount">Mayor porcentaje de descuento (%)</option>
-                          <option value="savings">Mayor ahorro en dinero ($)</option>
-                        </>
-                      )}
-                    </select>
-                    <ChevronDown size={13} aria-hidden="true" />
-                  </label>
-                </div>
+                    <option value="opportunities">Semáforo: oportunidades primero</option>
+                    {filter === "saved" ? (
+                      <>
+                        <option value="recent">Más recientes primero</option>
+                        <option value="price_asc">Precio: de menor a mayor</option>
+                        <option value="price_desc">Precio: de mayor a menor</option>
+                        <option value="discount">Mayor porcentaje de descuento (%)</option>
+                        <option value="savings">Mayor ahorro en dinero ($)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="compare">Disponibles en varias tiendas</option>
+                        <option value="price_asc">Precio: de menor a mayor</option>
+                        <option value="price_desc">Precio: de mayor a menor</option>
+                        <option value="discount">Mayor porcentaje de descuento (%)</option>
+                        <option value="savings">Mayor ahorro en dinero ($)</option>
+                      </>
+                    )}
+                  </select>
+                  <ChevronDown size={13} aria-hidden="true" />
+                </label>
                 <div className="view-switch">
                   <button
                     className="icon-button"
