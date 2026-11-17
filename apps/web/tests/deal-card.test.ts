@@ -84,6 +84,27 @@ test('DealBadge warns when price increased in detailed mode only', () => {
   assert.equal(htmlSimple, '');
 });
 
+test('DealBadge does not render green discount when signal is regular', () => {
+  const html = renderToStaticMarkup(createElement(DealBadge, {
+    deal: baseDeal,
+    signal: { level: 'regular', reason: 'Precio normal', savingPercent: 0 },
+    mode: 'simple',
+  }));
+  assert.doesNotMatch(html, /verdict-green/);
+  assert.doesNotMatch(html, /Con descuento/);
+  assert.match(html, /33% anunciado/);
+});
+
+test('DealBadge in detailed mode includes verified reduction when signal is worth', () => {
+  const html = renderToStaticMarkup(createElement(DealBadge, {
+    deal: baseDeal,
+    signal: { level: 'worth', reason: 'Bajada comprobada', savingPercent: 25 },
+    mode: 'detailed',
+  }));
+  assert.match(html, /verdict-green/);
+  assert.match(html, /Con descuento −25%/);
+});
+
 test('isGreenDeal filters strictly true bargains and historic lows', () => {
   assert.equal(isGreenDeal(baseDeal), false);
 

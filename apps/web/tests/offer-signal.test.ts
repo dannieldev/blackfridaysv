@@ -116,3 +116,15 @@ test('OfferSignals in simple mode renders only 2 signals', () => {
   assert.match(html, /Con descuento/);
   assert.match(html, /Precio normal/);
 });
+
+test('SignalBadge renders "Más barato en otra tienda" when competitor is cheaper', () => {
+  const html = renderToStaticMarkup(createElement(SignalBadge, {
+    signal: {
+      level: 'wait',
+      reason: 'El mismo modelo aparece a $300 en Prado, al menos 10% menos. Revisa variante y envío.',
+      savingPercent: 0,
+    },
+  }));
+  assert.match(html, /signal-cheaper/);
+  assert.match(html, /Más barato en otra tienda/);
+});

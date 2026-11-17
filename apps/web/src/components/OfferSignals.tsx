@@ -1,8 +1,14 @@
 import { SIGNALS, type OfferSignal, type SignalLevel } from '../lib/offerSignal';
 
 export function SignalBadge({ signal, explain = false }: { signal: OfferSignal; explain?: boolean }) {
-  return <div className={`offer-signal signal-${signal.level}`}>
-    <span className="signal-label"><span className="signal-dot" aria-hidden="true" />{SIGNALS.find(s => s.id === signal.level)!.label}</span>
+  const isCheaper = signal.level === 'wait' && signal.reason.includes('aparece a');
+  const levelClass = isCheaper ? 'signal-cheaper' : `signal-${signal.level}`;
+  let label: string = SIGNALS.find(s => s.id === signal.level)!.label;
+  if (isCheaper) {
+    label = 'Más barato en otra tienda';
+  }
+  return <div className={`offer-signal ${levelClass}`}>
+    <span className="signal-label"><span className="signal-dot" aria-hidden="true" />{label}</span>
     {explain && <p>{signal.reason}</p>}
   </div>;
 }

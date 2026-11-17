@@ -257,6 +257,7 @@ input::placeholder {
 .signal-worth { --signal-color: var(--positive); --signal-bg: var(--positive-bg); }
 .signal-regular { --signal-color: var(--caution); --signal-bg: var(--caution-bg); }
 .signal-wait { --signal-color: var(--danger); --signal-bg: var(--danger-bg); }
+.signal-cheaper { --signal-color: #ea580c; --signal-bg: #ffedd5; }
 .signal-unknown { --signal-color: var(--muted); --signal-bg: var(--surface); }
 .signal-option {
   min-width: 0;

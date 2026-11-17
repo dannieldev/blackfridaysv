@@ -163,9 +163,11 @@ function PriceEvidence({ deal }: { deal: DealItem }) {
 export function DealBadge({
   deal,
   mode = "simple",
+  signal,
 }: {
   deal: DealItem;
   mode?: "simple" | "detailed";
+  signal?: OfferSignal;
 }) {
   const discount = discountPercent(deal);
   const evidence = priceEvidence(deal);
@@ -184,7 +186,7 @@ export function DealBadge({
   }
 
   // 2. En Modo Detallado: alerta de precio aumentado
-  if (mode === "detailed" && evidence.trend === "higher") {
+  if (mode === "detailed" && (evidence.trend === "higher" || (signal?.level === "wait" && !cheaper))) {
     return (
       <span className="deal-verdict-badge verdict-red verdict-price-up">
         <ArrowUpRight size={12} strokeWidth={2.5} aria-hidden="true" />
@@ -193,15 +195,21 @@ export function DealBadge({
     );
   }
 
-  // 3. En ambos modos: Verde (rebaja comprobada o mínimo histórico)
-  if (evidence.isObservedLow || evidence.trend === "good_discount") {
+  // 3. Verde EXCLUSIVO: Solo si la señal del semáforo certifica 'worth' (≥ 10% bajada real)
+  const isWorth = signal
+    ? signal.level === "worth"
+    : (evidence.isObservedLow && evidence.points.length >= 2);
+  if (isWorth) {
     if (mode === "simple" && (cheaper || evidence.trend === "higher")) {
       return null;
     }
+    const reduction = mode === "detailed" && signal && signal.savingPercent > 0
+      ? ` −${Math.round(signal.savingPercent)}%`
+      : "";
     return (
       <span className="deal-verdict-badge verdict-green verdict-historic-low">
         <Check size={12} strokeWidth={2.5} aria-hidden="true" />
-        Con descuento
+        Con descuento{reduction}
       </span>
     );
   }
@@ -256,7 +264,7 @@ export function DealCard({
         >
           <Heart fill={saved ? "currentColor" : "none"} aria-hidden="true" />
         </button>
-        <DealBadge deal={deal} mode={mode} />
+        <DealBadge deal={deal} mode={mode} signal={signal} />
       </div>
       <div className="product-content">
         {mode === 'detailed' && signal && <SignalBadge signal={signal} />}
