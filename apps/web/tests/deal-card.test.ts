@@ -159,3 +159,74 @@ test('DealCard in detailed mode renders full sparkline and capture status', () =
   assert.match(html, /card-sparkline/);
   assert.match(html, /capture-status/);
 });
+
+test('DealCard in simple mode omits static price evidence filler when no competitors exist', () => {
+  const html = renderToStaticMarkup(
+    createElement(DealCard, {
+      deal: baseDeal,
+      saved: false,
+      onSave: () => {},
+      onOpen: () => {},
+      mode: 'simple',
+    })
+  );
+  assert.doesNotMatch(html, /Precio publicado por la tienda/);
+});
+
+test('DealCard in simple mode shows cross-store price evidence when competitors exist', () => {
+  const dealWithCompetitor: DealItem = {
+    ...baseDeal,
+    competitors: [{ store: 'Prado', price: 350, inStock: true }],
+  };
+  const html = renderToStaticMarkup(
+    createElement(DealCard, {
+      deal: dealWithCompetitor,
+      saved: false,
+      onSave: () => {},
+      onOpen: () => {},
+      mode: 'simple',
+    })
+  );
+  assert.match(html, /price-evidence/);
+  assert.match(html, /Desde \$350\.00 en otra tienda/);
+});
+
+test('DealCard in detailed mode avoids duplicate text badge when DealBadge is already visible', () => {
+  const html = renderToStaticMarkup(
+    createElement(DealCard, {
+      deal: baseDeal,
+      saved: false,
+      onSave: () => {},
+      onOpen: () => {},
+      mode: 'detailed',
+      signal: { level: 'worth', reason: 'Bajada comprobada', savingPercent: 20 },
+    })
+  );
+  // DealBadge is present
+  assert.match(html, /verdict-green/);
+  assert.match(html, /Con descuento −20%/);
+  // SignalBadge is NOT duplicated in product-content
+  assert.doesNotMatch(html, /offer-signal/);
+});
+
+test('DealCard in detailed mode renders SignalBadge when there is no visual badge', () => {
+  const regularDeal: DealItem = {
+    ...baseDeal,
+    regularPrice: null, // No advertised discount
+  };
+  const html = renderToStaticMarkup(
+    createElement(DealCard, {
+      deal: regularDeal,
+      saved: false,
+      onSave: () => {},
+      onOpen: () => {},
+      mode: 'detailed',
+      signal: { level: 'regular', reason: 'Sin una ventaja destacada', savingPercent: 0 },
+    })
+  );
+  // No visual DealBadge
+  assert.doesNotMatch(html, /deal-verdict-badge/);
+  // SignalBadge in content indicates regular signal
+  assert.match(html, /offer-signal signal-regular/);
+  assert.match(html, /Para comparar/);
+});

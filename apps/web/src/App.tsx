@@ -140,10 +140,23 @@ function ProductImage({
   );
 }
 
-function PriceEvidence({ deal }: { deal: DealItem }) {
+function PriceEvidence({
+  deal,
+  mode = "simple",
+}: {
+  deal: DealItem;
+  mode?: "simple" | "detailed";
+}) {
   const offers = comparableOffers(deal);
   const others = offers.filter((offer) => !offer.isCurrent);
   const cheaper = others.length > 0 && others[0].price < deal.currentPrice;
+
+  // En Modo Simple: Si no hay ofertas en otras tiendas para comparar y no es demo,
+  // omitir texto estático de relleno para mantener la tarjeta limpia y directa.
+  if (mode === "simple" && !others.length && deal.dataSource !== "demo") {
+    return null;
+  }
+
   return (
     <span
       className={`price-evidence ${others.length ? (cheaper ? "evidence-caution" : "evidence-compare") : ""}`}
@@ -245,6 +258,17 @@ export function DealCard({
   mode?: "simple" | "detailed";
   signal?: OfferSignal;
 }) {
+  const discount = discountPercent(deal);
+  const evidence = priceEvidence(deal);
+  const offers = comparableOffers(deal);
+  const others = offers.filter((o) => !o.isCurrent);
+  const cheaper = others.length > 0 && others[0].price < deal.currentPrice;
+  const isWorth = signal
+    ? signal.level === "worth"
+    : (evidence.isObservedLow && evidence.points.length >= 2);
+  const hasVisualBadge = (mode === "detailed" && (cheaper || evidence.trend === "higher" || (signal?.level === "wait" && !cheaper)))
+    || isWorth
+    || ((discount !== null && discount > 0) && !(mode === "simple" && (cheaper || evidence.trend === "higher")));
 
   return (
     <article className={`deal-card deal-card-${mode}`}>
@@ -267,7 +291,7 @@ export function DealCard({
         <DealBadge deal={deal} mode={mode} signal={signal} />
       </div>
       <div className="product-content">
-        {mode === 'detailed' && signal && <SignalBadge signal={signal} />}
+        {mode === 'detailed' && signal && !hasVisualBadge && <SignalBadge signal={signal} />}
         <div className="product-meta">
           <span>{storeLabel(deal.store)}</span>
           <span>{deal.inStock === false ? "Agotado" : deal.brand}</span>
@@ -291,7 +315,7 @@ export function DealCard({
             {deal.dataSource !== "demo" && <CaptureStatus item={deal} />}
           </>
         )}
-        <PriceEvidence deal={deal} />
+        <PriceEvidence deal={deal} mode={mode} />
         <button className="card-action" onClick={onOpen}>
           {mode === "simple" ? "Ver oferta" : "Ver precio y detalles"}
           <ArrowUpRight aria-hidden="true" />
@@ -1432,39 +1456,10 @@ export default function App() {
                   </button>}
                   {filter === "radar" && (
                     <button onClick={() => change(() => setFilter("all"))}>
-                      🎯 Mi Radar activo ({filtered.length})
-                      <X aria-label="Quitar filtro de Radar" />
+                      🎯 Mi Presupuesto activo ({filtered.length})
+                      <X aria-label="Quitar filtro de Presupuesto" />
                     </button>
                   )}
-                  {filter === "radar" &&
-                    radarPrefs.categories.map((c) => {
-                      const label = CATEGORIES.find((item) => item.id === c)?.label ?? c;
-                      return (
-                        <button key={`radar-cat-${c}`} onClick={() => removeRadarCategory(c)}>
-                          Radar categoría: {label}
-                          <X aria-label={`Quitar categoría ${label} del Radar`} />
-                        </button>
-                      );
-                    })}
-                  {filter === "radar" && radarPrefs.maxBudget !== null && (
-                    <button onClick={removeRadarBudget}>
-                      Radar presupuesto: ≤ {money(radarPrefs.maxBudget)}
-                      <X aria-label="Quitar presupuesto del Radar" />
-                    </button>
-                  )}
-                  {filter === "radar" && radarPrefs.minRigor !== "all" && (
-                    <button onClick={resetRadarRigor}>
-                      Radar: {radarPrefs.minRigor === "historic_low" ? "Mínimos del periodo" : "Rebajas anunciadas"}
-                      <X aria-label="Quitar filtro de precio del Radar" />
-                    </button>
-                  )}
-                  {filter === "radar" &&
-                    radarPrefs.stores.map((s) => (
-                      <button key={`radar-store-${s}`} onClick={() => removeRadarStore(s)}>
-                        Radar tienda: {s}
-                        <X aria-label={`Quitar tienda ${s} del Radar`} />
-                      </button>
-                    ))}
                   {filter === "compare" && (
                     <button onClick={() => change(() => setFilter("all"))}>
                       En varias tiendas
@@ -2087,7 +2082,7 @@ export default function App() {
                     ? `Referencia anunciada por la tienda: ${money(selectedDeal.regularPrice)}`
                     : "Sin otro precio de referencia anunciado."}
                 </p>
-                <PriceEvidence deal={selectedDeal} />
+                <PriceEvidence deal={selectedDeal} mode="detailed" />
                 <SignalBadge signal={signals.get(selectedDeal.id) ?? offerSignal(selectedDeal, evaluationTime)} explain />
               </div>
             </div>
