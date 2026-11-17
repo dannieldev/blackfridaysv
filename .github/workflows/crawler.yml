@@ -85,8 +85,23 @@ jobs:
               echo "SNAPSHOT_CHANGED=true" >> $GITHUB_ENV
               TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
               git commit -m "chore(data): auto-update deals snapshot ($TIMESTAMP) [skip ci]"
-              git push origin main
-              echo "✔ Snapshot actualizado y enviado a origin/main con éxito."
+
+              PUSH_OK=false
+              for ATTEMPT in 1 2 3; do
+                if git push origin main; then
+                  PUSH_OK=true
+                  echo "✔ Snapshot actualizado y enviado a origin/main con éxito (intento $ATTEMPT/3)."
+                  break
+                fi
+                echo "⚠ Push falló (intento $ATTEMPT/3). Reintentando en 15 segundos..."
+                sleep 15
+                git pull --rebase origin main
+              done
+
+              if [ "$PUSH_OK" = false ]; then
+                echo "::error::Los 3 intentos de push fallaron. Posible error temporal de GitHub."
+                exit 1
+              fi
             fi
           else
             echo "SNAPSHOT_CHANGED=false" >> $GITHUB_ENV
