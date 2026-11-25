@@ -129,6 +129,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GA_MEASUREMENT_ID: ${{ vars.VITE_GA_MEASUREMENT_ID || 'G-XX21E9DWXN' }}
+          VITE_CLARITY_ID: ${{ vars.VITE_CLARITY_ID || 'z97nys8fg7' }}
+          VITE_GTM_ID: ${{ vars.VITE_GTM_ID || '' }}
+          VITE_FB_PIXEL_ID: ${{ vars.VITE_FB_PIXEL_ID || '' }}
+          VITE_GOOGLE_ADS_ID: ${{ vars.VITE_GOOGLE_ADS_ID || '' }}
         run: |
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
             echo "::error::Faltan CLOUDFLARE_ACCOUNT_ID, VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. No se despliega un sitio incompleto."
@@ -184,27 +189,27 @@ jobs:
         run: |
           if [ -f .reports/crawler.json ]; then
             node --input-type=module <<'NODE'
-            import fs from 'node:fs';
+          import fs from 'node:fs';
 
-            const report = JSON.parse(fs.readFileSync('.reports/crawler.json', 'utf8'));
-            let md = '## 📊 Resumen Ejecutivo del Catálogo Black Friday\n\n';
-            const statusIcon = report.status === 'complete' ? '🟢 **Completo**' : report.status === 'partial' ? '🟡 **Parcial (Preservado)**' : '🔴 **Fallido**';
-            md += `- **Estado General:** ${statusIcon}\n`;
-            md += `- **Modo:** \`${report.mode}\` | **Productos en Catálogo:** \`${report.catalogProducts}\` | **Historial Supabase:** \`${report.historyStatus}\`\n\n`;
-            md += '| Tienda | Estado | Recibidos | Aceptados | Retenidos | Detalle |\n';
-            md += '|---|:---:|:---:|:---:|:---:|---|\n';
-            for (const s of (report.stores || [])) {
-              const icon = s.status === 'updated' ? '🟢 Actualizada' : s.status === 'partial' ? '🟡 Parcial' : '⚪ Retenida';
-              const reason = s.reason === 'fetch_failed' ? 'Conexión / CDN' : s.reason === 'low_coverage' ? 'Baja cobertura' : s.reason || 'Cobertura OK';
-              md += `| **${s.storeId.toUpperCase()}** | ${icon} | ${s.received} | ${s.accepted} | ${s.retained} | ${reason} |\n`;
-            }
-            if (report.database) {
-              md += `\n> **Sincronización Base de Datos:** ${report.database.productsSynced} productos sincronizados, ${report.database.errors} errores.\n`;
-            }
-            if (process.env.GITHUB_STEP_SUMMARY) {
-              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
-            }
-            NODE
+          const report = JSON.parse(fs.readFileSync('.reports/crawler.json', 'utf8'));
+          let md = '## 📊 Resumen Ejecutivo del Catálogo Black Friday\n\n';
+          const statusIcon = report.status === 'complete' ? '🟢 **Completo**' : report.status === 'partial' ? '🟡 **Parcial (Preservado)**' : '🔴 **Fallido**';
+          md += `- **Estado General:** ${statusIcon}\n`;
+          md += `- **Modo:** \`${report.mode}\` | **Productos en Catálogo:** \`${report.catalogProducts}\` | **Historial Supabase:** \`${report.historyStatus}\`\n\n`;
+          md += '| Tienda | Estado | Recibidos | Aceptados | Retenidos | Detalle |\n';
+          md += '|---|:---:|:---:|:---:|:---:|---|\n';
+          for (const s of (report.stores || [])) {
+            const icon = s.status === 'updated' ? '🟢 Actualizada' : s.status === 'partial' ? '🟡 Parcial' : '⚪ Retenida';
+            const reason = s.reason === 'fetch_failed' ? 'Conexión / CDN' : s.reason === 'low_coverage' ? 'Baja cobertura' : s.reason || 'Cobertura OK';
+            md += `| **${s.storeId.toUpperCase()}** | ${icon} | ${s.received} | ${s.accepted} | ${s.retained} | ${reason} |\n`;
+          }
+          if (report.database) {
+            md += `\n> **Sincronización Base de Datos:** ${report.database.productsSynced} productos sincronizados, ${report.database.errors} errores.\n`;
+          }
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
+          }
+          NODE
           fi
 
       - name: Flag incomplete updates

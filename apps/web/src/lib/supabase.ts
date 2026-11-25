@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { isExcludedFromCatalog } from '../../../../packages/scrapers/src/core/catalog-policy';
 
 const environment = import.meta.env ?? {};
-const supabaseUrl = environment.VITE_SUPABASE_URL;
-const supabaseKey = environment.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = environment.VITE_SUPABASE_URL || '';
+const supabaseKey = environment.VITE_SUPABASE_ANON_KEY || '';
 
 let clientPromise: Promise<SupabaseClient> | undefined;
 

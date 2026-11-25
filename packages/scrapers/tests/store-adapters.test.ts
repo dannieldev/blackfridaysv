@@ -3,6 +3,7 @@ import { afterEach, mock, test } from 'node:test';
 import { parseVtexProducts } from '../src/stores/vtex-adapter.js';
 import { MagentoStoreAdapter } from '../src/stores/magento-adapter.js';
 import { parseRafListing, rafScraper } from '../src/stores/raf.js';
+import { parseOfficeDepotListing } from '../src/stores/officedepot.js';
 import { extractModelCode } from '../src/core/normalizer.js';
 
 const config = { storeId: 'prismamoda', baseUrl: 'https://www.prismamoda.com' };
@@ -109,4 +110,79 @@ test('RAF reports a blocked category without inventing products or crashing the 
 test('a shared Intel processor code cannot masquerade as the laptop manufacturer model', () => {
   assert.equal(extractModelCode('Laptop Dell Latitude Intel Core i5-1335U 8GB', 'Dell'), null);
   assert.equal(extractModelCode('Laptop HP 15-FC0250LA Ryzen 5', 'HP'), '15-FC0250LA');
+  assert.equal(extractModelCode('Celular Xiaomi Redmi Note 13 Pro 256GB', 'Xiaomi'), 'REDMI-NOTE-13-PRO-256GB');
+  assert.equal(extractModelCode('Pantalla Dahua Smart TV 55" 4K', 'Dahua', 'TecnoAvance-DHI-LTV55-SN400_medidasTV.jpg'), 'DHI-LTV55-SN400');
+});
+
+test('Unicomer LiveSearch GraphQL extracts official MPN and filters out cheap accessories', () => {
+  const adapter = new MagentoStoreAdapter({
+    storeId: 'tropigas',
+    storeName: 'Almacenes Tropigas',
+    baseUrl: 'https://www.almacenestropigas.com.sv',
+    categoriesToSearch: [],
+  });
+  const items = [
+    {
+      productView: {
+        sku: '468955800012',
+        name: 'Pantalla TCL 55" LED 4K UHD 55V6C',
+        url: 'https://www.almacenestropigas.com.sv/televisor-tcl-google-tv-led-55-4k-uhd-55v6c-468955800012/p',
+        inStock: true,
+        images: [{ url: 'https://www.almacenestropigas.com.sv/media/catalog/product/4/6/468955800012.jpg' }],
+        attributes: [
+          { name: 'marca', value: 'TCL' },
+          { name: 'mpn_iden_del_prod_t', value: '55V6C' },
+        ],
+        price: {
+          final: { amount: { value: 349 } },
+          regular: { amount: { value: 499 } },
+        },
+      },
+    },
+    {
+      productView: {
+        sku: '441826000001',
+        name: 'Control Remoto Universal RadioShack Negro 1503281',
+        url: 'https://www.almacenestropigas.com.sv/control-remoto-universal-441826000001/p',
+        inStock: true,
+        price: {
+          final: { amount: { value: 8.99 } },
+          regular: { amount: { value: 8.99 } },
+        },
+      },
+    },
+  ];
+  const parsed = adapter.parseLiveSearchItems(items, 'tv_audio', 50);
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].storeId, 'tropigas');
+  assert.equal(parsed[0].brand, 'TCL');
+  assert.equal(parsed[0].modelCode, '55V6C');
+  assert.equal(parsed[0].offerPrice, 349);
+  assert.equal(parsed[0].regularPrice, 499);
+});
+
+test('Office Depot listing parses valid laptops and excludes laptop backpacks', () => {
+  const html = `
+    <div class="product-item">
+      <a href="/officedepotSV/en/Laptops/LAPTOP-HP-15-FC0250LA/p/10001"
+         onclick="onProductClickDataLayer('10001','Laptop HP 15-FC0250LA Ryzen 5','Laptops','HP','549.00', 'title', 1);">
+        <div class="name description-style"><h2>Laptop HP 15-FC0250LA Ryzen 5</h2></div>
+        <div class="discountedPrice-grid">$549.<span class="decimal-digit-price-format">00</span></div>
+        <div class="beforePrice-grid">$699.<span class="decimal-digit-price-format">00</span></div>
+      </a>
+    </div>
+    <div class="product-item">
+      <a href="/officedepotSV/en/Mochilas/MOCHILA-PARA-LAPTOP-TARGUS/p/10002"
+         onclick="onProductClickDataLayer('10002','Mochila para Laptop Targus 15.6','Mochilas','TARGUS','37.90', 'title', 2);">
+        <div class="name description-style"><h2>Mochila para Laptop Targus 15.6</h2></div>
+        <div class="discountedPrice-grid">$37.<span class="decimal-digit-price-format">90</span></div>
+      </a>
+    </div>`;
+  const parsed = parseOfficeDepotListing(html, 'computacion', 50);
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].storeSku, '10001');
+  assert.equal(parsed[0].brand, 'HP');
+  assert.equal(parsed[0].modelCode, '15-FC0250LA');
+  assert.equal(parsed[0].offerPrice, 549);
+  assert.equal(parsed[0].regularPrice, 699);
 });

@@ -50,6 +50,7 @@ export function storeLabel(store: string): string {
     ['siman', 'Siman'], ['walmart', 'Walmart'], ['curacao', 'La Curacao'],
     ['prado', 'Prado'], ['omnisport', 'Omnisport'],
     ['radioshack', 'RadioShack'], ['raf', 'RAF'], ['prisma', 'Prisma Moda'],
+    ['tropigas', 'Tropigas'], ['office depot', 'Office Depot'], ['officedepot', 'Office Depot'],
   ];
   return labels.find(([name]) => store.toLowerCase().includes(name))?.[1] ?? store;
 }
@@ -107,7 +108,7 @@ function cleanText(value: string): string {
 function modelKey(deal: DealItem): string | null {
   if (deal.category === 'moda_calzado') return null;
   const brand = deal.brand.trim().toUpperCase();
-  let model = deal.modelCode.trim().toUpperCase();
+  let model = deal.modelCode.trim().replace(/\s+/g, '-').toUpperCase();
   if (!brand || ['GENÉRICO', 'GENERICO', 'N/A', 'UNKNOWN', 'SIN MARCA'].includes(brand)
     || !/[A-Z]/.test(model) || !/\d/.test(model) || model.length < 5
     || !/^[A-Z0-9][A-Z0-9./-]+$/.test(model) || /^I[3579]-/i.test(model)) return null;
@@ -134,7 +135,7 @@ function enrichComparisons(deals: DealItem[]): DealItem[] {
 
 export function catalogProductId(item: Pick<SupabaseDeal, 'source' | 'store_id' | 'store_sku' | 'store_product_id'>): string {
   // The database and snapshot writers use the same store slug and original SKU.
-  return item.source === 'database' && /^(siman|walmart|curacao|prado|omnisport|epa|radioshack|raf|prismamoda)$/.test(item.store_id) && item.store_sku
+  return item.source === 'database' && /^(siman|walmart|curacao|prado|omnisport|epa|radioshack|raf|prismamoda|tropigas|officedepot)$/.test(item.store_id) && item.store_sku
     ? `${item.store_id}-${item.store_sku}`
     : item.store_product_id;
 }

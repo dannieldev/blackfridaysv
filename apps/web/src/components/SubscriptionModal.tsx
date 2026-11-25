@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Dialog } from './Dialog';
 import { money, type DealItem } from '../lib/deals';
 import { CATEGORY_LABELS } from '../../../../packages/notifications/src/contracts';
+import { trackPriceAlertCreated, trackLeadSubmission } from '../lib/analytics';
 
 export function SubscriptionModal({ product, onClose }: { product: DealItem | null; onClose: () => void }) {
   const id = useId();
@@ -42,6 +43,11 @@ export function SubscriptionModal({ product, onClose }: { product: DealItem | nu
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'No pudimos guardar tu solicitud.');
+      if (product) {
+        trackPriceAlertCreated(product.id, product.title, Number(target), product.store);
+      } else {
+        trackLeadSubmission('newsletter', { categories: categories.join(','), max_budget: budget || 'none' });
+      }
       setState('sent');
     } catch (error) {
       setError(error instanceof Error && error.name !== 'AbortError' ? error.message : 'La solicitud tardó demasiado. Revisa tu correo antes de volver a intentarlo.');

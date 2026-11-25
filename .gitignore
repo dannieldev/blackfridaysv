@@ -34,3 +34,12 @@ yarn-error.log*
 # OS Files
 .DS_Store
 Thumbs.db
+
+# AI Studio & Local Container Tooling
+.aistudio/
+.playwright-cli/
+metadata.json
+bun.lock
+/index.html
+/tsconfig.json
+

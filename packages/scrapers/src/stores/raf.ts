@@ -5,7 +5,6 @@ import { decodeHtmlEntities, detectBrand } from './magento-adapter.js';
 
 const origin = 'https://www.rafenlinea.com';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
-
 const dispatcher = new Agent({
   connect: {
     rejectUnauthorized: false,
@@ -70,7 +69,11 @@ export const rafScraper: StoreScraper = {
             // @ts-expect-error Node.js native fetch supports undici dispatcher
             dispatcher,
             signal: AbortSignal.timeout(20000),
-            headers: { 'User-Agent': UA, 'Accept': '*/*' },
+            headers: {
+              'User-Agent': UA,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'es-SV,es;q=0.9,en;q=0.8',
+            },
           });
           if (!response.ok) throw new Error(`RAF HTTP ${response.status}`);
           const html: string = await response.text();

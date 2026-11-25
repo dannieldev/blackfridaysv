@@ -16,12 +16,14 @@ export interface VtexStoreConfig {
 interface VtexProduct {
   productId: string;
   productName: string;
+  productReference?: string;
   brand: string;
   categories?: string[];
   link: string;
   items?: Array<{
     itemId?: string;
     variations?: string[];
+    referenceId?: Array<{ Key?: string; Value?: string }>;
     [key: string]: unknown;
     images?: Array<{ imageUrl: string }>;
     sellers?: Array<{
@@ -159,7 +161,13 @@ export function parseVtexProducts(data: VtexProduct[], config: Pick<VtexStoreCon
     const variants = (item.variations ?? []).flatMap(key => Array.isArray(item[key]) ? [`${key}: ${(item[key] as string[]).join(', ')}`] : []);
     const brand = fashion ? (p.brand?.trim() || 'Sin marca') : normalizeBrand(p.brand || 'Genérico');
     const title = cleanTitle(p.productName);
-    const modelCode = extractModelCode(title, brand);
+    const imageUrl = item.images?.[0]?.imageUrl ?? null;
+    const refHint = [
+      p.productReference,
+      ...(item.referenceId ?? []).map(r => r.Value),
+      imageUrl ? imageUrl.split('/').pop()?.replace(/\?.*$/, '').replace(/_/g, ' ') : '',
+    ].filter(Boolean).join(' ');
+    const modelCode = extractModelCode(title, brand, refHint);
     if (fashion) productUrl.searchParams.set('skuId', item.itemId!);
     return [{
       storeId: config.storeId, storeSku: fashion ? `${p.productId}.${item.itemId}.${sellerId}` : p.productId,
@@ -167,7 +175,7 @@ export function parseVtexProducts(data: VtexProduct[], config: Pick<VtexStoreCon
         + (fashion && sellerId !== '1' && seller.sellerName ? ` · Vende ${seller.sellerName}` : ''),
       brand, category, modelCode: fashion ? null : modelCode,
       regularPrice: offer!.ListPrice > offer!.Price ? offer!.ListPrice : null,
-      offerPrice: offer!.Price, productUrl: productUrl.href, imageUrl: item.images?.[0]?.imageUrl ?? null,
+      offerPrice: offer!.Price, productUrl: productUrl.href, imageUrl,
       inStock: typeof offer!.AvailableQuantity === 'number' ? offer!.AvailableQuantity > 0 : null,
     }];
   });

@@ -1,6 +1,7 @@
 import type { ScrapedProduct } from '../types.js';
 import { STORE_METADATA } from '../stores/metadata.js';
 import { isExcludedFromCatalog } from './catalog-policy.js';
+import { cleanTitle, extractModelCode } from './normalizer.js';
 
 export interface Observation { date: string; price: number }
 export interface SnapshotItem {
@@ -51,7 +52,30 @@ export function mergeHistory(points: Observation[], capturedAt: string): Observa
       dates.set(new Date(time).toISOString(), point.price);
     }
   }
-  return [...dates].sort(([a], [b]) => a.localeCompare(b)).map(([date, price]) => ({ date, price }));
+  const sorted = [...dates].sort(([a], [b]) => a.localeCompare(b)).map(([date, price]) => ({ date, price }));
+  if (sorted.length <= 2) return sorted;
+
+  // Compactar capturas intradía redundantes (mismo día UTC y mismo precio) conservando siempre el último punto
+  const compacted: Observation[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const curr = sorted[i];
+    const prev = compacted[compacted.length - 1];
+    const isLast = i === sorted.length - 1;
+    if (!prev) {
+      compacted.push(curr);
+      continue;
+    }
+    const sameDay = prev.date.slice(0, 10) === curr.date.slice(0, 10);
+    const samePrice = prev.price === curr.price;
+    if (sameDay && samePrice) {
+      if (isLast) {
+        compacted[compacted.length - 1] = curr;
+      }
+      continue;
+    }
+    compacted.push(curr);
+  }
+  return compacted;
 }
 
 export function validProduct(product: ScrapedProduct, storeId: string): boolean {
@@ -72,10 +96,16 @@ export function mergeCatalog(
   const items = new Map<string, SnapshotItem>();
   for (const item of previous) {
     if (!item.id || !Number.isFinite(item.currentPrice) || item.currentPrice <= 0 || isExcludedFromCatalog(item)) continue;
+    const cleanedTitle = cleanTitle(item.title);
+    const existingModel = item.modelCode && item.modelCode !== 'N/A' ? item.modelCode.trim().replace(/\s+/g, '-') : null;
+    const inferredModel =
+      item.category === 'moda_calzado'
+        ? null
+        : existingModel ?? extractModelCode(cleanedTitle, item.brand, item.imageUrl);
     // Copy only supported fields: legacy scores and estimated baselines are not evidence.
     items.set(item.id, {
       id: item.id, store: item.store, storeId: storeIdOf(item), brand: item.brand,
-      modelCode: item.modelCode, title: item.title, category: item.category,
+      modelCode: inferredModel || 'N/A', title: cleanedTitle, category: item.category,
       currentPrice: item.currentPrice, regularPrice: item.regularPrice,
       productUrl: item.productUrl, imageUrl: item.imageUrl, inStock: item.inStock ?? null,
       updatedAt: item.updatedAt, refreshStatus: item.refreshStatus, lastAttemptAt: item.lastAttemptAt,

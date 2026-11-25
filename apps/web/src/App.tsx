@@ -59,7 +59,7 @@ import { SubscriptionModal } from "./components/SubscriptionModal";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { OfferSignals, SignalBadge } from "./components/OfferSignals";
 import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
-import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference } from "./lib/analytics";
+import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference, trackSaveDeal } from "./lib/analytics";
 
 export type { DealItem } from "./lib/deals";
 
@@ -73,7 +73,7 @@ const CATEGORIES = [
   { id: "moda_calzado", label: "Moda y calzado", icon: Shirt },
   { id: "fotografia", label: "Fotografía", icon: Camera },
 ];
-const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport", "RadioShack", "RAF", "Prisma Moda"];
+const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport", "RadioShack", "RAF", "Prisma Moda", "Tropigas", "Office Depot"];
 const BUDGETS = [
   { id: "all", label: "Cualquier precio" },
   { id: "under100", label: "Menos de $100" },
@@ -333,9 +333,22 @@ export default function App() {
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [evaluationTime, setEvaluationTime] = useState(Date.now);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const [stores, setStores] = useState<string[]>([]);
+  const [search, setSearch] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+  });
+  const [category, setCategory] = useState(() => {
+    if (typeof window === "undefined") return "all";
+    const cat = new URLSearchParams(window.location.search).get("cat")?.trim();
+    return cat && CATEGORIES.some((c) => c.id === cat) ? cat : "all";
+  });
+  const [stores, setStores] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    const storeParam = new URLSearchParams(window.location.search).get("store")?.trim();
+    if (!storeParam) return [];
+    const matched = STORES.find((s) => normalize(s) === normalize(storeParam));
+    return matched ? [matched] : [];
+  });
   const [budget, setBudget] = useState("all");
   const [availableOnly, setAvailableOnly] = useState(false);
   type FilterType = "all" | "compare" | "saved" | "radar";
@@ -425,12 +438,14 @@ export default function App() {
       } catch {
         /* Invalid links resolve to the unavailable-product state. */
       }
+      const queryDeal = new URLSearchParams(window.location.search).get("deal")?.trim();
+      const dealIdFromUrl = hash.startsWith("deal-") ? hash.slice(5) : queryDeal;
       if (["terminos", "metodologia", "privacidad", "cookies"].includes(hash)) {
         setLegal(hash as LegalModalType);
         setSelectedDeal(null);
         setMissingDeal(false);
-      } else if (hash.startsWith("deal-") && !isLoading) {
-        const match = deals.find((deal) => deal.id === hash.slice(5));
+      } else if (dealIdFromUrl && !isLoading) {
+        const match = deals.find((deal) => deal.id === dealIdFromUrl);
         setSelectedDeal(match ?? null);
         setMissingDeal(!match);
         setLegal(null);
@@ -500,6 +515,7 @@ export default function App() {
       ? savedIds.filter((id) => id !== deal.id)
       : [...savedIds, deal.id];
     setSavedIds(next);
+    trackSaveDeal(deal.id, deal.title, exists ? 'unsave' : 'save');
     try {
       localStorage.setItem("blackfridaysv_saved_deals", JSON.stringify(next));
       notify(
@@ -1199,7 +1215,7 @@ export default function App() {
                   key={id}
                   aria-pressed={isSelected}
                   onClick={() => {
-                    trackCategoryFilter(id);
+                    trackCategoryFilter(id, label);
                     toggleCategory(id);
                   }}
                   className={isSelected ? "selected" : ""}

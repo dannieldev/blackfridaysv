@@ -1,37 +1,33 @@
 import { MagentoStoreAdapter } from './magento-adapter.js';
 
 /**
- * La Curacao (Grupo Unicomer) — Magento 2 Luma con tema "Lco/default".
- *
- * Notas técnicas (verificadas):
- * - El CDN (Varnish/Fastly) bloquea rutas de búsqueda: /rest/V1/* (401),
- *   /graphql (406), /catalogsearch/* (404/406). No intentarlo.
- * - Las páginas de categoría SÍ son server-rendered y requieren slash final
- *   ("/c/tv-y-video/" responde 200; sin slash el CDN devuelve 406).
- * - El CDN alterna bloqueos 406 por ruta (tv-y-video suele bloquearse desde
- *   ciertas IPs); el adapter reintenta y falla gracefully por categoría.
- * - Cada tarjeta trae data-product-sku (código de barras real del producto).
+ * La Curacao (Grupo Unicomer) — Adobe Commerce con Live Search (Catalog Service GraphQL).
+ * Extrae productos en stock con MPN oficial ('mpn_iden_del_prod_t' / 'modelo_comercial_iden_del_prod_t').
  */
 export const curacaoScraper = new MagentoStoreAdapter({
   storeId: 'curacao',
   storeName: 'La Curacao El Salvador',
   baseUrl: 'https://www.lacuracaonline.com/elsalvador',
+  liveSearch: {
+    environmentId: 'b0453fee-9cca-41d9-930c-0a94fd84b9bd',
+    apiKey: '2999e5a23078490096b15ef87ccc499c',
+    websiteCode: 'lco_el_salvador_w',
+    storeCode: 'lco_el_salvador_s',
+    storeViewCode: 'lco_el_salvador_sv',
+  },
   categoriesToSearch: [
-    {
-      category: 'tv_audio',
-      path: '/c/tv-y-video/',
-    },
-    {
-      category: 'smartphones',
-      path: '/c/telefonia/celulares-y-telefonos/celulares/',
-    },
-    {
-      category: 'linea_blanca',
-      path: '/c/linea-blanca/',
-    },
-    {
-      category: 'linea_blanca',
-      path: '/c/electrodomesticos/',
-    },
+    { category: 'tv_audio', path: 'c/tecnologia/tv-y-video/televisores' },
+    { category: 'tv_audio', path: 'c/tecnologia/audio' },
+    { category: 'smartphones', path: 'c/telefonia/celulares-y-telefonos/celulares' },
+    { category: 'computacion', path: 'c/tecnologia/computacion/laptops' },
+    { category: 'computacion', path: 'c/tecnologia/computacion/tablets' },
+    { category: 'computacion', path: 'c/tecnologia/computacion/impresoras' },
+    { category: 'linea_blanca', path: 'c/linea-blanca/refrigeracion/refrigeradoras' },
+    { category: 'linea_blanca', path: 'c/linea-blanca/lavadoras-y-secadoras/lavadoras' },
+    { category: 'linea_blanca', path: 'c/linea-blanca/cocina/cocinas' },
+    { category: 'linea_blanca', path: 'c/linea-blanca/climatizacion/aires-acondicionados' },
+    { category: 'linea_blanca', path: 'c/electrodomesticos' },
+    { category: 'gaming', path: 'c/tecnologia/gaming/consolas' },
+    { category: 'gaming', path: 'c/tecnologia/gaming' },
   ],
 });

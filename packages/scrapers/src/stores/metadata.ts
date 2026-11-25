@@ -7,4 +7,6 @@ export const STORE_METADATA = [
   { id: 'radioshack', name: 'RadioShack', domain: 'www.radioshackla.com', platform: 'magento' },
   { id: 'raf', name: 'RAF', domain: 'www.rafenlinea.com', platform: 'prestashop' },
   { id: 'prismamoda', name: 'Prisma Moda', domain: 'www.prismamoda.com', platform: 'vtex' },
+  { id: 'tropigas', name: 'Almacenes Tropigas', domain: 'www.almacenestropigas.com.sv', platform: 'magento' },
+  { id: 'officedepot', name: 'Office Depot', domain: 'www.officedepot.com.sv', platform: 'hybris' },
 ];
