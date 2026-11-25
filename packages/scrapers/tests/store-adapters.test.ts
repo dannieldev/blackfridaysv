@@ -4,6 +4,7 @@ import { parseVtexProducts } from '../src/stores/vtex-adapter.js';
 import { MagentoStoreAdapter } from '../src/stores/magento-adapter.js';
 import { parseRafListing, rafScraper } from '../src/stores/raf.js';
 import { parseOfficeDepotListing } from '../src/stores/officedepot.js';
+import { parseAeonListing } from '../src/stores/aeon.js';
 import { extractModelCode } from '../src/core/normalizer.js';
 
 const config = { storeId: 'prismamoda', baseUrl: 'https://www.prismamoda.com' };
@@ -185,4 +186,32 @@ test('Office Depot listing parses valid laptops and excludes laptop backpacks', 
   assert.equal(parsed[0].modelCode, '15-FC0250LA');
   assert.equal(parsed[0].offerPrice, 549);
   assert.equal(parsed[0].regularPrice, 699);
+});
+
+test('Aeon Odoo SSR listing parses valid laptops with MPN and excludes cheap accessories', () => {
+  const html = `
+    <form action="/shop/cart/update" method="post" itemscope="itemscope" itemtype="http://schema.org/Product" data-pp-available="1">
+      <input name="product_id" type="hidden" value="96895"/>
+      <a itemprop="url" href="/shop/laptop-hp-victus-15-fa2014la-105290?category=423">
+        <img itemprop="image" src="/web/image/product.template/105290/image_512"/>
+      </a>
+      <a itemprop="name" href="/shop/laptop-hp-victus-15-fa2014la-105290?category=423" content="Laptop HP Victus 15-fa2014la RTX 3050">Laptop HP Victus 15-fa2014la RTX 3050</a>
+      <span itemprop="price">999.0</span>
+      <del><span class="oe_currency_value">1,169.00</span></del>
+    </form>
+    <form action="/shop/cart/update" method="post" itemscope="itemscope" itemtype="http://schema.org/Product" data-pp-available="1">
+      <input name="product_id" type="hidden" value="96896"/>
+      <a itemprop="name" href="/shop/cable-usb-c-105291" content="Cable USB-C 2m">Cable USB-C 2m</a>
+      <span itemprop="price">9.99</span>
+    </form>`;
+  const parsed = parseAeonListing(html, 'computacion', 50);
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].storeId, 'aeon');
+  assert.equal(parsed[0].storeSku, '96895');
+  assert.equal(parsed[0].brand, 'HP');
+  assert.equal(parsed[0].modelCode, '15-FA2014LA');
+  assert.equal(parsed[0].offerPrice, 999);
+  assert.equal(parsed[0].regularPrice, 1169);
+  assert.equal(parsed[0].productUrl, 'https://aeon.com.sv/shop/laptop-hp-victus-15-fa2014la-105290');
+  assert.equal(parsed[0].imageUrl, 'https://aeon.com.sv/web/image/product.template/105290/image_512');
 });

@@ -9,4 +9,6 @@ export const STORE_METADATA = [
   { id: 'prismamoda', name: 'Prisma Moda', domain: 'www.prismamoda.com', platform: 'vtex' },
   { id: 'tropigas', name: 'Almacenes Tropigas', domain: 'www.almacenestropigas.com.sv', platform: 'magento' },
   { id: 'officedepot', name: 'Office Depot', domain: 'www.officedepot.com.sv', platform: 'hybris' },
+  { id: 'aeon', name: 'Aeon El Salvador', domain: 'aeon.com.sv', platform: 'odoo' },
+  { id: 'epa', name: 'EPA El Salvador', domain: 'sv.epaenlinea.com', platform: 'magento' },
 ];

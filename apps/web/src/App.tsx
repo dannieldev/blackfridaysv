@@ -58,8 +58,10 @@ import { CatalogHealth, CaptureStatus } from "./components/CatalogHealth";
 import { SubscriptionModal } from "./components/SubscriptionModal";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { OfferSignals, SignalBadge } from "./components/OfferSignals";
+import { TopDropsStrip } from "./components/TopDropsStrip";
 import { offerSignal, compareSignals, SIGNALS, type OfferSignal, type SignalLevel } from "./lib/offerSignal";
-import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference, trackSaveDeal } from "./lib/analytics";
+import { initAnalytics, trackDealClick, trackSearch, trackCategoryFilter, trackRadarPreference, trackSaveDeal, trackShareDeal } from "./lib/analytics";
+import { buildDealShareUrl, buildWhatsAppShareUrl } from "./lib/share";
 
 export type { DealItem } from "./lib/deals";
 
@@ -73,7 +75,7 @@ const CATEGORIES = [
   { id: "moda_calzado", label: "Moda y calzado", icon: Shirt },
   { id: "fotografia", label: "Fotografía", icon: Camera },
 ];
-const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport", "RadioShack", "RAF", "Prisma Moda", "Tropigas", "Office Depot"];
+const STORES = ["Siman", "Walmart", "La Curacao", "Prado", "Omnisport", "RadioShack", "RAF", "Prisma Moda", "Tropigas", "Office Depot", "Aeon", "EPA"];
 const BUDGETS = [
   { id: "all", label: "Cualquier precio" },
   { id: "under100", label: "Menos de $100" },
@@ -541,10 +543,13 @@ export default function App() {
     setSelectedDeal(null);
     setLegal(null);
     setMissingDeal(false);
+    const params = new URLSearchParams(window.location.search);
+    params.delete("deal");
+    const nextSearch = params.toString();
     history.replaceState(
       null,
       "",
-      `${window.location.pathname}${window.location.search}`,
+      `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`,
     );
   };
   const openDeal = (deal: DealItem) => {
@@ -863,9 +868,10 @@ export default function App() {
   const copyLink = async (deal: DealItem) => {
     try {
       await navigator.clipboard.writeText(
-        `${window.location.origin}/#deal-${encodeURIComponent(deal.id)}`,
+        buildDealShareUrl(deal, window.location.origin),
       );
-      notify("Enlace copiado");
+      trackShareDeal(deal.id, deal.title, "copy");
+      notify("Enlace copiado con vista previa lista para compartir");
     } catch {
       notify("No pudimos copiar. Puedes copiar la dirección del navegador.");
     }
@@ -1152,6 +1158,13 @@ export default function App() {
         </div>
       </div>
       <main id="main-content">
+        {!isLoading && source !== "demo" && (
+          <TopDropsStrip
+            deals={deals}
+            evaluationTime={evaluationTime}
+            onSelectDeal={openDeal}
+          />
+        )}
         <section
           className="catalog page-width"
           id="catalogo"
@@ -2201,12 +2214,19 @@ export default function App() {
               </button>
               <a
                 className="btn btn-secondary"
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${selectedDeal.dataSource === "demo" ? "Ejemplo de demostración" : "Precio publicado"}: ${selectedDeal.title} en ${storeLabel(selectedDeal.store)}: ${money(selectedDeal.currentPrice)}. Consulta los detalles: ${window.location.origin}/#deal-${encodeURIComponent(selectedDeal.id)}`)}`}
+                href={buildWhatsAppShareUrl(
+                  selectedDeal,
+                  offerSignal(selectedDeal, evaluationTime),
+                  window.location.origin,
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackShareDeal(selectedDeal.id, selectedDeal.title, "whatsapp")
+                }
               >
                 <MessageCircle aria-hidden="true" />
-                Compartir
+                WhatsApp
               </a>
             </div>
           </div>

@@ -51,6 +51,7 @@ export function storeLabel(store: string): string {
     ['prado', 'Prado'], ['omnisport', 'Omnisport'],
     ['radioshack', 'RadioShack'], ['raf', 'RAF'], ['prisma', 'Prisma Moda'],
     ['tropigas', 'Tropigas'], ['office depot', 'Office Depot'], ['officedepot', 'Office Depot'],
+    ['aeon', 'Aeon'], ['epa', 'EPA'],
   ];
   return labels.find(([name]) => store.toLowerCase().includes(name))?.[1] ?? store;
 }
@@ -135,7 +136,7 @@ function enrichComparisons(deals: DealItem[]): DealItem[] {
 
 export function catalogProductId(item: Pick<SupabaseDeal, 'source' | 'store_id' | 'store_sku' | 'store_product_id'>): string {
   // The database and snapshot writers use the same store slug and original SKU.
-  return item.source === 'database' && /^(siman|walmart|curacao|prado|omnisport|epa|radioshack|raf|prismamoda|tropigas|officedepot)$/.test(item.store_id) && item.store_sku
+  return item.source === 'database' && /^(siman|walmart|curacao|prado|omnisport|epa|aeon|radioshack|raf|prismamoda|tropigas|officedepot)$/.test(item.store_id) && item.store_sku
     ? `${item.store_id}-${item.store_sku}`
     : item.store_product_id;
 }

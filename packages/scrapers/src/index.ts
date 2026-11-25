@@ -9,6 +9,8 @@ import { radioshackScraper } from './stores/radioshack.js';
 import { rafScraper } from './stores/raf.js';
 import { tropigasScraper } from './stores/tropigas.js';
 import { officedepotScraper } from './stores/officedepot.js';
+import { aeonScraper } from './stores/aeon.js';
+import { epaScraper } from './stores/epa.js';
 import { getSupabaseClient, readPriceHistory, syncProductsToDatabase } from './db/supabase.js';
 import { mergeCatalog, type Observation, type StoreResult } from './core/catalog.js';
 import { readSnapshot, writeJsonAtomic, writeSnapshot } from './core/snapshot.js';
@@ -22,6 +24,7 @@ const scrapers: Record<string, StoreScraper> = {
   prado: pradoScraper, omnisport: omnisportScraper,
   prismamoda: prismamodaScraper, radioshack: radioshackScraper, raf: rafScraper,
   tropigas: tropigasScraper, officedepot: officedepotScraper,
+  aeon: aeonScraper, epa: epaScraper,
 };
 const reportPath = fileURLToPath(new URL('../../../.reports/crawler.json', import.meta.url));
 

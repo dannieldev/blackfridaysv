@@ -1,6 +1,7 @@
 import { CONSENT_VERSION, validateSubscription, type CatalogProduct } from '../../../packages/notifications/src/contracts.js';
 import { confirmationEmail, escapeHtml, sendEmail } from '../../../packages/notifications/src/email.js';
 import { Database, hashToken, isConfigured, randomToken, verifyUnsubscribe, type ServiceEnvironment } from '../../../packages/notifications/src/service.js';
+import { injectDealOpenGraph, type OgDealRecord } from './og.js';
 
 export interface Env extends ServiceEnvironment { ASSETS: { fetch(request: Request): Promise<Response> } }
 const privateHeaders = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' };
@@ -34,9 +35,41 @@ async function readBody(request: Request) {
   return new TextDecoder().decode(bytes);
 }
 
+async function serveDealOpenGraph(request: Request, env: Env, dealId: string): Promise<Response | null> {
+  if (!/^[a-z0-9._-]{3,120}$/i.test(dealId)) return null;
+  try {
+    const [assetRes, snapRes] = await Promise.all([
+      env.ASSETS.fetch(new Request(new URL('/', request.url), { method: 'GET', headers: request.headers })),
+      env.ASSETS.fetch(new Request(new URL('/data/deals-snapshot.json', request.url))),
+    ]);
+    if (!assetRes.ok || !snapRes.ok) return null;
+    const contentType = assetRes.headers.get('Content-Type') ?? '';
+    if (!contentType.includes('text/html')) return null;
+    const catalog = await snapRes.json() as OgDealRecord[];
+    const deal = Array.isArray(catalog) ? catalog.find(item => item.id === dealId) : undefined;
+    if (!deal) return null;
+    const html = await assetRes.text();
+    const siteOrigin = env.SITE_URL ? new URL(env.SITE_URL).origin : new URL(request.url).origin;
+    const enriched = injectDealOpenGraph(html, deal, siteOrigin);
+    const headers = new Headers(assetRes.headers);
+    headers.set('Content-Type', 'text/html; charset=utf-8');
+    headers.set('Cache-Control', 'public, max-age=300');
+    headers.delete('Content-Length');
+    return new Response(enriched, { status: assetRes.status, headers });
+  } catch {
+    return null;
+  }
+}
+
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+  if (!url.pathname.startsWith('/api/')) {
+    if (request.method === 'GET' && url.pathname === '/' && url.searchParams.has('deal')) {
+      const ogResponse = await serveDealOpenGraph(request, env, url.searchParams.get('deal')?.trim() ?? '');
+      if (ogResponse) return ogResponse;
+    }
+    return env.ASSETS.fetch(request);
+  }
   if (url.pathname === '/api/subscriptions/config' && request.method === 'GET') return json({ enabled: isConfigured(env) });
   const db = new Database(env);
   try {

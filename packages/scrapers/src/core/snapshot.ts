@@ -19,11 +19,12 @@ export function readSnapshot(file = snapshotPath): SnapshotItem[] {
   return data;
 }
 
-export function writeJsonAtomic(file: string, value: unknown): void {
+export function writeJsonAtomic(file: string, value: unknown, pretty = true): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.tmp`;
   try {
-    fs.writeFileSync(temporary, JSON.stringify(value, null, 2) + '\n', 'utf8');
+    const serialized = pretty ? JSON.stringify(value, null, 2) + '\n' : JSON.stringify(value);
+    fs.writeFileSync(temporary, serialized, 'utf8');
     fs.renameSync(temporary, file);
   } finally {
     if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
@@ -32,5 +33,5 @@ export function writeJsonAtomic(file: string, value: unknown): void {
 
 export function writeSnapshot(items: SnapshotItem[], file = snapshotPath): void {
   if (!items.length) throw new Error('No se publicará un catálogo vacío.');
-  writeJsonAtomic(file, items);
+  writeJsonAtomic(file, items, false);
 }

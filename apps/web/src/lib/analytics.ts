@@ -520,3 +520,15 @@ export function trackRadarPreference(enabled: boolean, budget: number | null, ca
     }
   }
 }
+
+/**
+ * Evento: Compartir oferta verificada (WhatsApp o enlace copiado)
+ */
+export function trackShareDeal(dealId: string, title: string, channel: 'whatsapp' | 'copy'): void {
+  trackEvent('share', {
+    method: channel,
+    content_type: 'deal',
+    item_id: dealId,
+    product_title: title,
+  });
+}
